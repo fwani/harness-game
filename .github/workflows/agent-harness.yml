@@ -15,12 +15,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      # The harness tool is published as a git package, not on npm.
+      - name: Install agent-harness
+        run: npm install -g https://github.com/fwani/agent-harness.git
       # Validate docs, config, and architecture boundaries.
       - name: Harness verify
-        run: npx --yes company-agent-harness verify
+        run: agent-harness verify
       # Evaluate the deterministic rule scenarios (.agent-harness.yml eval.scenarios).
       - name: Harness eval
-        run: npx --yes company-agent-harness eval
+        run: agent-harness eval
       # Optional: run the repo's full verification (lint/typecheck/test/build).
       - name: Project verification
         run: sh scripts/agent-harness/agent-verify
