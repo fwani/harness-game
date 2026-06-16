@@ -25,7 +25,8 @@
 | 도메인 | [`src/domain/gameRecord.ts`](../../src/domain/gameRecord.ts) | `createGameRecord()`, `summarize()`, `GameId`, `PlayerStats` | ✅ |
 | 애플리케이션 | [`src/application/gameRecordStore.ts`](../../src/application/gameRecordStore.ts) | `GameRecordRepository` 포트, `standings(repo)` | ✅ |
 | 인프라 | [`src/infrastructure/inMemoryGameRecordRepository.ts`](../../src/infrastructure/inMemoryGameRecordRepository.ts) | 인메모리 저장소 | ✅ |
-| UI(연동) | [`src/ui/records.ts`](../../src/ui/records.ts) | 공유 저장소 + `recordGame()` 헬퍼 + 구독 | ✅ |
+| 애플리케이션(쓰기) | [`src/application/recordRound.ts`](../../src/application/recordRound.ts) | `recordRound(repo, game, players, winner)` — 승자→검증된 기록 저장 | ✅ |
+| UI(연동) | [`src/ui/records.ts`](../../src/ui/records.ts) | 공유 저장소 + 구독 + `recordGame()`(저장은 `recordRound`에 위임) | ✅ |
 | UI(화면) | [`src/ui/games/Records.tsx`](../../src/ui/games/Records.tsx) | "전적" 탭 — 플레이어별 승/패/무 표 + 최근 기록 | ✅ |
 
 > 각 게임 화면이 한 판을 끝내면 `recordGame(game, playerA, playerB, win)`을 호출해 저장하고,
