@@ -6,19 +6,42 @@
 import type { HwatuCard } from "./hwatu";
 import { isSameMonth } from "./hwatu";
 
-/** 섯다 패의 종류 */
-export type SutdaCategory = "ddaeng" | "kkut"; // 땡 | 끗
+/** 섯다 패의 종류. 위계: 땡 > 특수패(멍텅구리 끗) > 끗 */
+export type SutdaCategory = "ddaeng" | "special" | "kkut"; // 땡 | 특수패 | 끗
 
-/** 카테고리별 비교 강도(땡이 끗보다 강하다). 같은 category는 같은 strength를 가진다. */
+/** 카테고리별 비교 강도(땡 > 특수패 > 끗). 같은 category는 같은 strength를 가진다. */
 const CATEGORY_STRENGTH: Record<SutdaCategory, number> = {
-  ddaeng: 1, // 땡
+  ddaeng: 2, // 땡
+  special: 1, // 특수패(멍텅구리 끗)
   kkut: 0, // 끗
 };
 
 export interface SutdaHandRank {
   category: SutdaCategory;
-  /** 땡이면 month(1~10), 끗이면 0~9 */
+  /** 땡이면 month(1~10), 특수패면 내부 강도(1~6), 끗이면 0~9 */
   value: number;
+}
+
+/**
+ * 멍텅구리 끗(특수패) 월 조합 → 내부 강도(클수록 강함). 키는 정렬된 "min·max".
+ * 강→약: 알리 1·2(6) > 독사 1·4(5) > 구삥 1·9(4) > 장삥 1·10(3) > 장사 4·10(2) > 세륙 4·6(1).
+ */
+const SPECIAL_KKUT_STRENGTH: Record<string, number> = {
+  "1,2": 6, // 알리
+  "1,4": 5, // 독사
+  "1,9": 4, // 구삥
+  "1,10": 3, // 장삥
+  "4,10": 2, // 장사
+  "4,6": 1, // 세륙
+};
+
+/**
+ * 두 월(month) 조합이 특수패면 내부 강도(1~6)를, 아니면 null을 반환한다.
+ * 월 순서는 무관하다([min,max]로 정규화). 같은 월(땡)은 호출 전에 걸러진다.
+ */
+function specialKkutValue(a: number, b: number): number | null {
+  const key = a <= b ? `${a},${b}` : `${b},${a}`;
+  return SPECIAL_KKUT_STRENGTH[key] ?? null;
 }
 
 /** 섯다에서 유효한 month 핀 범위(1~10). 11·12월은 섯다에서 사용하지 않는다. */
@@ -35,7 +58,10 @@ function validatePip(month: number): void {
 /**
  * 섯다 2장 패의 등급을 판정한다(순수·불변).
  * - 두 카드의 month는 1~10 정수여야 하며, 아니면 throw. 입력 카드를 변형하지 않는다.
- * - 같은 월이면 땡(value=month), 아니면 끗(value=(a.month + b.month) % 10).
+ * 판정 순서:
+ *   1. 같은 월 → 땡(value=month).
+ *   2. 특수패 조합(알리·독사·구삥·장삥·장사·세륙) → special(value=내부 강도 1~6).
+ *   3. 그 외 → 끗(value=(a.month + b.month) % 10).
  */
 export function evaluateSutdaHand(a: HwatuCard, b: HwatuCard): SutdaHandRank {
   validatePip(a.month);
@@ -44,13 +70,19 @@ export function evaluateSutdaHand(a: HwatuCard, b: HwatuCard): SutdaHandRank {
   if (isSameMonth(a, b)) {
     return { category: "ddaeng", value: a.month };
   }
+
+  const special = specialKkutValue(a.month, b.month);
+  if (special !== null) {
+    return { category: "special", value: special };
+  }
+
   return { category: "kkut", value: (a.month + b.month) % 10 };
 }
 
 /**
  * 두 섯다 패의 우열을 비교한다(순수·불변).
  * a가 강하면 양수, b가 강하면 음수, 동급이면 0.
- * 우선순위: 땡 > 끗, 같은 종류면 value가 큰 쪽이 강하다.
+ * 우선순위: 땡 > 특수패 > 끗, 같은 종류면 value가 큰 쪽이 강하다.
  */
 export function compareSutdaHands(a: SutdaHandRank, b: SutdaHandRank): number {
   const sa = CATEGORY_STRENGTH[a.category];

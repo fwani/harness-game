@@ -84,40 +84,40 @@ describe("playSutdaRound", () => {
   });
 
   it("땡 > 끗: A가 땡이면 A 승", () => {
-    // A0={3,0}, A1={3,1} → 3땡. B0={1,0}, B1={2,0} → (1+2)%10=3 끗.
-    const target = targetWithFirst4(C(3, 0), C(1, 0), C(3, 1), C(2, 0));
+    // A0={3,0}, A1={3,1} → 3땡. B0={7,0}, B1={8,0} → (7+8)%10=5 끗(특수패 아님).
+    const target = targetWithFirst4(C(3, 0), C(7, 0), C(3, 1), C(8, 0));
     const result = playSutdaRound(rngForTarget(target));
 
     expect(result.a).toEqual([C(3, 0), C(3, 1)]);
-    expect(result.b).toEqual([C(1, 0), C(2, 0)]);
+    expect(result.b).toEqual([C(7, 0), C(8, 0)]);
     expect(result.aRank).toEqual({ category: "ddaeng", value: 3 });
-    expect(result.bRank).toEqual({ category: "kkut", value: 3 });
+    expect(result.bRank).toEqual({ category: "kkut", value: 5 });
     expect(result.result).toBe("a");
   });
 
   it("땡 > 끗: B가 땡이면 B 승", () => {
-    // A0={1,0}, A1={2,0} → (1+2)%10=3 끗. B0={3,0}, B1={3,1} → 3땡.
-    const target = targetWithFirst4(C(1, 0), C(3, 0), C(2, 0), C(3, 1));
+    // A0={7,0}, A1={8,0} → (7+8)%10=5 끗(특수패 아님). B0={3,0}, B1={3,1} → 3땡.
+    const target = targetWithFirst4(C(7, 0), C(3, 0), C(8, 0), C(3, 1));
     const result = playSutdaRound(rngForTarget(target));
 
-    expect(result.aRank).toEqual({ category: "kkut", value: 3 });
+    expect(result.aRank).toEqual({ category: "kkut", value: 5 });
     expect(result.bRank).toEqual({ category: "ddaeng", value: 3 });
     expect(result.result).toBe("b");
   });
 
   it("같은 끗이면 value가 큰 쪽이 승", () => {
-    // A0={3,0}, A1={6,0} → (3+6)%10=9 끗. B0={1,0}, B1={2,0} → 3 끗. A 승.
-    const target = targetWithFirst4(C(3, 0), C(1, 0), C(6, 0), C(2, 0));
+    // A0={3,0}, A1={6,0} → (3+6)%10=9 끗. B0={2,0}, B1={3,1} → (2+3)%10=5 끗. A 승.
+    const target = targetWithFirst4(C(3, 0), C(2, 0), C(6, 0), C(3, 1));
     const result = playSutdaRound(rngForTarget(target));
 
     expect(result.aRank).toEqual({ category: "kkut", value: 9 });
-    expect(result.bRank).toEqual({ category: "kkut", value: 3 });
+    expect(result.bRank).toEqual({ category: "kkut", value: 5 });
     expect(result.result).toBe("a");
   });
 
   it("같은 끗 value면 draw", () => {
-    // A0={1,0}, A1={4,0} → 5 끗. B0={2,0}, B1={3,0} → 5 끗. draw.
-    const target = targetWithFirst4(C(1, 0), C(2, 0), C(4, 0), C(3, 0));
+    // A0={7,0}, A1={8,0} → (7+8)%10=5 끗. B0={2,0}, B1={3,0} → (2+3)%10=5 끗. draw.
+    const target = targetWithFirst4(C(7, 0), C(2, 0), C(8, 0), C(3, 0));
     const result = playSutdaRound(rngForTarget(target));
 
     expect(result.aRank).toEqual({ category: "kkut", value: 5 });
