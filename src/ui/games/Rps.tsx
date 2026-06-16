@@ -2,6 +2,7 @@ import { useState } from "react";
 import { playRpsRound, type RpsRoundResult } from "../../application/playRps";
 import type { Hand } from "../../domain/rps";
 import { RandomHandSource } from "../../infrastructure/randomHandSource";
+import { recordGame } from "../records";
 
 const CHOICES: { hand: Hand; emoji: string; label: string }[] = [
   { hand: "rock", emoji: "✊", label: "바위" },
@@ -27,7 +28,14 @@ export function Rps() {
   const [round, setRound] = useState<RpsRoundResult | null>(null);
 
   const play = (hand: Hand) => {
-    setRound(playRpsRound({ choose: () => hand }, cpu));
+    const result = playRpsRound({ choose: () => hand }, cpu);
+    setRound(result);
+    recordGame(
+      "rps",
+      "나",
+      "CPU",
+      result.result === "a-win" ? "a" : result.result === "b-win" ? "b" : "draw",
+    );
   };
 
   return (

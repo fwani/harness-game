@@ -2,6 +2,7 @@ import { useState } from "react";
 import { playRound, type RoundResult } from "../../application/playOddEven";
 import type { Parity } from "../../domain/oddEven";
 import { RandomNumberSource } from "../../infrastructure/randomNumberSource";
+import { recordGame } from "../records";
 
 const GUESSES: { parity: Parity; label: string }[] = [
   { parity: "odd", label: "홀" },
@@ -14,7 +15,9 @@ export function OddEven() {
   const [round, setRound] = useState<RoundResult | null>(null);
 
   const play = (guess: Parity) => {
-    setRound(playRound(guess, source));
+    const result = playRound(guess, source);
+    setRound(result);
+    recordGame("oddEven", "나", "딜러", result.won ? "a" : "b");
   };
 
   return (

@@ -2,19 +2,31 @@ import { useState } from "react";
 import { Rps } from "./games/Rps";
 import { OddEven } from "./games/OddEven";
 import { Deal } from "./games/Deal";
+import { HighCard } from "./games/HighCard";
 import { Gomoku } from "./games/Gomoku";
 import { Go } from "./games/Go";
 import { Janggi } from "./games/Janggi";
+import { Records } from "./games/Records";
 
-type GameKey = "rps" | "oddeven" | "deal" | "gomoku" | "go" | "janggi";
+type GameKey =
+  | "rps"
+  | "oddeven"
+  | "deal"
+  | "highcard"
+  | "gomoku"
+  | "go"
+  | "janggi"
+  | "records";
 
 const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "rps", label: "가위바위보", render: () => <Rps /> },
   { key: "oddeven", label: "홀짝", render: () => <OddEven /> },
   { key: "deal", label: "카드 딜", render: () => <Deal /> },
+  { key: "highcard", label: "하이카드", render: () => <HighCard /> },
   { key: "gomoku", label: "오목", render: () => <Gomoku /> },
   { key: "go", label: "바둑", render: () => <Go /> },
   { key: "janggi", label: "장기", render: () => <Janggi /> },
+  { key: "records", label: "전적", render: () => <Records /> },
 ];
 
 export function App() {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { startGame, applyMove, type GomokuState } from "../../application/playGomoku";
+import { recordGame } from "../records";
 
 const SIZE = 15;
 
@@ -12,7 +13,11 @@ export function Gomoku() {
     if (state.winner !== null || state.board[y]![x] !== null) {
       return;
     }
-    setState(applyMove(state, x, y));
+    const next = applyMove(state, x, y);
+    setState(next);
+    if (next.winner !== null) {
+      recordGame("gomoku", "흑", "백", next.winner === "black" ? "a" : "b");
+    }
   };
 
   return (
