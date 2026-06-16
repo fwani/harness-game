@@ -31,12 +31,13 @@ header h1 {
 
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
 }
 
 .tab {
-  flex: 1;
+  flex: 1 1 auto;
   padding: 0.6rem 1rem;
   border: 1px solid #334155;
   background: var(--panel);
@@ -135,4 +136,175 @@ header h1 {
 .drawn strong {
   font-size: 1.4rem;
   color: var(--accent);
+}
+
+/* --- shared controls --- */
+
+.primary {
+  margin-top: 1rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.primary:hover {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.controls input {
+  width: 5rem;
+  padding: 0.4rem 0.5rem;
+  background: #0b1220;
+  border: 1px solid #334155;
+  border-radius: 0.4rem;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.controls .primary {
+  margin-top: 0;
+}
+
+.error {
+  color: #f87171;
+  font-size: 0.9rem;
+}
+
+/* --- card deal --- */
+
+.hand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.hand-label {
+  width: 2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.hand-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.card-chip {
+  display: inline-block;
+  min-width: 2.2rem;
+  text-align: center;
+  padding: 0.25rem 0.4rem;
+  background: #f8fafc;
+  color: #0f172a;
+  border-radius: 0.3rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.card-chip.red {
+  color: #dc2626;
+}
+
+/* --- boards (gomoku / go / janggi) --- */
+
+.board {
+  display: grid;
+  gap: 0;
+  width: max-content;
+  max-width: 100%;
+  margin: 1rem 0;
+  background: #b8860b;
+  border: 2px solid #7c5e08;
+  border-radius: 4px;
+}
+
+.cell {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0.5px solid rgba(0, 0, 0, 0.4);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.cell:disabled {
+  cursor: default;
+}
+
+.cell:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.stone {
+  font-size: 22px;
+}
+
+.stone.black {
+  color: #111;
+}
+
+.stone.white {
+  color: #f8fafc;
+  text-shadow: 0 0 1px #000;
+}
+
+.board.go {
+  background: #dcb35c;
+}
+
+/* --- janggi --- */
+
+.board.janggi {
+  background: #e3b76a;
+}
+
+.janggi-cell {
+  cursor: default;
+}
+
+.piece {
+  font-size: 18px;
+  font-weight: 700;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5e6c8;
+  border: 1.5px solid currentColor;
+}
+
+.piece.cho {
+  color: #15803d;
+}
+
+.piece.han {
+  color: #b91c1c;
 }

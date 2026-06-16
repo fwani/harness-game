@@ -1,0 +1,89 @@
+import { useState } from "react";
+import { createDeck, type Card, type Suit } from "../../domain/card";
+import { shuffle, deal, type DealResult } from "../../application/dealCards";
+import { MathRandomSource } from "../../infrastructure/mathRandomSource";
+
+const rng = new MathRandomSource();
+
+const SUIT: Record<Suit, { sym: string; red: boolean }> = {
+  spades: { sym: "♠", red: false },
+  clubs: { sym: "♣", red: false },
+  hearts: { sym: "♥", red: true },
+  diamonds: { sym: "♦", red: true },
+};
+
+function CardChip({ card }: { card: Card }) {
+  const s = SUIT[card.suit];
+  return (
+    <span className={s.red ? "card-chip red" : "card-chip"}>
+      {card.rank}
+      {s.sym}
+    </span>
+  );
+}
+
+export function Deal() {
+  const [players, setPlayers] = useState(4);
+  const [perPlayer, setPerPlayer] = useState(5);
+  const [result, setResult] = useState<DealResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const run = () => {
+    try {
+      const dealt = deal(shuffle(createDeck(), rng), players, perPlayer);
+      setResult(dealt);
+      setError(null);
+    } catch (e) {
+      setError((e as Error).message);
+      setResult(null);
+    }
+  };
+
+  return (
+    <section className="game">
+      <h2>카드 딜</h2>
+      <p className="hint">52장 덱을 섞어 인원수만큼 나눠줍니다.</p>
+      <div className="controls">
+        <label>
+          인원
+          <input
+            type="number"
+            min={1}
+            max={8}
+            value={players}
+            onChange={(e) => setPlayers(Number(e.target.value))}
+          />
+        </label>
+        <label>
+          1인당
+          <input
+            type="number"
+            min={0}
+            max={13}
+            value={perPlayer}
+            onChange={(e) => setPerPlayer(Number(e.target.value))}
+          />
+        </label>
+        <button className="primary" onClick={run}>
+          딜
+        </button>
+      </div>
+      {error && <p className="error">{error}</p>}
+      {result && (
+        <div className="result">
+          {result.hands.map((hand, i) => (
+            <div key={i} className="hand">
+              <span className="hand-label">P{i + 1}</span>
+              <span className="hand-cards">
+                {hand.map((c, j) => (
+                  <CardChip key={j} card={c} />
+                ))}
+              </span>
+            </div>
+          ))}
+          <p className="hint">남은 더미: {result.rest.length}장</p>
+        </div>
+      )}
+    </section>
+  );
+}
