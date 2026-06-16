@@ -43,6 +43,15 @@ export function placeStone(board: Board, x: number, y: number, stone: Stone): Bo
   );
 }
 
+/**
+ * 보드에 빈 칸(null)이 하나도 없으면 true(가득 참), 하나라도 있으면 false.
+ * - 입력 board를 변형하지 않는다(불변, 결정적).
+ * - 빈 보드(모든 칸 null)는 false. 0×0(빈 행 배열) 보드는 가득 찬 것으로 보아 true.
+ */
+export function isBoardFull(board: Board): boolean {
+  return board.every((row) => row.every((cell) => cell !== null));
+}
+
 // 가로, 세로, 두 대각선의 단위 방향 벡터.
 const DIRECTIONS: ReadonlyArray<readonly [number, number]> = [
   [1, 0],
