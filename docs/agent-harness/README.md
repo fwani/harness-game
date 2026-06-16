@@ -19,17 +19,20 @@
 | `docs/agent-harness/OBSERVABILITY.md` | 로그/메트릭/디버깅 |
 | `docs/agent-harness/QUALITY_SCORE.md` | 변경 자기검토 기준 |
 | `docs/agent-harness/DOC_GARDENING.md` | 오래된 문서 정리 기준 |
+| `docs/agent-harness/UX_GUIDELINES.md` | UI/UX 원칙·체크리스트·현재 UI 상태·갭(게임 제품 필수) |
 | `docs/agent-harness/PRODUCT_CONTEXT.md` | 제품 맥락, 사용자, 목표 |
 | `docs/agent-harness/exec-plans/` | 진행 중/완료 작업 계획, 기술부채 |
 
 ## Quick commands
 
-- Install: _(unknown — fill in during onboarding)_
-- Run: _(unknown — fill in during onboarding)_
-- Test: _(unknown — fill in during onboarding)_
+- Install: `npm ci`
+- Run (web UI): `npm run dev` (Vite, 기본 http://localhost:5173)
+- Run (CLI): `npm start`
+- Test: `npm test`
 - Full verification: `scripts/agent-harness/agent-verify`
 
 ## Source layout (detected)
 
-- Source directories: _(unknown — fill in during onboarding)_
-- Entry points: _(unknown — fill in during onboarding)_
+- Source directories: `src/domain`(순수 규칙), `src/application`(흐름), `src/infrastructure`(어댑터), `src/ui`(웹 UI)
+- Entry points: `src/ui/main.tsx`(웹), `src/infrastructure/cli.ts`(CLI)
+- UI/UX 가이드: `docs/agent-harness/UX_GUIDELINES.md`
