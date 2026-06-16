@@ -4,6 +4,7 @@ import {
   PokerHandCategory,
   evaluatePokerHand,
   comparePokerHands,
+  findPokerWinners,
 } from "./pokerHand";
 
 const card = (rank: Rank, suit: Suit = "spades"): Card => ({ suit, rank });
@@ -177,5 +178,72 @@ describe("입력 검증·불변성", () => {
     comparePokerHands(a, b);
     expect(a).toEqual(sa);
     expect(b).toEqual(sb);
+  });
+});
+
+describe("findPokerWinners - 여러 핸드 중 승자(들) 판정", () => {
+  it("서로 다른 카테고리면 단독 승자 인덱스를 반환한다", () => {
+    const hands = [
+      mixed("A", "K", "9", "5", "3"), // 0: 하이카드
+      mixed("7", "7", "7", "K", "2"), // 1: 트리플 (최강)
+      mixed("9", "9", "K", "5", "3"), // 2: 원페어
+    ];
+    expect(findPokerWinners(hands)).toEqual([1]);
+  });
+
+  it("같은 카테고리에서 타이브레이크로 단독 승자를 가린다", () => {
+    const hands = [
+      mixed("Q", "Q", "9", "5", "3"), // 0: 페어 Q
+      mixed("K", "K", "9", "5", "3"), // 1: 페어 K (최강)
+      mixed("9", "9", "K", "5", "3"), // 2: 페어 9
+    ];
+    expect(findPokerWinners(hands)).toEqual([1]);
+  });
+
+  it("완전 동률(무늬만 다른 동일 랭크)이면 공동 1위 인덱스를 오름차순으로 반환한다", () => {
+    const hands = [
+      oneSuit("spades", "A", "K", "9", "5", "3"), // 플러시
+      oneSuit("hearts", "A", "K", "9", "5", "3"), // 플러시(동일 랭크)
+      oneSuit("clubs", "A", "K", "9", "5", "3"), // 플러시(동일 랭크)
+    ];
+    expect(findPokerWinners(hands)).toEqual([0, 1, 2]);
+  });
+
+  it("일부만 동률(3명 중 2명 공동 1위)인 경우 정확한 인덱스 집합을 반환한다", () => {
+    const hands = [
+      mixed("K", "K", "9", "5", "3"), // 0: 페어 K (공동 1위)
+      mixed("Q", "Q", "9", "5", "3"), // 1: 페어 Q
+      [
+        card("K", "clubs"),
+        card("K", "diamonds"),
+        card("9", "hearts"),
+        card("5", "clubs"),
+        card("3", "diamonds"),
+      ], // 2: 페어 K, 동일 랭크 (공동 1위, 무늬만 다름)
+    ];
+    expect(findPokerWinners(hands)).toEqual([0, 2]);
+  });
+
+  it("핸드가 하나여도 그 핸드가 승자다", () => {
+    expect(findPokerWinners([mixed("A", "K", "9", "5", "3")])).toEqual([0]);
+  });
+
+  it("어떤 핸드가 5장이 아니면 throw", () => {
+    const hands = [mixed("A", "K", "9", "5", "3"), mixed("A", "K", "Q", "J")];
+    expect(() => findPokerWinners(hands)).toThrow();
+  });
+
+  it("hands가 비어 있으면 throw", () => {
+    expect(() => findPokerWinners([])).toThrow();
+  });
+
+  it("입력 배열과 원소를 변형하지 않는다", () => {
+    const hands = [
+      mixed("K", "K", "9", "5", "3"),
+      mixed("Q", "Q", "9", "5", "3"),
+    ];
+    const snapshot = hands.map((h) => h.map((c) => ({ ...c })));
+    findPokerWinners(hands);
+    expect(hands).toEqual(snapshot);
   });
 });
