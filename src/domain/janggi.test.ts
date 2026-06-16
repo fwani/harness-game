@@ -7,6 +7,8 @@ import {
   isLegalMove,
   legalMovesFrom,
   applyMove,
+  isInCheck,
+  isCheckmate,
   WIDTH,
   HEIGHT,
   type Board,
@@ -428,5 +430,107 @@ describe("applyMove", () => {
     put(board, 2, 0, "han", "soldier"); // 아군
     expect(() => applyMove(board, "han", { x: 0, y: 0 }, { x: 2, y: 0 })).toThrow();
     expect(() => applyMove(board, "han", { x: 5, y: 5 }, { x: 5, y: 6 })).toThrow();
+  });
+});
+
+describe("isInCheck", () => {
+  it("표준 초기 배치는 양 진영 모두 장군이 아니다", () => {
+    const board = createInitialBoard();
+    expect(isInCheck(board, "han")).toBe(false);
+    expect(isInCheck(board, "cho")).toBe(false);
+  });
+
+  it("상대 차가 장을 직선으로 노리면 장군(true)", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 1, "han", "general"); // 궁성 중앙
+    put(board, 4, 9, "cho", "chariot"); // 같은 열, 경로 비어 있음
+    expect(isInCheck(board, "han")).toBe(true);
+  });
+
+  it("경로가 막혀 장을 못 노리면 비장군(false)", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 1, "han", "general");
+    put(board, 4, 9, "cho", "chariot");
+    put(board, 4, 5, "han", "soldier"); // 경로 차단
+    expect(isInCheck(board, "han")).toBe(false);
+  });
+
+  it("받침을 갖춘 상대 포가 장을 노리면 장군(true)", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 1, "han", "general");
+    put(board, 4, 5, "cho", "soldier"); // 받침
+    put(board, 4, 9, "cho", "cannon"); // 받침 1개 넘어 장 포획 가능
+    expect(isInCheck(board, "han")).toBe(true);
+  });
+
+  it("장이 보드에 없으면(이미 잡힘) 장군으로 간주(true)", () => {
+    const board = createEmptyBoard();
+    put(board, 0, 0, "han", "chariot"); // 장이 없는 진영
+    expect(isInCheck(board, "han")).toBe(true);
+  });
+
+  it("판정은 보드를 변형하지 않는다", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 1, "han", "general");
+    put(board, 4, 9, "cho", "chariot");
+    const snapshot = JSON.stringify(board);
+    isInCheck(board, "han");
+    expect(JSON.stringify(board)).toBe(snapshot);
+  });
+});
+
+describe("isCheckmate", () => {
+  it("표준 초기 배치는 양 진영 모두 외통수가 아니다", () => {
+    const board = createInitialBoard();
+    expect(isCheckmate(board, "han")).toBe(false);
+    expect(isCheckmate(board, "cho")).toBe(false);
+  });
+
+  it("장군이 아니면 외통수가 아니다(false)", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 1, "han", "general");
+    expect(isInCheck(board, "han")).toBe(false);
+    expect(isCheckmate(board, "han")).toBe(false);
+  });
+
+  it("장군이지만 장이 피할 수 있으면 외통수가 아니다(false)", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 1, "han", "general");
+    put(board, 4, 9, "cho", "chariot"); // 열 4 장군
+    expect(isInCheck(board, "han")).toBe(true);
+    // 장이 (3,1)·(5,1) 등으로 피하면 장군이 풀린다.
+    expect(isCheckmate(board, "han")).toBe(false);
+  });
+
+  it("어떤 합법 수로도 장군을 못 벗어나면 외통수(true)", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 0, "han", "general"); // 궁성 변(이동 가능: (3,0)/(5,0)/(4,1))
+    put(board, 4, 9, "cho", "chariot"); // 열 4 장군 + (4,1) 봉쇄
+    put(board, 3, 9, "cho", "chariot"); // (3,0) 봉쇄
+    put(board, 5, 9, "cho", "chariot"); // (5,0) 봉쇄
+    expect(isInCheck(board, "han")).toBe(true);
+    expect(isCheckmate(board, "han")).toBe(true);
+  });
+
+  it("같은 봉쇄 상황이라도 막을 기물이 있으면 외통수가 아니다(false)", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 0, "han", "general");
+    put(board, 4, 9, "cho", "chariot");
+    put(board, 3, 9, "cho", "chariot");
+    put(board, 5, 9, "cho", "chariot");
+    put(board, 0, 5, "han", "chariot"); // (4,5)로 가서 열 4를 막을 수 있다
+    expect(isInCheck(board, "han")).toBe(true);
+    expect(isCheckmate(board, "han")).toBe(false);
+  });
+
+  it("판정은 보드를 변형하지 않는다", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 0, "han", "general");
+    put(board, 4, 9, "cho", "chariot");
+    put(board, 3, 9, "cho", "chariot");
+    put(board, 5, 9, "cho", "chariot");
+    const snapshot = JSON.stringify(board);
+    isCheckmate(board, "han");
+    expect(JSON.stringify(board)).toBe(snapshot);
   });
 });

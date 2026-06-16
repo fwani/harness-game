@@ -116,8 +116,9 @@ export function pieceAt(board: Board, x: number, y: number): Cell {
 }
 
 // ── 기물 이동/포획 합법 수(legal move) 판정 ─────────────────────────────────
-// 장군(check)·외통(checkmate)·빅장(bikjang)·차림 변형·턴 오케스트레이션은 이 모듈
-// 범위 밖이다(별도 이슈). 여기서는 "개별 기물의 한 수 이동/포획 합법성"만 다룬다.
+// 빅장(bikjang)·차림 변형·턴 오케스트레이션은 이 모듈 범위 밖이다(별도 이슈).
+// 장군(check)·외통수(checkmate) 판정은 파일 하단에 별도로 추가한다.
+// 여기서는 "개별 기물의 한 수 이동/포획 합법성"만 다룬다.
 
 /** 보드 좌표. */
 export interface Pos {
@@ -400,4 +401,82 @@ export function applyMove(board: Board, side: Side, from: Pos, to: Pos): Board {
   next[to.y]![to.x] = next[from.y]![from.x]!;
   next[from.y]![from.x] = null;
   return next;
+}
+
+// ── 장군(check)·외통수(checkmate) 판정 ──────────────────────────────────────
+// 순수 함수. 기존 isLegalMove/legalMovesFrom/applyMove를 재사용한다.
+// 빅장(bikjang, 장군 마주보기 무승부)·차림 변형·턴 오케스트레이션은 범위 밖이다.
+
+// 상대 진영.
+function opponentOf(side: Side): Side {
+  return side === "han" ? "cho" : "han";
+}
+
+// side 진영 장(general)의 좌표를 찾는다. 보드에 없으면(이미 잡힘) null.
+function findGeneral(board: Board, side: Side): Pos | null {
+  for (let y = 0; y < board.length; y++) {
+    const row = board[y]!;
+    for (let x = 0; x < row.length; x++) {
+      const cell = row[x]!;
+      if (cell !== null && cell.side === side && cell.type === "general") {
+        return { x, y };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * `side` 진영의 장(general)이 현재 상대에게 잡힐 위치에 있는지(장군, check) 판정한다.
+ * - 상대 진영의 어떤 기물이든 side의 장 위치로 가는 합법 수가 하나라도 있으면 true.
+ * - side의 장이 보드에 없으면(이미 잡힘) true로 간주한다.
+ * 보드를 변형하지 않는다.
+ */
+export function isInCheck(board: Board, side: Side): boolean {
+  const general = findGeneral(board, side);
+  if (general === null) {
+    return true; // 장이 이미 잡힘 — 장군으로 간주
+  }
+  const opponent = opponentOf(side);
+  for (let y = 0; y < board.length; y++) {
+    const row = board[y]!;
+    for (let x = 0; x < row.length; x++) {
+      const cell = row[x]!;
+      if (cell !== null && cell.side === opponent) {
+        if (isLegalMove(board, opponent, { x, y }, general)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * `side` 진영이 외통수(checkmate)인지 판정한다.
+ * - 현재 장군 상태(`isInCheck(board, side) === true`)이고,
+ * - side의 어떤 합법 수를 두어도 그 수를 둔 뒤에도 여전히 장군이면 true.
+ * - 장군이 아니거나, 장군을 벗어나는 합법 수가 하나라도 있으면 false.
+ * 보드를 변형하지 않는다(applyMove가 새 보드를 반환한다).
+ */
+export function isCheckmate(board: Board, side: Side): boolean {
+  if (!isInCheck(board, side)) {
+    return false;
+  }
+  for (let y = 0; y < board.length; y++) {
+    const row = board[y]!;
+    for (let x = 0; x < row.length; x++) {
+      const cell = row[x]!;
+      if (cell !== null && cell.side === side) {
+        const from: Pos = { x, y };
+        for (const to of legalMovesFrom(board, side, from)) {
+          const next = applyMove(board, side, from, to);
+          if (!isInCheck(next, side)) {
+            return false; // 장군을 벗어나는 수가 존재
+          }
+        }
+      }
+    }
+  }
+  return true;
 }
