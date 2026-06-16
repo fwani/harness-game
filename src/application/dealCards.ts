@@ -11,8 +11,9 @@ export interface RandomSource {
  * Fisher–Yates로 섞은 새 배열을 반환한다(불변: 입력 cards는 변형하지 않는다).
  * 끝에서부터 i(>=1)마다 j = rng.nextInt(i + 1) (0 <= j <= i)를 뽑아 교환한다.
  * rng.nextInt를 사용해 결정적 테스트가 가능해야 한다.
+ * 카드 종류에 독립적이다(표준 트럼프 Card, 화투 HwatuCard 등 어떤 원소 타입이든 섞는다).
  */
-export function shuffle(cards: readonly Card[], rng: RandomSource): Card[] {
+export function shuffle<T>(cards: readonly T[], rng: RandomSource): T[] {
   const result = [...cards];
   for (let i = result.length - 1; i >= 1; i--) {
     const j = rng.nextInt(i + 1);
@@ -26,24 +27,25 @@ export function shuffle(cards: readonly Card[], rng: RandomSource): Card[] {
   return result;
 }
 
-export interface DealResult {
+export interface DealResult<T = Card> {
   /** players명에게 perPlayer장씩 나눈 손패(길이 players, 각 길이 perPlayer). */
-  hands: Card[][];
+  hands: T[][];
   /** 남은 더미(딜 후 남은 카드). */
-  rest: Card[];
+  rest: T[];
 }
 
 /**
  * deck에서 players명에게 perPlayer장씩 라운드로빈으로 분배한다(불변).
+ * 카드 종류에 독립적이다(원소 타입 T는 호출 측이 정한다).
  * - players < 1 또는 perPlayer < 0 이면 throw.
  * - players, perPlayer가 정수가 아니면 throw.
  * - players * perPlayer 가 deck.length 를 초과하면 throw(카드 부족).
  */
-export function deal(
-  deck: readonly Card[],
+export function deal<T>(
+  deck: readonly T[],
   players: number,
   perPlayer: number,
-): DealResult {
+): DealResult<T> {
   if (!Number.isInteger(players) || players < 1) {
     throw new Error(`players must be an integer >= 1, got ${players}`);
   }
@@ -56,7 +58,7 @@ export function deal(
       `not enough cards: need ${needed}, have ${deck.length}`,
     );
   }
-  const hands: Card[][] = Array.from({ length: players }, () => []);
+  const hands: T[][] = Array.from({ length: players }, () => []);
   for (let round = 0; round < perPlayer; round++) {
     for (let p = 0; p < players; p++) {
       hands[p]!.push(deck[round * players + p]!);
