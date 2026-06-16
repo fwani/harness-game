@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 dist/
+dist-ui/
 build/
 
 # Secrets (mirror .agent-harness.yml security.secret_patterns)
