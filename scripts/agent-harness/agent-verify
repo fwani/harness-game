@@ -23,10 +23,10 @@ run_step() {
   fi
 }
 
-run_step "lint"      ""
-run_step "typecheck" ""
-run_step "test"      ""
-run_step "build"     ""
+run_step "lint"      "npm run lint"
+run_step "typecheck" "npm run typecheck"
+run_step "test"      "npm test"
+run_step "build"     "npm run build"
 
 if [ "$ran" -eq 0 ]; then
   printf '\nNo checks configured — set commands in .agent-harness.yml, then re-run.\n'

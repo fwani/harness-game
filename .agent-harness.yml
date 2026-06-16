@@ -16,12 +16,12 @@ paths:
   docs: docs/agent-harness
   scripts: scripts/agent-harness
 commands:
-  install: ""
+  install: npm ci
   run: ""
-  test: ""
-  lint: ""
-  typecheck: ""
-  build: ""
+  test: npm test
+  lint: npm run lint
+  typecheck: npm run typecheck
+  build: npm run build
   verify: scripts/agent-harness/agent-verify
 docs:
   root: docs/agent-harness

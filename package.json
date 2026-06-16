@@ -1,0 +1,20 @@
+{
+  "name": "harness-game",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "간단한 게임(카드/홀짝/오목/바둑/장기) 멀티 + 기록 시스템",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.4.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^2.0.0"
+  }
+}
