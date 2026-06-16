@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { createBoard, placeStone, checkWin, type Board, type Stone } from "./gomoku";
+import {
+  createBoard,
+  placeStone,
+  checkWin,
+  isBoardFull,
+  type Board,
+  type Stone,
+} from "./gomoku";
 
 /** (x,y) 목록에 같은 색 돌을 차례로 놓은 보드를 만든다. */
 function withStones(size: number, stone: Stone, coords: ReadonlyArray<[number, number]>): Board {
@@ -122,5 +129,54 @@ describe("gomoku checkWin", () => {
     expect(checkWin(board, 7, 7)).toBe(null); // 빈 칸
     expect(checkWin(board, -1, 0)).toBe(null); // 범위 밖
     expect(checkWin(board, 15, 0)).toBe(null);
+  });
+});
+
+describe("gomoku isBoardFull", () => {
+  it("returns false for an empty board", () => {
+    expect(isBoardFull(createBoard(3))).toBe(false);
+  });
+
+  it("returns false when at least one cell is empty", () => {
+    // 3×3 보드에서 한 칸(2,2)만 비워둔다.
+    const coords: Array<[number, number]> = [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [0, 1],
+      [1, 1],
+      [2, 1],
+      [0, 2],
+      [1, 2],
+    ];
+    const board = withStones(3, "black", coords);
+    expect(isBoardFull(board)).toBe(false);
+  });
+
+  it("returns true when every cell is filled", () => {
+    const coords: Array<[number, number]> = [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [0, 1],
+      [1, 1],
+      [2, 1],
+      [0, 2],
+      [1, 2],
+      [2, 2],
+    ];
+    const board = withStones(3, "black", coords);
+    expect(isBoardFull(board)).toBe(true);
+  });
+
+  it("does not mutate the input board", () => {
+    const board = createBoard(3);
+    const snapshot = JSON.stringify(board);
+    isBoardFull(board);
+    expect(JSON.stringify(board)).toBe(snapshot);
+  });
+
+  it("treats a 0×0 board as full (no empty cells)", () => {
+    expect(isBoardFull([])).toBe(true);
   });
 });
