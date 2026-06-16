@@ -139,3 +139,38 @@ export function comparePokerHands(a: Card[], b: Card[]): number {
   if (ra.category !== rb.category) return ra.category - rb.category;
   return compareTiebreakers(ra.tiebreakers, rb.tiebreakers);
 }
+
+/** 두 족보 평가 결과의 우열을 비교한다(카테고리 우선, 같으면 타이브레이크). */
+function compareRanks(a: PokerHandRank, b: PokerHandRank): number {
+  if (a.category !== b.category) return a.category - b.category;
+  return compareTiebreakers(a.tiebreakers, b.tiebreakers);
+}
+
+/**
+ * N명(>=1)의 5장 포커 핸드 중 가장 강한 핸드(들)의 인덱스를 반환한다(불변·결정적).
+ * - 동률이면 모든 공동 1위 인덱스를 오름차순으로 반환한다(스플릿 팟).
+ * - 각 핸드는 정확히 5장이어야 하며, 아니면 throw(evaluatePokerHand가 검증).
+ * - hands가 비어 있으면(길이 0) throw.
+ * - 무늬(suit)는 우열 판정에 사용하지 않는다(기존 규칙 일관).
+ */
+export function findPokerWinners(hands: Card[][]): number[] {
+  if (hands.length === 0) {
+    throw new Error("hands는 최소 한 개 이상의 핸드를 포함해야 한다(받은 핸드 수: 0).");
+  }
+
+  // 모든 핸드를 먼저 평가한다(5장이 아닌 핸드가 하나라도 있으면 여기서 throw).
+  const ranks = hands.map((hand) => evaluatePokerHand(hand));
+
+  // hands.length >= 1 이 보장되므로 첫 핸드를 초기 최강으로 둔다.
+  let best = ranks[0]!;
+  for (const rank of ranks) {
+    if (compareRanks(rank, best) > 0) best = rank;
+  }
+
+  // 인덱스 오름차순으로 순회하므로 결과도 오름차순이다.
+  const winners: number[] = [];
+  ranks.forEach((rank, i) => {
+    if (compareRanks(rank, best) === 0) winners.push(i);
+  });
+  return winners;
+}
