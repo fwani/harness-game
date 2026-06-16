@@ -11,6 +11,12 @@ build/
 *.pem
 *.key
 
+# Test coverage
+coverage/
+
+# Local harness metrics (regenerated each run)
+.agent-harness/metrics.jsonl
+
 # Logs / OS
 *.log
 .DS_Store

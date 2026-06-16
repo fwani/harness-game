@@ -24,6 +24,9 @@ jobs:
       # Evaluate the deterministic rule scenarios (.agent-harness.yml eval.scenarios).
       - name: Harness eval
         run: agent-harness eval
-      # Optional: run the repo's full verification (lint/typecheck/test/build).
+      # Install project dependencies for the verification step below.
+      - name: Install deps
+        run: npm ci
+      # Run the repo's full verification (lint/typecheck/test/build).
       - name: Project verification
         run: sh scripts/agent-harness/agent-verify
