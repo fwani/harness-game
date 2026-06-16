@@ -17,3 +17,7 @@
 ```
 
 완료되면 `../completed/`로 옮긴다.
+
+## 진행 중 계획
+
+- [game-server-multiplayer-ai.md](game-server-multiplayer-ai.md) — AI 대전 + 소켓 멀티플레이(방) 게임 서버화 설계/로드맵 (설계, 코드 미착수)
