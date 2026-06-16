@@ -1,0 +1,106 @@
+version: "1"
+project:
+  name: harness-game
+  type: generic
+  owner: fwani
+  description: 플래시 게임 레파지토리임. 카드게임, 홀짝게임, 오목, 바둑, 장기 등 간단하게 게임을 할 수 있고, 멀티로 진행도 되며, 기록을 할 수 있는 게임시스템임.
+agents:
+  - claude
+harness:
+  version: 0.4.0
+  profile: generic
+  maturity_target: 4
+  non_destructive: true
+  require_dry_run_before_write: false
+paths:
+  docs: docs/agent-harness
+  scripts: scripts/agent-harness
+commands:
+  install: ""
+  run: ""
+  test: ""
+  lint: ""
+  typecheck: ""
+  build: ""
+  verify: scripts/agent-harness/agent-verify
+docs:
+  root: docs/agent-harness
+  required:
+    - AGENTS.md
+    - ARCHITECTURE.md
+    - docs/agent-harness/TESTING.md
+    - docs/agent-harness/SECURITY.md
+    - docs/agent-harness/OBSERVABILITY.md
+    - docs/agent-harness/DOC_GARDENING.md
+architecture:
+  layers:
+    - domain
+    - application
+    - infrastructure
+  forbidden_imports:
+    - from: "src/domain"
+      pattern: "application"
+      reason: "domain must not depend on application"
+    - from: "src/domain"
+      pattern: "infrastructure"
+      reason: "domain must not depend on infrastructure"
+    - from: "src/application"
+      pattern: "infrastructure"
+      reason: "application must not depend on infrastructure"
+  dependency_direction:
+    - application -> domain
+    - infrastructure -> application
+    - infrastructure -> domain
+security:
+  secret_patterns:
+    - .env
+    - "*.pem"
+    - "*.key"
+  sensitive_log_terms:
+    - password
+    - token
+    - secret
+    - authorization
+    - session_id
+    - session_token
+    - player_token
+    - player_id
+  destructive_commands:
+    - git\s+reset\s+--hard
+    - git\s+checkout\s+(--\s+)?\.
+    - git\s+checkout\s+--\s
+    - git\s+clean\s+-[a-zA-Z]*f
+    - git\s+push\s+.*(--force(?!-with-lease)|-f)\b
+    - git\s+branch\s+-D\b
+    - rm\s+-rf\s+(/|~|\$HOME)
+agent:
+  working_loop_required: true
+  require_tests_for_code_changes: true
+  require_docs_for_behavior_changes: true
+  no_guessing: true
+  minimal_change_scope: true
+  reuse_before_create: true
+  concise_output: true
+  require_doc_spec_sync: true
+  prohibit_destructive_commands_without_confirm: true
+  require_human_escalation_for:
+    - data deletion
+    - auth changes
+    - permission changes
+    - production migration
+    - customer-facing api changes
+    - large infrastructure cost
+eval:
+  scenarios:
+    - name: guard blocks git reset --hard
+      type: guard
+      input: git reset --hard
+      expect: block
+    - name: guard blocks rm -rf $HOME
+      type: guard
+      input: rm -rf $HOME
+      expect: block
+    - name: guard allows git push --force-with-lease
+      type: guard
+      input: git push --force-with-lease
+      expect: allow

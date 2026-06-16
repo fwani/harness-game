@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-06-16T06:55:22.528Z",
+  "harness_version": "0.4.0",
+  "primary_profile": "generic",
+  "profiles_matched": [
+    "generic"
+  ],
+  "monorepo": false,
+  "language": null,
+  "framework": null,
+  "package_manager": null,
+  "source_directories": [],
+  "entrypoints": [],
+  "docker": false,
+  "ci": false,
+  "makefile": false,
+  "docs_dir": false,
+  "env_file_patterns": [],
+  "existing_agent_docs": [],
+  "commands": {
+    "install": {
+      "value": "",
+      "confidence": "unknown",
+      "source": ""
+    },
+    "run": {
+      "value": "",
+      "confidence": "unknown",
+      "source": ""
+    },
+    "test": {
+      "value": "",
+      "confidence": "unknown",
+      "source": ""
+    },
+    "lint": {
+      "value": "",
+      "confidence": "unknown",
+      "source": ""
+    },
+    "typecheck": {
+      "value": "",
+      "confidence": "unknown",
+      "source": ""
+    },
+    "build": {
+      "value": "",
+      "confidence": "unknown",
+      "source": ""
+    }
+  },
+  "additional_docs": [],
+  "additional_scripts": []
+}

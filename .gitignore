@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Secrets (mirror .agent-harness.yml security.secret_patterns)
+.env
+.env.*
+*.pem
+*.key
+
+# Logs / OS
+*.log
+.DS_Store
