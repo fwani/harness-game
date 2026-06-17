@@ -33,6 +33,7 @@ export type GameId =
   | "mancala"
   | "checkers"
   | "nim"
+  | "battleship"
   | "rps-match";
 
 /** 한 판에서 한 플레이어의 결과. */
