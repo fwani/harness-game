@@ -29,6 +29,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   dotsandboxes: "도트 앤 박스",
   memory: "메모리",
   mancala: "만칼라",
+  checkers: "체커",
   "rps-match": "다전제(가위바위보)",
 };
 
