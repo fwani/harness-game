@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createDeck, type Card, type Suit } from "../../domain/card";
 import { shuffle, deal, type DealResult } from "../../application/dealCards";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
+import { validateDealInput, dealFailureMessage } from "./dealView";
 
 const rng = new MathRandomSource();
 
@@ -29,12 +30,21 @@ export function Deal() {
   const [error, setError] = useState<string | null>(null);
 
   const run = () => {
+    const deck = createDeck();
+    // 잘못된 입력은 영어 내부 예외 대신 플레이어용 한국어 사유로 안내한다.
+    const validation = validateDealInput(players, perPlayer, deck.length);
+    if (!validation.ok) {
+      setError(validation.reason);
+      setResult(null);
+      return;
+    }
     try {
-      const dealt = deal(shuffle(createDeck(), rng), players, perPlayer);
+      const dealt = deal(shuffle(deck, rng), players, perPlayer);
       setResult(dealt);
       setError(null);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      // 검증을 통과했는데도 실패하면 한국어 폴백 메시지(영어 원문 노출 금지).
+      setError(dealFailureMessage());
       setResult(null);
     }
   };
