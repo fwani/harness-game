@@ -2,12 +2,27 @@ import { useSyncExternalStore } from "react";
 import { getStandings, listRecords, recordsPersisted, subscribe } from "../records";
 import { toEloLeaderboard } from "./recordsEloView";
 import { toWinRankingRows } from "./recordsRankingView";
+import { toStreakRankingRows, type StreakRankingRow } from "./recordsStreakRankingView";
 import { recordsPersistenceHint } from "./recordsHintView";
 import { toHeadToHeadList } from "./recordsHeadToHeadView";
 import { buildRecordsByGameRows } from "./recordsByGameView";
 import { GAME_LABEL } from "./recordsGameLabelView";
 
 const RESULT_LABEL = { win: "승", loss: "패", draw: "무" } as const;
+
+/** 현재 연속 기록을 색에 의존하지 않는 텍스트 라벨로 표현한다(예: 3연승·2연패·무·-). */
+function currentStreakLabel(row: StreakRankingRow): string {
+  switch (row.currentType) {
+    case "win":
+      return `${row.currentLength}연승`;
+    case "loss":
+      return `${row.currentLength}연패`;
+    case "draw":
+      return "무";
+    default:
+      return "-";
+  }
+}
 
 export function Records() {
   // 외부 저장소(records.ts) 변경에 맞춰 다시 렌더한다.
@@ -17,6 +32,8 @@ export function Records() {
   const leaderboard = toEloLeaderboard(records);
   // 누적 전적을 승수·승률 기준 순위표로 변환한다(domain/rankPlayers 재사용, 표시용 변환).
   const winRanking = toWinRankingRows(standings);
+  // 플레이어별 최장 연승·현재 연승 순위(domain/playerStreak 재사용, 표시용 변환).
+  const streakRanking = toStreakRankingRows(records);
   // 맞붙은 플레이어 쌍별 상대 전적(domain/headToHead 재사용, 표시용 변환).
   const headToHead = toHeadToHeadList(records);
   // 게임별(per-game) 전적(domain/summarizeByGame 재사용, 표시용 변환).
@@ -111,6 +128,39 @@ export function Records() {
                     <td>{row.draws}</td>
                     <td>{row.gamesPlayed}</td>
                     <td>{(row.winRate * 100).toFixed(1)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {streakRanking.length > 0 && (
+        <>
+          <h3>연승 순위</h3>
+          <p className="hint">
+            플레이어별 역대 최장 연승 기준 순위입니다(최장 연승 → 현재 연승 길이 순). 현재
+            연속은 종류와 길이를 함께 표시합니다(예: 3연승·2연패·무). 동점은 같은 순위를
+            공유합니다(예: 1, 2, 2, 4).
+          </p>
+          <div className="table-scroll">
+            <table className="standings">
+              <thead>
+                <tr>
+                  <th>순위</th>
+                  <th>플레이어</th>
+                  <th>최장 연승</th>
+                  <th>현재 연속</th>
+                </tr>
+              </thead>
+              <tbody>
+                {streakRanking.map((row) => (
+                  <tr key={row.player}>
+                    <td>{row.rank}</td>
+                    <td>{row.player}</td>
+                    <td>{row.longestWin}</td>
+                    <td>{currentStreakLabel(row)}</td>
                   </tr>
                 ))}
               </tbody>
