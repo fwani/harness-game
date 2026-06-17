@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Rps } from "./games/Rps";
+import { Mukjjippa } from "./games/Mukjjippa";
 import { BestOfN } from "./games/BestOfN";
 import { OddEven } from "./games/OddEven";
 import { Deal } from "./games/Deal";
@@ -33,6 +34,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 
 type GameKey =
   | "rps"
+  | "mukjjippa"
   | "best-of-n"
   | "oddeven"
   | "deal"
@@ -65,6 +67,7 @@ type GameKey =
 
 const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "rps", label: "가위바위보", render: () => <Rps /> },
+  { key: "mukjjippa", label: "묵찌빠", render: () => <Mukjjippa /> },
   { key: "best-of-n", label: "다전제", render: () => <BestOfN /> },
   { key: "oddeven", label: "홀짝", render: () => <OddEven /> },
   { key: "deal", label: "카드 딜", render: () => <Deal /> },

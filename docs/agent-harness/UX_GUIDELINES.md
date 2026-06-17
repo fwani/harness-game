@@ -51,6 +51,7 @@
 | 게임 | 화면 | 플레이 가능성 | UX 메모 |
 | --- | --- | --- | --- |
 | 가위바위보 (`Rps.tsx`) | 손 선택 → CPU와 1판 | ✅ vs CPU | 결과를 전적에 저장. 화면 내 현재 연승·통산·최장 연속 표시(`streakView`) |
+| 묵찌빠 (`Mukjjippa.tsx`) | 묵/찌/빠 선택 → CPU와 라운드 진행(선공 결정→공격자 유지/전환→같은 손이면 공격자 승) | ✅ vs CPU·승자까지 | `playMukjjippaTurn`+`chooseRandomMukjjippaHand`(`MathRandomSource` 주입, `mukjjippaView.playMukjjippaCpuRound`) 연동. 사람=a/CPU=b, 단계(선공 결정/공격 중)·공격자(사람/CPU)·매 라운드 양측 손을 표시(`mukjjippaStageLabel`/`mukjjippaAttackerLabel`), 같은 손이면 공격자 승으로 종료·`.outcome` 표시, 종료 후 입력 차단, 새 게임 리셋, 종료 시 전적 저장(`mukjjippa`, 사람=a/CPU=b). 손은 색뿐 아니라 라벨(묵/찌/빠)+기호(✊/✌️/✋)로 구분. 화면 내 통산 전적·연승 표시(`StreakPanel`) |
 | 홀짝 (`OddEven.tsx`) | 홀/짝 추측 → 추첨 | ✅ vs 난수 | 결과를 전적에 저장. 화면 내 현재 연승·통산·최장 연속 표시(`streakView`) |
 | 카드 딜 (`Deal.tsx`) | 인원·장수 입력 → 딜 | ✅ 딜만 | 게임이 아닌 유틸. 입력 검증 에러를 플레이어용 한국어 사유로 표시(`dealView.validateDealInput`) |
 | 하이카드 (`HighCard.tsx`) | 카드 뽑기 → CPU와 비교 | ✅ vs CPU | `playHighCard` 연동, 결과를 전적에 저장(`highcard`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
