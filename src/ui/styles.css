@@ -254,6 +254,28 @@ header h1 {
   margin-top: 0.3rem;
 }
 
+.card-chip-month {
+  display: block;
+}
+
+.card-chip-category {
+  display: block;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.72rem;
+}
+
+.score-line {
+  margin: 0.5rem 0;
+}
+
+.score-breakdown {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: -0.15rem;
+  line-height: 1.5;
+}
+
 .dice-total {
   margin-top: 0.4rem;
   font-weight: 600;
