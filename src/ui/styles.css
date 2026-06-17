@@ -117,6 +117,19 @@ header h1 {
   align-items: center;
   justify-content: center;
   gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/*
+ * .versus 안의 손패 라벨은 카드 위에 놓이는 제목이라
+ * 가로 한 줄(.hand) 레이아웃용 고정 폭(2rem)을 쓰면 안 된다.
+ * 좁은 폭에서 한글 라벨("나 · 원페어 · 승자")이 한 글자씩 끊기지 않도록
+ * 단어 단위(keep-all)로만 줄바꿈한다.
+ */
+.versus .hand-label {
+  width: auto;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .big {
@@ -125,6 +138,13 @@ header h1 {
 
 .vs {
   color: var(--muted);
+}
+
+/* 좁은 폭에서는 나/CPU 손패를 세로로 쌓아 각 손패가 충분한 가로 폭을 갖게 한다. */
+@media (max-width: 480px) {
+  .versus {
+    flex-direction: column;
+  }
 }
 
 .outcome {
