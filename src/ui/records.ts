@@ -10,6 +10,12 @@ import { InMemoryGameRecordRepository } from "../infrastructure/inMemoryGameReco
 const repo = new InMemoryGameRecordRepository();
 const listeners = new Set<() => void>();
 
+// useSyncExternalStore는 스냅샷 게터의 반환값을 Object.is로 비교하므로,
+// 저장소가 바뀌지 않았다면 반드시 "동일 참조"를 돌려줘야 무한 렌더 루프가 안 난다.
+// 저장(recordGame) 시에만 캐시를 무효화하고, 그 사이에는 메모이즈된 스냅샷을 재사용한다.
+let standingsCache: PlayerStats[] | null = null;
+let recordsCache: GameRecord[] | null = null;
+
 /** 한 판 결과: "a"=playerA 승, "b"=playerB 승, "draw"=무승부. */
 export type WinSide = RoundWinner;
 
@@ -24,17 +30,32 @@ export function recordGame(
   win: WinSide,
 ): void {
   recordRound(repo, game, { a: playerA, b: playerB }, win);
+  // 저장소가 바뀌었으니 다음 스냅샷 요청 때 새로 계산하도록 캐시를 비운다.
+  standingsCache = null;
+  recordsCache = null;
   listeners.forEach((fn) => fn());
 }
 
-/** 플레이어별 누적 전적(승/패/무). */
+/**
+ * 플레이어별 누적 전적(승/패/무).
+ * 저장소 변경 전까지 동일 참조를 반환한다(useSyncExternalStore 안정성).
+ */
 export function getStandings(): PlayerStats[] {
-  return computeStandings(repo);
+  if (standingsCache === null) {
+    standingsCache = computeStandings(repo);
+  }
+  return standingsCache;
 }
 
-/** 저장된 모든 기록(저장 순). */
+/**
+ * 저장된 모든 기록(저장 순).
+ * 저장소 변경 전까지 동일 참조를 반환한다(useSyncExternalStore 안정성).
+ */
 export function listRecords(): GameRecord[] {
-  return repo.list();
+  if (recordsCache === null) {
+    recordsCache = repo.list();
+  }
+  return recordsCache;
 }
 
 /** 기록 변경 구독. 해제 함수를 반환한다. */
