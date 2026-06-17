@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { playRpsRound, type RpsRoundResult } from "../../application/playRps";
 import type { Hand } from "../../domain/rps";
 import { RandomHandSource } from "../../infrastructure/randomHandSource";
-import { recordGame } from "../records";
+import { listRecords, recordGame, subscribe } from "../records";
+import { summarizeStreakForGame } from "./streakView";
+import { StreakPanel } from "./StreakPanel";
 
 const CHOICES: { hand: Hand; emoji: string; label: string }[] = [
   { hand: "rock", emoji: "✊", label: "바위" },
@@ -26,6 +28,9 @@ const OUTCOME: Record<RpsRoundResult["result"], string> = {
 
 export function Rps() {
   const [round, setRound] = useState<RpsRoundResult | null>(null);
+  // 저장소 변경(한 판 기록)에 맞춰 통산 전적·연승 표시를 갱신한다.
+  const records = useSyncExternalStore(subscribe, listRecords);
+  const streak = summarizeStreakForGame(records, "rps", "나");
 
   const play = (hand: Hand) => {
     const result = playRpsRound({ choose: () => hand }, cpu);
@@ -60,6 +65,7 @@ export function Rps() {
           <p className="outcome">{OUTCOME[round.result]}</p>
         </div>
       )}
+      <StreakPanel title="내 전적 (나)" summary={streak} />
     </section>
   );
 }
