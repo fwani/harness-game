@@ -81,3 +81,67 @@ export function generateSingleEliminationFirstRound(players: string[]): BracketP
 
   return pairings;
 }
+
+/**
+ * 한 라운드의 대진과 각 대진 승자로 다음 라운드 대진을 생성한다(불변, 결정적).
+ * - `winners[i]`는 `round[i]` 대진의 승자다.
+ * - bye 대진(`b === null`)이면 `winners[i]`는 `null`이어도 되고(자동으로 `a` 진출),
+ *   명시하면 `a`와 일치해야 한다(불일치 시 throw).
+ * - 실제 대국(`b !== null`)인데 `winners[i]`가 `null`이거나 그 대진의 `a`/`b` 중
+ *   하나가 아니면 throw.
+ * - `winners.length !== round.length`면 throw.
+ * - 진출자(각 대진 승자)는 라운드 순서를 그대로 유지한 채 인접 두 명씩 묶어 대진을 만든다.
+ *   진출자가 홀수면 마지막 한 명은 bye(`{ a, b: null }`).
+ * - 진출자가 1명이면 우승 확정으로 보고 빈 배열(`[]`)을 반환한다. `round`가 비어도 `[]`.
+ * - 입력 배열(`round`/`winners`)을 변형하지 않는다.
+ */
+export function advanceSingleEliminationRound(
+  round: BracketPairing[],
+  winners: ReadonlyArray<string | null>,
+): BracketPairing[] {
+  if (winners.length !== round.length) {
+    throw new Error(
+      "advanceSingleEliminationRound requires winners.length to equal round.length",
+    );
+  }
+
+  // 각 대진의 진출자(승자)를 라운드 순서대로 환원한다.
+  const advancers: string[] = [];
+  for (let i = 0; i < round.length; i += 1) {
+    const pairing = round[i] as BracketPairing;
+    const winner = winners[i] as string | null;
+
+    if (pairing.b === null) {
+      // bye: 승자를 생략하면 a 자동 진출, 명시하면 a와 일치해야 한다.
+      if (winner !== null && winner !== pairing.a) {
+        throw new Error(
+          "advanceSingleEliminationRound: bye winner must be the auto-advancing seat",
+        );
+      }
+      advancers.push(pairing.a);
+    } else {
+      // 실제 대국: 승자는 반드시 a 또는 b 중 하나여야 한다.
+      if (winner !== pairing.a && winner !== pairing.b) {
+        throw new Error(
+          "advanceSingleEliminationRound: winner must be one of the pairing's participants",
+        );
+      }
+      advancers.push(winner as string);
+    }
+  }
+
+  // 진출자가 1명 이하면 다음 라운드가 없다(우승 확정 또는 빈 라운드).
+  if (advancers.length < 2) {
+    return [];
+  }
+
+  // 진출자 순서를 유지한 채 인접 두 명씩 묶는다. 홀수면 마지막은 bye.
+  const next: BracketPairing[] = [];
+  for (let i = 0; i < advancers.length; i += 2) {
+    const a = advancers[i] as string;
+    const b = i + 1 < advancers.length ? (advancers[i + 1] as string) : null;
+    next.push({ a, b });
+  }
+
+  return next;
+}
