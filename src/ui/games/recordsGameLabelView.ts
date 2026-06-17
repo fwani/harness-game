@@ -47,6 +47,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   wordle: "워들",
   mastermind: "마스터마인드",
   nonogram: "네모로직",
+  sudoku: "스도쿠",
   "rps-match": "다전제(가위바위보)",
 };
 
