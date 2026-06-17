@@ -567,6 +567,78 @@ header h1 {
   background: #fecaca;
 }
 
+/* --- 배틀십(Battleship) --- */
+
+/* 두 보드(적 함대/내 함대)를 나란히 두되 좁은 화면에서는 세로로 쌓고 가로 스크롤 없이 줄어든다. */
+.bs-boards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+}
+
+.bs-board-wrap {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.bs-board-wrap h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+}
+
+.board.battleship {
+  background: #1e3a5f;
+  border-color: #0b2540;
+}
+
+/* 물(미사격): 잔잔한 파랑. 색만이 아니라 기호(빈칸)로 구분되며 상태는 aria-label로 보강. */
+.bs-cell {
+  color: #f8fafc;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.bs-cell.bs-water {
+  background: #2b517a;
+}
+
+.bs-cell.bs-water:not(:disabled):hover {
+  background: #356092;
+}
+
+/* 함선(자기 보드의 안 맞은 칸): 회색 선체 + ■ 기호. */
+.bs-cell.bs-ship {
+  background: #64748b;
+  color: #0f172a;
+}
+
+/* 빗나감: 가라앉은 어두운 물 + ○. */
+.bs-cell.bs-miss {
+  background: #16314d;
+  color: #cbd5e1;
+}
+
+/* 명중: 붉은 경고 + ✕. */
+.bs-cell.bs-hit {
+  background: #b91c1c;
+}
+
+/* 격침: 더 진한 붉은 + 💥. */
+.bs-cell.bs-sunk {
+  background: #7f1d1d;
+}
+
+/* 사격 결과 로그: 색만이 아니라 텍스트(명중/빗나감/격침)로 안내. */
+.bs-log {
+  margin: 0.25rem 0 0.75rem;
+  padding-left: 1.1rem;
+  font-size: 0.95rem;
+}
+
+.bs-log li {
+  margin: 0.1rem 0;
+}
+
 /* --- 도트 앤 박스(Dots and Boxes) --- */
 
 /* 점·변·박스가 교차 배치되는 격자. 트랙 크기는 인라인(dotsGridTemplate)으로 지정하므로
