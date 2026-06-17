@@ -36,6 +36,7 @@
 | 배틀십 | [battleship.md](battleship.md) | vs CPU 10×10, 함대 무작위 배치·사격(명중/빗나감/격침)·전 함대 격침 승패 |
 | 페그 솔리테어 | [peg-solitaire.md](peg-solitaire.md) | 1인 33칸 십자 보드, 못 뛰어넘기·못 1개=클리어(중앙이면 완벽 클리어) |
 | 플러드 잇 | [flood-it.md](flood-it.md) | NxN 색 격자 좌상단 flood fill로 영역 확장·전부 한 색이면 클리어 (domain ✅ / app·UI ❌) |
+| 히토리 | [hitori.md](hitori.md) | 숫자 N×N에서 칸 칠하기·white 행/열 중복 금지·black 비인접·white 연결이면 클리어 (domain ✅ / app·UI ❌) |
 | 기록(공통) | [records.md](records.md) | 게임 종류 독립 전적 기록·집계 |
 
 ## 구현 상태 매트릭스 (갱신: 2026-06-16)
