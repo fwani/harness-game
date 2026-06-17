@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import type { GameId } from "../../domain/gameRecord";
 import { getStandings, listRecords, subscribe } from "../records";
+import { toEloLeaderboard } from "./recordsEloView";
 
 const GAME_LABEL: Record<GameId, string> = {
   rps: "가위바위보",
@@ -19,6 +20,8 @@ export function Records() {
   // 외부 저장소(records.ts) 변경에 맞춰 다시 렌더한다.
   const standings = useSyncExternalStore(subscribe, getStandings);
   const records = useSyncExternalStore(subscribe, listRecords);
+  // 누적 기록으로 ELO 레이팅 리더보드를 계산한다(domain/computeEloRatings 재사용, 표시용 변환).
+  const leaderboard = toEloLeaderboard(records);
 
   return (
     <section className="game">
@@ -50,6 +53,35 @@ export function Records() {
             ))}
           </tbody>
         </table>
+      )}
+
+      {leaderboard.length > 0 && (
+        <>
+          <h3>레이팅</h3>
+          <p className="hint">
+            초기 1000점에서 시작하는 ELO 레이팅(2인 대국 기준, 레이팅 내림차순).
+          </p>
+          <table className="standings">
+            <thead>
+              <tr>
+                <th>순위</th>
+                <th>플레이어</th>
+                <th>레이팅</th>
+                <th>판수</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaderboard.map((row) => (
+                <tr key={row.player}>
+                  <td>{row.rank}</td>
+                  <td>{row.player}</td>
+                  <td>{row.rating}</td>
+                  <td>{row.games}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
 
       {records.length > 0 && (
