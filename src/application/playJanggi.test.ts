@@ -147,6 +147,64 @@ describe("playJanggi application", () => {
     expect(next.next).toBe("han");
   });
 
+  it("finishes as a draw (bikjang) when a move leaves the two generals facing on an open file", () => {
+    // 두 장은 같은 세로줄 x=4(han (4,1), cho (4,8))에 있고, 그 사이를 cho 졸(4,5)이 막고 있다.
+    // cho가 그 졸을 옆으로(4,5)->(3,5) 치우면 x=4 세로줄이 트여 빅장(무승부)이 성립한다.
+    const board = createEmptyBoard();
+    board[1]![4] = { side: "han", type: "general" };
+    board[8]![4] = { side: "cho", type: "general" };
+    board[5]![4] = { side: "cho", type: "soldier" };
+    const state: JanggiState = {
+      board,
+      next: "cho",
+      finished: false,
+      winner: null,
+      endReason: null,
+    };
+    const from: Pos = { x: 4, y: 5 };
+    const to: Pos = { x: 3, y: 5 };
+    expect(isLegalMove(board, "cho", from, to)).toBe(true);
+    const next = applyMove(state, from, to);
+    expect(next.finished).toBe(true);
+    // 빅장은 무승부 — 승자가 없다.
+    expect(next.winner).toBeNull();
+    expect(next.endReason).toBe("bikjang");
+    // 무승부도 종료 상태이므로 차례는 토글되지 않는다.
+    expect(next.next).toBe("cho");
+    // 두 장은 여전히 보드에 있고, 졸은 옆으로 비켰다.
+    expect(pieceAt(next.board, 4, 1)).toEqual({ side: "han", type: "general" });
+    expect(pieceAt(next.board, 4, 8)).toEqual({ side: "cho", type: "general" });
+    expect(pieceAt(next.board, 3, 5)).toEqual({ side: "cho", type: "soldier" });
+  });
+
+  it("prefers checkmate over bikjang when a move yields both", () => {
+    // 두 장은 같은 세로줄 x=4(han (4,0), cho (4,9))에 있어 보드는 빅장 형태다.
+    // 동시에 cho 차 B를 (0,5)->(0,0)으로 올려 y=0 행으로 han 장을 외통에 빠뜨린다.
+    // 탈출칸 (3,0)·(5,0)은 차 B가(장이 비키면 행이 트여) 제압, (4,1)은 차 D(1,1)가 제압 → 외통.
+    // 외통이 빅장보다 우선이므로 무승부가 아니라 cho 승리여야 한다.
+    const board = createEmptyBoard();
+    board[0]![4] = { side: "han", type: "general" };
+    board[9]![4] = { side: "cho", type: "general" };
+    board[5]![0] = { side: "cho", type: "chariot" }; // 차 B(이동 전)
+    board[1]![1] = { side: "cho", type: "chariot" }; // 차 D — (4,1) 제압
+    const state: JanggiState = {
+      board,
+      next: "cho",
+      finished: false,
+      winner: null,
+      endReason: null,
+    };
+    const from: Pos = { x: 0, y: 5 };
+    const to: Pos = { x: 0, y: 0 };
+    expect(isLegalMove(board, "cho", from, to)).toBe(true);
+    const next = applyMove(state, from, to);
+    expect(next.finished).toBe(true);
+    // 외통 우선: 빅장 형태여도 무승부가 아니라 cho 승리.
+    expect(next.winner).toBe("cho");
+    expect(next.endReason).toBe("checkmate");
+    expect(next.next).toBe("cho");
+  });
+
   it("throws when applying a move after the game is finished", () => {
     const state: JanggiState = {
       board: createEmptyBoard(),
