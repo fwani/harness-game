@@ -282,3 +282,136 @@ export function pieceColorMoves(
   }
   return result;
 }
+
+/**
+ * 해당 색 킹의 좌표를 반환한다. 보드에 그 색 킹이 없으면 null.
+ * (인공 배치 테스트에서 킹이 없을 수 있으므로 throw하지 않는다.)
+ */
+export function findKing(board: ChessBoard, color: ChessColor): ChessSquare | null {
+  for (let row = 0; row < CHESS_SIZE; row++) {
+    for (let col = 0; col < CHESS_SIZE; col++) {
+      const piece = board[row]![col]!;
+      if (piece !== null && piece.color === color && piece.type === "king") {
+        return { row, col };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * (row,col) 칸이 `byColor` 기물들에게 공격받는지 여부.
+ * - 폰은 **대각 전방 두 칸만 공격**한다(전진 칸은 공격 아님 — 그래서 pseudoLegalMoves를
+ *   재사용하지 않고 직접 판정한다. pseudoLegalMoves의 폰 대각은 상대 기물이 있을 때만
+ *   포함되므로 빈 칸 공격 판정에 부적합).
+ * - 나이트·킹·슬라이더(룩/비숍/퀸)는 의사합법 도착칸이 곧 공격 칸이므로 pseudoLegalMoves로 판정.
+ *   (막힌 슬라이더는 첫 기물에서 멈추므로 그 너머는 공격하지 않는다.)
+ * 입력 board는 변형하지 않는다(읽기만 함).
+ */
+export function isSquareAttacked(
+  board: ChessBoard,
+  row: number,
+  col: number,
+  byColor: ChessColor,
+): boolean {
+  if (!isOnBoard(row, col)) {
+    return false;
+  }
+  for (let r = 0; r < CHESS_SIZE; r++) {
+    for (let c = 0; c < CHESS_SIZE; c++) {
+      const piece = board[r]![c]!;
+      if (piece === null || piece.color !== byColor) {
+        continue;
+      }
+      if (piece.type === "pawn") {
+        // 폰은 전진 방향(white: row 감소, black: row 증가)의 대각 두 칸을 공격한다.
+        const dir = piece.color === "white" ? -1 : 1;
+        if (r + dir === row && (c - 1 === col || c + 1 === col)) {
+          return true;
+        }
+        continue;
+      }
+      for (const to of pseudoLegalMoves(board, r, c)) {
+        if (to.row === row && to.col === col) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * `color` 킹이 상대에게 공격받는 중이면 true. 킹이 없으면 false.
+ */
+export function isKingInCheck(board: ChessBoard, color: ChessColor): boolean {
+  const king = findKing(board, color);
+  if (king === null) {
+    return false;
+  }
+  const opponent: ChessColor = color === "white" ? "black" : "white";
+  return isSquareAttacked(board, king.row, king.col, opponent);
+}
+
+/**
+ * from→to 수를 적용한 새 보드를 반환한다(입력 board 비변형). 단순 이동/포획만(특수 규칙 없음).
+ * 배열 슬롯만 새로 만들고 기물 객체는 불변이므로 참조를 공유해도 안전하다.
+ */
+function applyMove(board: ChessBoard, from: ChessSquare, to: ChessSquare): ChessBoard {
+  const next: ChessBoard = board.map((rowCells) => rowCells.slice());
+  next[to.row]![to.col] = next[from.row]![from.col]!;
+  next[from.row]![from.col] = null;
+  return next;
+}
+
+/**
+ * (row,col) 기물의 **합법 수**: 의사합법 수 중 그 수를 둔 뒤 자기 킹이 장군이 되는 수를 제외한다.
+ * 빈 칸/범위 밖이면 `[]`. 가상 보드로 판정하되 입력 board는 변형하지 않는다(순수 함수).
+ */
+export function legalChessMoves(board: ChessBoard, row: number, col: number): ChessSquare[] {
+  const piece = pieceAt(board, row, col);
+  if (piece === null) {
+    return [];
+  }
+  const from: ChessSquare = { row, col };
+  return pseudoLegalMoves(board, row, col).filter((to) => {
+    const after = applyMove(board, from, to);
+    return !isKingInCheck(after, piece.color);
+  });
+}
+
+/**
+ * 한 색이 둘 수 있는 모든 합법 수(from→to). 외통/스테일메이트 판정에 사용. board 비변형.
+ */
+export function colorLegalMoves(
+  board: ChessBoard,
+  color: ChessColor,
+): { from: ChessSquare; to: ChessSquare }[] {
+  const result: { from: ChessSquare; to: ChessSquare }[] = [];
+  for (let row = 0; row < CHESS_SIZE; row++) {
+    for (let col = 0; col < CHESS_SIZE; col++) {
+      const piece = board[row]![col]!;
+      if (piece === null || piece.color !== color) {
+        continue;
+      }
+      for (const to of legalChessMoves(board, row, col)) {
+        result.push({ from: { row, col }, to });
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * `color`가 장군 상태이면서 합법 수가 하나도 없으면 외통(체크메이트) — true.
+ */
+export function isCheckmate(board: ChessBoard, color: ChessColor): boolean {
+  return isKingInCheck(board, color) && colorLegalMoves(board, color).length === 0;
+}
+
+/**
+ * `color`가 장군이 아니면서 합법 수가 하나도 없으면 스테일메이트(무승부) — true.
+ */
+export function isStalemate(board: ChessBoard, color: ChessColor): boolean {
+  return !isKingInCheck(board, color) && colorLegalMoves(board, color).length === 0;
+}

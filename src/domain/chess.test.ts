@@ -1,7 +1,14 @@
 import { describe, it, expect } from "vitest";
 import {
+  colorLegalMoves,
   createChessBoard,
+  findKing,
+  isCheckmate,
+  isKingInCheck,
   isOnBoard,
+  isSquareAttacked,
+  isStalemate,
+  legalChessMoves,
   pieceAt,
   pieceColorMoves,
   pseudoLegalMoves,
@@ -370,5 +377,242 @@ describe("chess pieceColorMoves", () => {
     pieceColorMoves(board, "white");
     pieceColorMoves(board, "black");
     expect(JSON.stringify(board)).toBe(before);
+  });
+});
+
+describe("chess findKing", () => {
+  it("locates both kings in the initial setup", () => {
+    const board = createChessBoard();
+    expect(findKing(board, "black")).toEqual({ row: 0, col: 4 });
+    expect(findKing(board, "white")).toEqual({ row: 7, col: 4 });
+  });
+
+  it("returns null when the color has no king", () => {
+    const board = emptyBoard();
+    board[4]![4] = { color: "white", type: "rook" } satisfies ChessPiece;
+    expect(findKing(board, "white")).toBeNull();
+    expect(findKing(board, "black")).toBeNull();
+  });
+});
+
+describe("chess isSquareAttacked", () => {
+  it("detects a rook attacking along a clear rank/file", () => {
+    const board = emptyBoard();
+    board[4]![0] = { color: "white", type: "rook" } satisfies ChessPiece;
+    // Same rank, clear path.
+    expect(isSquareAttacked(board, 4, 5, "white")).toBe(true);
+    // Same file, clear path.
+    expect(isSquareAttacked(board, 0, 0, "white")).toBe(true);
+    // Off the rook's lines.
+    expect(isSquareAttacked(board, 5, 5, "white")).toBe(false);
+  });
+
+  it("detects a bishop attacking along a diagonal", () => {
+    const board = emptyBoard();
+    board[4]![4] = { color: "black", type: "bishop" } satisfies ChessPiece;
+    expect(isSquareAttacked(board, 6, 6, "black")).toBe(true);
+    expect(isSquareAttacked(board, 1, 1, "black")).toBe(true);
+    expect(isSquareAttacked(board, 4, 6, "black")).toBe(false); // straight, not diagonal
+  });
+
+  it("detects a knight attack", () => {
+    const board = emptyBoard();
+    board[4]![4] = { color: "white", type: "knight" } satisfies ChessPiece;
+    expect(isSquareAttacked(board, 2, 3, "white")).toBe(true);
+    expect(isSquareAttacked(board, 6, 5, "white")).toBe(true);
+    expect(isSquareAttacked(board, 5, 5, "white")).toBe(false); // adjacent, not an L
+  });
+
+  it("counts a pawn's diagonal attacks but not its forward push", () => {
+    const board = emptyBoard();
+    board[4]![4] = { color: "white", type: "pawn" } satisfies ChessPiece;
+    // White pawn attacks the two diagonally-forward squares (row decreases).
+    expect(isSquareAttacked(board, 3, 3, "white")).toBe(true);
+    expect(isSquareAttacked(board, 3, 5, "white")).toBe(true);
+    // Forward push square is NOT an attack.
+    expect(isSquareAttacked(board, 3, 4, "white")).toBe(false);
+    // Behind the pawn is not attacked.
+    expect(isSquareAttacked(board, 5, 3, "white")).toBe(false);
+  });
+
+  it("counts a black pawn's diagonal attacks downward", () => {
+    const board = emptyBoard();
+    board[4]![4] = { color: "black", type: "pawn" } satisfies ChessPiece;
+    expect(isSquareAttacked(board, 5, 3, "black")).toBe(true);
+    expect(isSquareAttacked(board, 5, 5, "black")).toBe(true);
+    expect(isSquareAttacked(board, 5, 4, "black")).toBe(false); // forward push
+  });
+
+  it("does not let a blocked slider attack beyond the blocker", () => {
+    const board = emptyBoard();
+    board[4]![0] = { color: "white", type: "rook" } satisfies ChessPiece;
+    board[4]![3] = { color: "black", type: "pawn" } satisfies ChessPiece; // blocker
+    expect(isSquareAttacked(board, 4, 3, "white")).toBe(true); // the blocker itself
+    expect(isSquareAttacked(board, 4, 4, "white")).toBe(false); // beyond the blocker
+  });
+
+  it("returns false for out-of-bounds squares", () => {
+    const board = emptyBoard();
+    board[4]![4] = { color: "white", type: "queen" } satisfies ChessPiece;
+    expect(isSquareAttacked(board, -1, 0, "white")).toBe(false);
+    expect(isSquareAttacked(board, 0, 8, "white")).toBe(false);
+  });
+});
+
+describe("chess isKingInCheck", () => {
+  it("reports check when a rook lines up on the king", () => {
+    const board = emptyBoard();
+    board[0]![4] = { color: "black", type: "king" } satisfies ChessPiece;
+    board[5]![4] = { color: "white", type: "rook" } satisfies ChessPiece;
+    expect(isKingInCheck(board, "black")).toBe(true);
+    expect(isKingInCheck(board, "white")).toBe(false);
+  });
+
+  it("is false when a piece blocks the checking line", () => {
+    const board = emptyBoard();
+    board[0]![4] = { color: "black", type: "king" } satisfies ChessPiece;
+    board[3]![4] = { color: "black", type: "pawn" } satisfies ChessPiece; // blocks
+    board[5]![4] = { color: "white", type: "rook" } satisfies ChessPiece;
+    expect(isKingInCheck(board, "black")).toBe(false);
+  });
+
+  it("is false when the color has no king", () => {
+    const board = emptyBoard();
+    board[5]![4] = { color: "white", type: "rook" } satisfies ChessPiece;
+    expect(isKingInCheck(board, "black")).toBe(false);
+  });
+});
+
+describe("chess legalChessMoves", () => {
+  it("equals pseudoLegalMoves when the king is not exposed", () => {
+    const board = emptyBoard();
+    board[4]![4] = { color: "white", type: "knight" } satisfies ChessPiece;
+    board[7]![0] = { color: "white", type: "king" } satisfies ChessPiece;
+    expect(squareKeys(legalChessMoves(board, 4, 4))).toEqual(
+      squareKeys(pseudoLegalMoves(board, 4, 4)),
+    );
+  });
+
+  it("forbids moving a pinned piece off the pin line", () => {
+    const board = emptyBoard();
+    // White king on e1 (row7,col4), white rook on e4 (row4,col4) pinned by black rook on e8 (row0,col4).
+    board[7]![4] = { color: "white", type: "king" } satisfies ChessPiece;
+    board[4]![4] = { color: "white", type: "rook" } satisfies ChessPiece;
+    board[0]![4] = { color: "black", type: "rook" } satisfies ChessPiece;
+    const moves = legalChessMoves(board, 4, 4);
+    // The pinned rook may only move along the e-file (col 4); never sideways.
+    for (const m of moves) {
+      expect(m.col).toBe(4);
+    }
+    // It can capture the pinning rook and slide along the file, but never leave the file.
+    expect(moves.some((m) => m.row === 0 && m.col === 4)).toBe(true); // capture the pinner
+    expect(moves.some((m) => m.col !== 4)).toBe(false);
+  });
+
+  it("when in check, keeps only moves that resolve the check", () => {
+    const board = emptyBoard();
+    // Black king a8 (row0,col0). White rook a4 (row4,col0) checks along the a-file.
+    // Black rook on c6 (row2,col5) can only help by interposing on the a-file at (2,0).
+    board[0]![0] = { color: "black", type: "king" } satisfies ChessPiece;
+    board[2]![5] = { color: "black", type: "rook" } satisfies ChessPiece;
+    board[4]![0] = { color: "white", type: "rook" } satisfies ChessPiece;
+    expect(isKingInCheck(board, "black")).toBe(true);
+    const rookMoves = legalChessMoves(board, 2, 5);
+    // The only legal rook move blocks the check by interposing on the a-file at (2,0).
+    for (const m of rookMoves) {
+      expect({ row: m.row, col: m.col }).toEqual({ row: 2, col: 0 });
+    }
+    expect(rookMoves.some((m) => m.row === 2 && m.col === 0)).toBe(true);
+  });
+
+  it("returns [] for an empty or out-of-range square", () => {
+    const board = createChessBoard();
+    expect(legalChessMoves(board, 4, 4)).toEqual([]); // empty middle square
+    expect(legalChessMoves(board, -1, 0)).toEqual([]);
+  });
+
+  it("does not mutate the input board", () => {
+    const board = createChessBoard();
+    const before = JSON.stringify(board);
+    legalChessMoves(board, 7, 1); // a knight
+    legalChessMoves(board, 6, 4); // a pawn
+    expect(JSON.stringify(board)).toBe(before);
+  });
+});
+
+describe("chess colorLegalMoves", () => {
+  it("lists every legal move for a color", () => {
+    const board = emptyBoard();
+    board[7]![4] = { color: "white", type: "king" } satisfies ChessPiece;
+    board[4]![4] = { color: "white", type: "knight" } satisfies ChessPiece;
+    const moves = colorLegalMoves(board, "white");
+    // King has 5 legal squares from e1 corner-ish + knight has 8 from the center.
+    const knightMoves = moves.filter((m) => m.from.row === 4 && m.from.col === 4);
+    expect(knightMoves).toHaveLength(8);
+    for (const m of moves) {
+      expect(pieceAt(board, m.from.row, m.from.col)?.color).toBe("white");
+    }
+  });
+});
+
+describe("chess isCheckmate", () => {
+  it("detects a back-rank style mate (true)", () => {
+    const board = emptyBoard();
+    // Black king h8 (row0,col7), boxed by its own pawns g7,h7; white rook delivers mate on row 0.
+    board[0]![7] = { color: "black", type: "king" } satisfies ChessPiece;
+    board[1]![6] = { color: "black", type: "pawn" } satisfies ChessPiece;
+    board[1]![7] = { color: "black", type: "pawn" } satisfies ChessPiece;
+    board[0]![0] = { color: "white", type: "rook" } satisfies ChessPiece; // checks along row 0
+    expect(isKingInCheck(board, "black")).toBe(true);
+    expect(isCheckmate(board, "black")).toBe(true);
+    expect(isStalemate(board, "black")).toBe(false);
+  });
+
+  it("is false for a simple check the king can escape", () => {
+    const board = emptyBoard();
+    board[0]![4] = { color: "black", type: "king" } satisfies ChessPiece;
+    board[5]![4] = { color: "white", type: "rook" } satisfies ChessPiece; // check, but king can step aside
+    expect(isKingInCheck(board, "black")).toBe(true);
+    expect(isCheckmate(board, "black")).toBe(false);
+  });
+
+  it("recognizes fool's mate from a played sequence", () => {
+    // Fool's mate: 1. f3 e5 2. g4 Qh4# — black queen mates white.
+    const board = createChessBoard();
+    // 1. f3 : white pawn f2(row6,col5) -> f3(row5,col5)
+    board[5]![5] = board[6]![5]!;
+    board[6]![5] = null;
+    // 1... e5 : black pawn e7(row1,col4) -> e5(row3,col4)
+    board[3]![4] = board[1]![4]!;
+    board[1]![4] = null;
+    // 2. g4 : white pawn g2(row6,col6) -> g4(row4,col6)
+    board[4]![6] = board[6]![6]!;
+    board[6]![6] = null;
+    // 2... Qh4# : black queen d8(row0,col3) -> h4(row4,col7)
+    board[4]![7] = board[0]![3]!;
+    board[0]![3] = null;
+    expect(isKingInCheck(board, "white")).toBe(true);
+    expect(isCheckmate(board, "white")).toBe(true);
+  });
+});
+
+describe("chess isStalemate", () => {
+  it("detects a classic king+pawn stalemate (true)", () => {
+    const board = emptyBoard();
+    // Black king a8 (row0,col0). White king a6 (row2,col0) + white queen b6 (row2,col1).
+    // Black is not in check but has no legal move → stalemate.
+    board[0]![0] = { color: "black", type: "king" } satisfies ChessPiece;
+    board[2]![0] = { color: "white", type: "king" } satisfies ChessPiece;
+    board[2]![1] = { color: "white", type: "queen" } satisfies ChessPiece;
+    expect(isKingInCheck(board, "black")).toBe(false);
+    expect(isStalemate(board, "black")).toBe(true);
+    expect(isCheckmate(board, "black")).toBe(false);
+  });
+
+  it("is false when the color still has a legal move", () => {
+    const board = emptyBoard();
+    board[0]![0] = { color: "black", type: "king" } satisfies ChessPiece;
+    board[7]![7] = { color: "white", type: "king" } satisfies ChessPiece;
+    expect(isStalemate(board, "black")).toBe(false); // king can roam freely
   });
 });
