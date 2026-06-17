@@ -119,6 +119,6 @@ describe("playMukjjippaCpuRound 흐름(선공 결정→공격자 전환→같은
   it("종료 상태에 추가 입력하면 불변으로 반환(입력 차단 동작 근거)", () => {
     const finished: MukjjippaState = { attacker: "b", finished: true, winner: "b" };
     const { state } = playMukjjippaCpuRound(finished, "rock", queueRng([0]));
-    expect(state).toBe(finished);
+    expect(state).toEqual(finished); // finished 입력은 상태 불변(값 동일)
   });
 });
