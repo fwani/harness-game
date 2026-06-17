@@ -3,28 +3,13 @@ import {
   WIDTH,
   legalMovesFrom,
   isInCheck,
-  type PieceType,
   type Side,
   type Pos,
 } from "../../domain/janggi";
 import { startGame, applyMove, type JanggiState } from "../../application/playJanggi";
 import { recordGame } from "../records";
 import { boardGridStyle } from "./boardView";
-
-// [cho 쪽 한자, han 쪽 한자]
-const GLYPH: Record<PieceType, [string, string]> = {
-  general: ["楚", "漢"],
-  guard: ["士", "士"],
-  elephant: ["象", "象"],
-  horse: ["馬", "馬"],
-  chariot: ["車", "車"],
-  cannon: ["包", "包"],
-  soldier: ["卒", "兵"],
-};
-
-function glyph(type: PieceType, side: Side): string {
-  return GLYPH[type][side === "cho" ? 0 : 1];
-}
+import { pieceGlyph, sideMark, pieceAriaLabel } from "./janggiView";
 
 const SIDE_LABEL: Record<Side, string> = { cho: "초(楚)", han: "한(漢)" };
 
@@ -82,7 +67,18 @@ export function Janggi() {
                   : "(상대 장 포획)"
               }`
           : `${SIDE_LABEL[state.next]} 차례 — 기물을 누르면 갈 수 있는 곳이 표시됩니다.`}
-        {inCheck ? " · 장군!" : ""}
+        {inCheck ? " · 장군! (장군을 푸는 수만 둘 수 있습니다)" : ""}
+      </p>
+      <p className="hint janggi-legend">
+        진영 구분(색에 의존하지 않음):{" "}
+        <span className="piece cho legend-mark" aria-hidden="true">
+          {sideMark("cho")}
+        </span>{" "}
+        초(楚)는 원형·이체자(俥砲傌像仕),{" "}
+        <span className="piece han legend-mark" aria-hidden="true">
+          {sideMark("han")}
+        </span>{" "}
+        한(漢)은 각형·정자(車包馬象士).
       </p>
       <div
         className="board janggi"
@@ -107,8 +103,12 @@ export function Janggi() {
                 disabled={state.finished}
               >
                 {piece && (
-                  <span className={`piece ${piece.side}`}>
-                    {glyph(piece.type, piece.side)}
+                  <span
+                    className={`piece ${piece.side}`}
+                    aria-label={pieceAriaLabel(piece.type, piece.side)}
+                    title={pieceAriaLabel(piece.type, piece.side)}
+                  >
+                    {pieceGlyph(piece.type, piece.side)}
                   </span>
                 )}
               </button>

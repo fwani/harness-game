@@ -534,3 +534,96 @@ describe("isCheckmate", () => {
     expect(JSON.stringify(board)).toBe(snapshot);
   });
 });
+
+describe("legalMovesFrom - self-check / 장군 강제(이슈 #214)", () => {
+  // 헬퍼: from에서 (x,y)로 가는 수가 합법 목록에 있는지.
+  const includes = (moves: { x: number; y: number }[], x: number, y: number) =>
+    moves.some((m) => m.x === x && m.y === y);
+
+  it("장군 상태에서 장군과 무관한 기물의 수는 제시하지 않는다(장군 무시 금지)", () => {
+    // 이슈 재현: Han 장(4,1)을 Cho 차(4,5)가 같은 세로줄로 노림 → Han 장군.
+    const board = createEmptyBoard();
+    put(board, 4, 1, "han", "general");
+    put(board, 4, 5, "cho", "chariot");
+    put(board, 0, 3, "han", "soldier"); // 장군과 무관한 졸
+    expect(isInCheck(board, "han")).toBe(true);
+    // 졸의 기하적 수 (0,4)·(1,3)은 장군을 풀지 못하므로 모두 제외 → 빈 배열.
+    const soldierMoves = legalMovesFrom(board, "han", { x: 0, y: 3 });
+    expect(soldierMoves).toEqual([]);
+  });
+
+  it("장군 상태에서 자기 장을 옮겨도 여전히 잡히는 칸(self-check)은 제외한다", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 1, "han", "general");
+    put(board, 4, 5, "cho", "chariot");
+    const moves = legalMovesFrom(board, "han", { x: 4, y: 1 });
+    // 같은 세로줄(열 4)에 머무는 (4,0)·(4,2)는 여전히 차에게 잡힘 → 제외.
+    expect(includes(moves, 4, 0)).toBe(false);
+    expect(includes(moves, 4, 2)).toBe(false);
+    // 열을 벗어나는 피신 (3,1)·(5,1)은 장군이 풀리므로 허용.
+    expect(includes(moves, 3, 1)).toBe(true);
+    expect(includes(moves, 5, 1)).toBe(true);
+    // 둔 뒤 실제로 장군이 풀리는지 교차 검증.
+    for (const to of moves) {
+      expect(isInCheck(applyMove(board, "han", { x: 4, y: 1 }, to), "han")).toBe(
+        false,
+      );
+    }
+  });
+
+  it("장군은 공격 기물을 포획해 해소할 수 있다(포획 수는 허용)", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 1, "han", "general");
+    put(board, 4, 5, "cho", "chariot"); // 공격 차
+    put(board, 8, 5, "han", "chariot"); // 같은 행에서 공격 차를 잡을 수 있음
+    expect(isInCheck(board, "han")).toBe(true);
+    const moves = legalMovesFrom(board, "han", { x: 8, y: 5 });
+    // 공격 차 포획(4,5)은 장군을 풀므로 허용.
+    expect(includes(moves, 4, 5)).toBe(true);
+    // 장군을 풀지 못하는 이동(8,0 등)은 제외.
+    expect(includes(moves, 8, 0)).toBe(false);
+  });
+
+  it("장군은 중간 차단으로 해소할 수 있다(차단 수는 허용)", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 1, "han", "general");
+    put(board, 4, 9, "cho", "chariot"); // 열 4 원거리 장군
+    put(board, 0, 5, "han", "chariot"); // (4,5)로 가서 열 4를 막을 수 있음
+    expect(isInCheck(board, "han")).toBe(true);
+    const moves = legalMovesFrom(board, "han", { x: 0, y: 5 });
+    expect(includes(moves, 4, 5)).toBe(true); // 차단 허용
+    expect(includes(moves, 0, 0)).toBe(false); // 무관한 이동은 제외
+  });
+
+  it("장군이 아니어도 자기 장을 노출시키는 수(pin)는 제외한다", () => {
+    // Han 장(4,1) 앞 같은 열에 Han 차(4,3)가 Cho 차(4,9)를 막고 있다 → 현재는 비장군.
+    const board = createEmptyBoard();
+    put(board, 4, 1, "han", "general");
+    put(board, 4, 3, "han", "chariot"); // 핀(pin)된 기물
+    put(board, 4, 9, "cho", "chariot");
+    expect(isInCheck(board, "han")).toBe(false);
+    const moves = legalMovesFrom(board, "han", { x: 4, y: 3 });
+    // 열 4를 벗어나면 장이 노출됨 → 그런 수는 모두 제외.
+    expect(includes(moves, 0, 3)).toBe(false);
+    expect(includes(moves, 3, 3)).toBe(false);
+    // 열 4 안에서 위아래로 움직여 여전히 막는 수는 허용(예: (4,2)/(4,4)..(4,8) 포획).
+    expect(includes(moves, 4, 2)).toBe(true);
+    expect(includes(moves, 4, 9)).toBe(true); // 공격 차 포획
+  });
+
+  it("자기 장이 보드에 없는 합성 국면은 self-check를 적용하지 않는다(기존 동작 보존)", () => {
+    const board = createEmptyBoard();
+    put(board, 0, 0, "han", "chariot"); // 장이 없는 진영
+    const moves = legalMovesFrom(board, "han", { x: 0, y: 0 });
+    expect(moves.length).toBe(17); // 같은 행 8 + 같은 열 9
+  });
+
+  it("self-check 필터는 입력 보드를 변형하지 않는다", () => {
+    const board = createEmptyBoard();
+    put(board, 4, 1, "han", "general");
+    put(board, 4, 5, "cho", "chariot");
+    const snapshot = JSON.stringify(board);
+    legalMovesFrom(board, "han", { x: 4, y: 1 });
+    expect(JSON.stringify(board)).toBe(snapshot);
+  });
+});
