@@ -4,6 +4,7 @@ import { isBoardFull, type Stone } from "../../domain/gomoku";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
 import { recordGame, type WinSide } from "../records";
 import { boardGridStyle } from "./boardView";
+import { useBoardNavigation } from "./useBoardNavigation";
 import { chooseCpuGomokuMove } from "./gomokuCpuView";
 
 const SIZE = 15;
@@ -23,6 +24,10 @@ function isOver(state: GomokuState): boolean {
 export function Gomoku() {
   const [mode, setMode] = useState<Mode>("local");
   const [state, setState] = useState<GomokuState>(() => startGame(SIZE));
+  const { setCellRef, onKeyDown, tabIndexFor, focusOn } = useBoardNavigation(
+    SIZE,
+    SIZE,
+  );
 
   // 모드별 플레이어 라벨. vs CPU에서는 사람(흑)="나" / CPU(백)="CPU".
   const label = (stone: Stone): string =>
@@ -45,6 +50,7 @@ export function Gomoku() {
   };
 
   const place = (x: number, y: number) => {
+    focusOn(x, y);
     if (isOver(state) || state.board[y]![x] !== null) {
       return;
     }
@@ -113,7 +119,13 @@ export function Gomoku() {
           {mode === "cpu" ? " · 백(○)은 CPU가 자동으로 둡니다" : ""}
         </p>
       )}
-      <div className="board" style={boardGridStyle(SIZE)}>
+      <div
+        className="board"
+        style={boardGridStyle(SIZE)}
+        role="grid"
+        aria-label="오목 보드 (방향 키로 칸 이동, Enter/Space로 착수)"
+        onKeyDown={onKeyDown}
+      >
         {state.board.map((row, y) =>
           row.map((cell, x) => {
             const blocked =
@@ -121,9 +133,12 @@ export function Gomoku() {
             return (
               <button
                 key={`${x},${y}`}
+                ref={setCellRef(x, y)}
                 className="cell"
+                role="gridcell"
+                tabIndex={tabIndexFor(x, y)}
                 onClick={() => place(x, y)}
-                disabled={blocked}
+                aria-disabled={blocked}
                 aria-label={
                   cell
                     ? `${x + 1}열 ${y + 1}행 ${label(cell)}`

@@ -85,7 +85,9 @@
   localStorage에 영속화 — 새로고침/재방문 후에도 전적 유지(미가용 시 인메모리 폴백). 서버 영속화는 범위 밖(별도 이슈).
 - ✅ ~~누적 점수/세션(화면 내)~~: 가위바위보·홀짝 화면에 현재 연승/통산/최장 연속을
   표시(`streakView.summarizeStreakForGame` 재사용, `playerStreak`/`summarize` 호출) — 완료.
-- **접근성/반응형 점검**: 보드 셀 키보드 내비게이션, 모바일 레이아웃, 명도 대비.
+- **접근성/반응형 점검**: ✅ ~~보드 셀 키보드 내비게이션~~(격자 보드 4종에 로빙 탭인덱스
+  + 화살표/Home/End/PageUp/PageDown 이동 도입 — `boardView.nextBoardFocus` +
+  `useBoardNavigation`, #227). 모바일 레이아웃·명도 대비는 후속 점검 대상.
 
 ## 참고
 

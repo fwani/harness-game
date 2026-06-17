@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   WIDTH,
+  HEIGHT,
   legalMovesFrom,
   isInCheck,
   type Side,
@@ -9,6 +10,7 @@ import {
 import { startGame, applyMove, type JanggiState } from "../../application/playJanggi";
 import { recordGame } from "../records";
 import { boardGridStyle } from "./boardView";
+import { useBoardNavigation } from "./useBoardNavigation";
 import { pieceGlyph, sideMark, pieceAriaLabel } from "./janggiView";
 
 const SIDE_LABEL: Record<Side, string> = { cho: "초(楚)", han: "한(漢)" };
@@ -16,6 +18,10 @@ const SIDE_LABEL: Record<Side, string> = { cho: "초(楚)", han: "한(漢)" };
 export function Janggi() {
   const [state, setState] = useState<JanggiState>(() => startGame());
   const [selected, setSelected] = useState<Pos | null>(null);
+  const { setCellRef, onKeyDown, tabIndexFor, focusOn } = useBoardNavigation(
+    WIDTH,
+    HEIGHT,
+  );
 
   // 선택한 기물이 갈 수 있는 합법 수(현재 차례 기준).
   const targets: Pos[] =
@@ -25,6 +31,7 @@ export function Janggi() {
     targets.some((t) => t.x === x && t.y === y);
 
   const click = (x: number, y: number) => {
+    focusOn(x, y);
     if (state.finished) {
       return;
     }
@@ -83,6 +90,9 @@ export function Janggi() {
       <div
         className="board janggi"
         style={boardGridStyle(WIDTH)}
+        role="grid"
+        aria-label="장기 보드 (방향 키로 칸 이동, Enter/Space로 선택·이동)"
+        onKeyDown={onKeyDown}
       >
         {state.board.map((row, y) =>
           row.map((piece, x) => {
@@ -98,9 +108,12 @@ export function Janggi() {
             return (
               <button
                 key={`${x},${y}`}
+                ref={setCellRef(x, y)}
                 className={cls}
+                role="gridcell"
+                tabIndex={tabIndexFor(x, y)}
                 onClick={() => click(x, y)}
-                disabled={state.finished}
+                aria-disabled={state.finished}
               >
                 {piece && (
                   <span
