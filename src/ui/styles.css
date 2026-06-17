@@ -285,6 +285,22 @@ header h1 {
   background: #dcb35c;
 }
 
+/* --- reversi (오델로) --- */
+
+.board.reversi {
+  background: #1f7a4d;
+  border-color: #145138;
+}
+
+/* 합법 수 칸: 안쪽 링으로 강조(색만으로 구분하지 않도록 호버 외에 상시 표시). */
+.cell.legal {
+  box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.6);
+}
+
+.cell.legal:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
 /* --- janggi --- */
 
 .board.janggi {

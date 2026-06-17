@@ -4,7 +4,7 @@
 // 도메인은 입력만으로 결정적이다.
 
 /** 기록 대상 게임 종류. */
-export type GameId = "rps" | "oddEven" | "gomoku" | "go" | "janggi" | "card";
+export type GameId = "rps" | "oddEven" | "gomoku" | "go" | "janggi" | "card" | "reversi";
 
 /** 한 판에서 한 플레이어의 결과. */
 export type Outcome = "win" | "loss" | "draw";

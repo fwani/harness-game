@@ -9,6 +9,7 @@ const GAME_LABEL: Record<GameId, string> = {
   card: "하이카드",
   go: "바둑",
   janggi: "장기",
+  reversi: "오델로",
 };
 
 const RESULT_LABEL = { win: "승", loss: "패", draw: "무" } as const;
