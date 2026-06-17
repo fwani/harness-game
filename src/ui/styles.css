@@ -397,6 +397,38 @@ header h1 {
   font-size: 0.85rem;
 }
 
+/* --- minesweeper (지뢰찾기) --- */
+
+.board.minesweeper {
+  background: #94a3b8;
+  border-color: #475569;
+}
+
+/* 미공개 칸: 올라온(raised) 모양 — 공개된 칸과 색이 아니라 입체/배경으로도 구분된다. */
+.ms-cell.ms-hidden {
+  background: #cbd5e1;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.7),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.ms-cell.ms-hidden:not(:disabled):hover {
+  background: #e2e8f0;
+}
+
+/* 공개된 칸: 눌린(flat) 모양. 숫자/빈칸/지뢰를 텍스트·기호로 구분한다. */
+.ms-cell.ms-empty,
+.ms-cell.ms-number,
+.ms-cell.ms-mine {
+  background: #e5e7eb;
+  color: #1f2937;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.ms-cell.ms-mine {
+  background: #fecaca;
+}
+
 /* --- 2048 --- */
 
 /* 좁은 화면(360px)에서도 깨지지 않도록 폭에 맞춰 줄어들고, 넓은 화면에선 max-width로 캡한다. */

@@ -24,6 +24,7 @@ export type GameId =
   | "gostop"
   | "numberBaseball"
   | "game2048"
+  | "minesweeper"
   | "rps-match";
 
 /** 한 판에서 한 플레이어의 결과. */
