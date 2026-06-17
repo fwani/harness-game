@@ -153,6 +153,11 @@
   1인 퍼즐을 `Sudoku.tsx`로 연결 — 무작위 퍼즐 시작(`startSudokuGame`)·셀 선택+숫자패드/키보드
   입력(`playSudokuPlacement`)·고정 단서 구분·충돌 강조(밑줄+`!`, 색 비의존)·불법 입력 사유(`.error`)·
   진행 요약·클리어 판정·새 게임·전적 저장(`sudoku`)까지(완료, `sudokuView` + `sudokuView.test`).
+- **히토리(Hitori) application·UI 연동**: 도메인(`hitori`: `createHitori`/`toggleHitoriCell`/
+  `hitoriViolations`/`isHitoriSolved`/`HITORI_PUZZLES`)만 있고 무작위 시작 헬퍼(application)와 플레이
+  화면(`Hitori.tsx` + `hitoriView`)이 없어 화면에서 플레이할 수 없다. 스도쿠/비나이로와 동일하게
+  application(`RandomSource` 주입 무작위 시작) → UI(셀 칠하기 토글·위반 강조(색 비의존)·클리어 판정·새 게임·
+  전적 저장 `hitori`) 짝 이슈가 필요하다. 사양: [`docs/games/hitori.md`](../games/hitori.md).
 - **접근성/반응형 점검**: 보드 셀 키보드 내비게이션, 모바일 레이아웃, 명도 대비.
 
 ## 참고
