@@ -12,6 +12,7 @@ import { Gomoku } from "./games/Gomoku";
 import { Go } from "./games/Go";
 import { Reversi } from "./games/Reversi";
 import { Janggi } from "./games/Janggi";
+import { Yut } from "./games/Yut";
 import { Records } from "./games/Records";
 
 type GameKey =
@@ -28,6 +29,7 @@ type GameKey =
   | "go"
   | "reversi"
   | "janggi"
+  | "yut"
   | "records";
 
 const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
@@ -44,6 +46,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "go", label: "바둑", render: () => <Go /> },
   { key: "reversi", label: "오델로", render: () => <Reversi /> },
   { key: "janggi", label: "장기", render: () => <Janggi /> },
+  { key: "yut", label: "윷놀이", render: () => <Yut /> },
   { key: "records", label: "전적", render: () => <Records /> },
 ];
 
