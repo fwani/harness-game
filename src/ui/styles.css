@@ -256,6 +256,58 @@ header h1 {
   cursor: not-allowed;
 }
 
+/* --- pig (피그) --- */
+
+/* 점수판: 좁은 화면(360px)에서도 깨지지 않도록 auto-fit 그리드로 감싼다. */
+.pig-scoreboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.6rem;
+  margin: 1rem 0;
+  max-width: 32rem;
+}
+
+.pig-scoreboard > div {
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: #0b1220;
+}
+
+.pig-scoreboard dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.pig-scoreboard dd {
+  margin: 0.2rem 0 0;
+  font-size: 1.1rem;
+}
+
+.pig-scoreboard dd strong {
+  font-size: 1.5rem;
+}
+
+/* CPU 진행 로그: 굴림/버스트/멈춤을 순서대로(번호 매김) 텍스트로 표시(색 비의존). */
+.pig-cpu-log {
+  margin: 1rem 0;
+  max-width: 32rem;
+}
+
+.pig-cpu-log h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.pig-cpu-log ol {
+  margin: 0;
+  padding-left: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 /* --- card deal --- */
 
 .hand {
