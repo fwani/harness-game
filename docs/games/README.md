@@ -29,6 +29,7 @@
 | 카드 (덱·딜·하이카드) | [card.md](card.md) | 52장 덱 셔플·딜, 하이카드 비교 |
 | 오목 | [gomoku.md](gomoku.md) | 2인 로컬, 5목 승리 판정 (레퍼런스 구현) |
 | 바둑 | [go.md](go.md) | 2인 로컬 착수·따냄, 영역 계가 |
+| 오델로 | [reversi.md](reversi.md) | 2인 로컬, 합법 수 착수·자동 패스·디스크 계가 |
 | 장기 | [janggi.md](janggi.md) | 표준 차림, 이동·장군·외통 판정 |
 | 기록(공통) | [records.md](records.md) | 게임 종류 독립 전적 기록·집계 |
 
@@ -45,6 +46,7 @@
 | 하이카드 | ✅ `highCard.ts` | ✅ `playHighCard.ts` | ✅ vs CPU 1판 | ✅ 저장(`GameId="card"`) |
 | 오목 | ✅ `gomoku.ts` | ✅ `playGomoku.ts` | ✅ 2인 로컬 | ✅ 저장 |
 | 바둑 | ✅ `go.ts`+`goScore.ts` | ✅ `playGo.ts` | ✅ 착수·패스·계가·승자 | ✅ 저장 |
+| 오델로 | ✅ `reversi*.ts` | ✅ `playReversi.ts` | ✅ 착수·자동패스·계가·승자 | ✅ 저장 |
 | 장기 | ✅ `janggi.ts` | ✅ `playJanggi.ts` | ✅ 선택·합법수·이동·턴·승부 | ✅ 저장 |
 
 > **2026-06-16 갱신**: 이전의 핵심 갭(장기 보기 전용, 하이카드 부재, 바둑 종료·계가 미연동,

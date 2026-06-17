@@ -5,6 +5,7 @@ import { Deal } from "./games/Deal";
 import { HighCard } from "./games/HighCard";
 import { Gomoku } from "./games/Gomoku";
 import { Go } from "./games/Go";
+import { Reversi } from "./games/Reversi";
 import { Janggi } from "./games/Janggi";
 import { Records } from "./games/Records";
 
@@ -15,6 +16,7 @@ type GameKey =
   | "highcard"
   | "gomoku"
   | "go"
+  | "reversi"
   | "janggi"
   | "records";
 
@@ -25,6 +27,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "highcard", label: "하이카드", render: () => <HighCard /> },
   { key: "gomoku", label: "오목", render: () => <Gomoku /> },
   { key: "go", label: "바둑", render: () => <Go /> },
+  { key: "reversi", label: "오델로", render: () => <Reversi /> },
   { key: "janggi", label: "장기", render: () => <Janggi /> },
   { key: "records", label: "전적", render: () => <Records /> },
 ];
