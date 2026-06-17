@@ -2,12 +2,30 @@
 // UI는 application 포트(gameRecordStore)와 infrastructure 어댑터를 함께 사용해도 된다
 // (UX_GUIDELINES "적용 범위" 참고). 도메인 createGameRecord/summarize는 재구현하지 않는다.
 import type { GameId, GameRecord, PlayerStats } from "../domain/gameRecord";
-import { standings as computeStandings } from "../application/gameRecordStore";
+import { standings as computeStandings, type GameRecordRepository } from "../application/gameRecordStore";
 import { recordRound, type RoundWinner } from "../application/recordRound";
 import { InMemoryGameRecordRepository } from "../infrastructure/inMemoryGameRecordRepository";
+import {
+  LocalStorageGameRecordRepository,
+  isLocalStorageAvailable,
+} from "../infrastructure/localStorageGameRecordRepository";
 
-// 세션 동안 공유되는 단일 저장소(인메모리 — 새로고침 시 초기화).
-const repo = new InMemoryGameRecordRepository();
+// 세션 간 공유되는 단일 저장소.
+// localStorage 사용이 가능하면 영속 저장소를 쓰고(새로고침/재방문 후에도 전적 유지),
+// SSR/비공개 모드 등 미가용 환경에서는 인메모리로 안전하게 폴백한다.
+function createRepository(): GameRecordRepository {
+  if (isLocalStorageAvailable()) {
+    try {
+      return new LocalStorageGameRecordRepository();
+    } catch {
+      // 탐지 후 생성 단계에서 실패해도 앱이 죽지 않도록 폴백.
+      return new InMemoryGameRecordRepository();
+    }
+  }
+  return new InMemoryGameRecordRepository();
+}
+
+const repo: GameRecordRepository = createRepository();
 const listeners = new Set<() => void>();
 
 // useSyncExternalStore는 스냅샷 게터의 반환값을 Object.is로 비교하므로,
