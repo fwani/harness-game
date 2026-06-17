@@ -22,6 +22,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   yut: "윷놀이",
   gostop: "고스톱",
   numberBaseball: "숫자야구",
+  game2048: "2048",
   "rps-match": "다전제(가위바위보)",
 };
 
