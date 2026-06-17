@@ -15,6 +15,7 @@ const GAME_LABEL: Record<GameId, string> = {
   dice: "주사위",
   yut: "윷놀이",
   gostop: "고스톱",
+  "rps-match": "다전제(가위바위보)",
 };
 
 const RESULT_LABEL = { win: "승", loss: "패", draw: "무" } as const;

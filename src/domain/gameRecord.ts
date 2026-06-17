@@ -14,7 +14,8 @@ export type GameId =
   | "reversi"
   | "dice"
   | "yut"
-  | "gostop";
+  | "gostop"
+  | "rps-match";
 
 /** 한 판에서 한 플레이어의 결과. */
 export type Outcome = "win" | "loss" | "draw";
