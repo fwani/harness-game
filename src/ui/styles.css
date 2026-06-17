@@ -1147,6 +1147,98 @@ button.dots-edge:disabled {
   color: #bbf7d0;
 }
 
+/* --- wordle (워들) --- */
+
+/* 힌트 기호 범례: 색뿐 아니라 기호+텍스트 라벨로 의미를 병기한다(색 비의존). */
+.wordle-legend {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.wordle-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.wordle-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 0.3rem;
+  border: 1px solid #334155;
+}
+
+/* 추측 히스토리 그리드: 행=추측, 열=글자. 좁은 화면에서도 폭에 맞춰 줄어든다. */
+.wordle-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+  max-width: 22rem;
+}
+
+.wordle-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.wordle-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #334155;
+  border-radius: 0.4rem;
+  background: #0b1220;
+  color: var(--text);
+}
+
+.wordle-letter {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.wordle-mark {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+/* 결과별 배경(색)은 보조 단서일 뿐 — 글자칸의 기호(■/◧/·)와 aria-label이 1차 단서다. */
+.wordle-cell.wordle-correct,
+.wordle-chip.wordle-correct {
+  background: #14532d;
+  border-color: #22c55e;
+  color: #dcfce7;
+}
+
+.wordle-cell.wordle-present,
+.wordle-chip.wordle-present {
+  background: #713f12;
+  border-color: #eab308;
+  color: #fef9c3;
+}
+
+.wordle-cell.wordle-absent,
+.wordle-chip.wordle-absent {
+  background: #1e293b;
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
 /* --- 2048 --- */
 
 /* 좁은 화면(360px)에서도 깨지지 않도록 폭에 맞춰 줄어들고, 넓은 화면에선 max-width로 캡한다. */

@@ -39,6 +39,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   pig: "피그",
   bingo: "빙고",
   snakesandladders: "뱀과 사다리",
+  wordle: "워들",
   "rps-match": "다전제(가위바위보)",
 };
 
