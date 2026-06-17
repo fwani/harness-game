@@ -2,6 +2,7 @@ import { useState } from "react";
 import { scoreArea, type GoScore } from "../../domain/goScore";
 import { startGame, applyMove, pass, type GoState } from "../../application/playGo";
 import { recordGame } from "../records";
+import { boardGridStyle } from "./boardView";
 
 const SIZE = 9;
 
@@ -66,7 +67,7 @@ export function Go() {
       )}
       <div
         className="board go"
-        style={{ gridTemplateColumns: `repeat(${SIZE}, 1fr)` }}
+        style={boardGridStyle(SIZE)}
       >
         {state.board.map((row, y) =>
           row.map((cell, x) => (
