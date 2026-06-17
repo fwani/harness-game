@@ -66,6 +66,7 @@ describe("playJanggi application", () => {
       next: "cho",
       finished: false,
       winner: null,
+      endReason: null,
     };
     const from: Pos = { x: 4, y: 5 };
     const to: Pos = { x: 4, y: 1 };
@@ -78,12 +79,81 @@ describe("playJanggi application", () => {
     expect(pieceAt(next.board, 4, 1)).toEqual({ side: "cho", type: "chariot" });
   });
 
+  it("sets endReason to \"capture\" when the opponent general is taken", () => {
+    const board = createEmptyBoard();
+    board[1]![4] = { side: "han", type: "general" };
+    board[5]![4] = { side: "cho", type: "chariot" };
+    board[8]![4] = { side: "cho", type: "general" };
+    const state: JanggiState = {
+      board,
+      next: "cho",
+      finished: false,
+      winner: null,
+      endReason: null,
+    };
+    const next = applyMove(state, { x: 4, y: 5 }, { x: 4, y: 1 });
+    expect(next.finished).toBe(true);
+    expect(next.winner).toBe("cho");
+    expect(next.endReason).toBe("capture");
+  });
+
+  it("finishes with checkmate when the mating move leaves the opponent in mate", () => {
+    // han 장은 (4,0)에 갇혀 있다. cho 차 B(8,1)가 y=1행을 제압해 탈출칸 (4,1)을 막고,
+    // cho 차 A(0,5)를 (0,0)으로 올려 y=0행으로 장군을 부른다.
+    // 장의 탈출칸 (3,0)·(5,0)은 차 A가, (4,1)은 차 B가 모두 제압 → 외통.
+    const board = createEmptyBoard();
+    board[0]![4] = { side: "han", type: "general" };
+    board[5]![0] = { side: "cho", type: "chariot" }; // 차 A
+    board[1]![8] = { side: "cho", type: "chariot" }; // 차 B
+    board[9]![4] = { side: "cho", type: "general" };
+    const state: JanggiState = {
+      board,
+      next: "cho",
+      finished: false,
+      winner: null,
+      endReason: null,
+    };
+    const from: Pos = { x: 0, y: 5 };
+    const to: Pos = { x: 0, y: 0 };
+    expect(isLegalMove(board, "cho", from, to)).toBe(true);
+    const next = applyMove(state, from, to);
+    expect(next.finished).toBe(true);
+    expect(next.winner).toBe("cho");
+    expect(next.endReason).toBe("checkmate");
+    // 외통은 장 포획이 아니므로 상대 장은 여전히 보드에 있다.
+    expect(pieceAt(next.board, 4, 0)).toEqual({ side: "han", type: "general" });
+    // 외통 시에도 차례는 토글되지 않는다.
+    expect(next.next).toBe("cho");
+  });
+
+  it("does not finish on a check that is not checkmate", () => {
+    // han 장 (4,1) 중앙. cho 차(0,3)를 (4,3)으로 옮겨 y열 장군을 부르지만
+    // 장이 (3,1)·(5,1)로 피할 수 있어 외통이 아니다 → 미종료, 차례는 han으로.
+    const board = createEmptyBoard();
+    board[1]![4] = { side: "han", type: "general" };
+    board[3]![0] = { side: "cho", type: "chariot" };
+    board[9]![4] = { side: "cho", type: "general" };
+    const state: JanggiState = {
+      board,
+      next: "cho",
+      finished: false,
+      winner: null,
+      endReason: null,
+    };
+    const next = applyMove(state, { x: 0, y: 3 }, { x: 4, y: 3 });
+    expect(next.finished).toBe(false);
+    expect(next.winner).toBeNull();
+    expect(next.endReason).toBeNull();
+    expect(next.next).toBe("han");
+  });
+
   it("throws when applying a move after the game is finished", () => {
     const state: JanggiState = {
       board: createEmptyBoard(),
       next: "cho",
       finished: true,
       winner: "cho",
+      endReason: "capture",
     };
     expect(() => applyMove(state, { x: 0, y: 6 }, { x: 0, y: 5 })).toThrow();
   });
@@ -110,6 +180,7 @@ describe("playJanggi application", () => {
       next: "han",
       finished: false,
       winner: null,
+      endReason: null,
     };
     const moves = legalMoves(state);
     expect(moves.length).toBeGreaterThan(0);
