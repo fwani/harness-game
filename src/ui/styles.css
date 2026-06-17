@@ -397,6 +397,98 @@ header h1 {
   font-size: 0.85rem;
 }
 
+/* --- 2048 --- */
+
+/* 좁은 화면(360px)에서도 깨지지 않도록 폭에 맞춰 줄어들고, 넓은 화면에선 max-width로 캡한다. */
+.board2048 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  width: 100%;
+  max-width: 340px;
+  margin: 1rem 0;
+  padding: 6px;
+  background: #bbada0;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+/* 화살표 키 포커스가 보이도록 명시적 아웃라인(키보드 조작 단서). */
+.board2048:focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.board2048-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.tile2048 {
+  aspect-ratio: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: #cdc1b4;
+  /* 색뿐 아니라 숫자 텍스트로 타일을 구분한다(색각 이상 대응). */
+  color: #776e65;
+  font-weight: 700;
+  font-size: clamp(13px, 5vw, 24px);
+  line-height: 1;
+}
+
+/* 빈 칸(값 0)은 숫자를 숨긴다. */
+.tile2048.tile-0 {
+  color: transparent;
+}
+
+.tile2048.tile-2 {
+  background: #eee4da;
+}
+.tile2048.tile-4 {
+  background: #ede0c8;
+}
+.tile2048.tile-8 {
+  background: #f2b179;
+  color: #f9f6f2;
+}
+.tile2048.tile-16 {
+  background: #f59563;
+  color: #f9f6f2;
+}
+.tile2048.tile-32 {
+  background: #f67c5f;
+  color: #f9f6f2;
+}
+.tile2048.tile-64 {
+  background: #f65e3b;
+  color: #f9f6f2;
+}
+.tile2048.tile-128,
+.tile2048.tile-256,
+.tile2048.tile-512 {
+  background: #edcf72;
+  color: #f9f6f2;
+}
+.tile2048.tile-1024,
+.tile2048.tile-2048 {
+  background: #edc22e;
+  color: #f9f6f2;
+}
+
+/* 방향 패드: 화살표 버튼을 한 줄로 배치, 좁은 화면에서 줄바꿈 허용. */
+.controls.dpad {
+  flex-wrap: wrap;
+}
+
+.controls.dpad button {
+  min-width: 3rem;
+  font-size: 1.25rem;
+}
+
 .janggi-captures-empty {
   color: #6b7280;
 }
