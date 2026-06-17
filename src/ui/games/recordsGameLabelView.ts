@@ -9,6 +9,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   gomoku: "오목",
   go: "바둑",
   janggi: "장기",
+  connectfour: "커넥트포",
   // 카드 게임은 각자 고유 라벨로 구분한다(같은 키로 합쳐지던 회귀 수정).
   highcard: "하이카드",
   blackjack: "블랙잭",
@@ -24,6 +25,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   numberBaseball: "숫자야구",
   game2048: "2048",
   tictactoe: "틱택토",
+  minesweeper: "지뢰찾기",
   "rps-match": "다전제(가위바위보)",
 };
 

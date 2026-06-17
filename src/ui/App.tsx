@@ -13,11 +13,13 @@ import { GoStop } from "./games/GoStop";
 import { Gomoku } from "./games/Gomoku";
 import { Go } from "./games/Go";
 import { Reversi } from "./games/Reversi";
+import { ConnectFour } from "./games/ConnectFour";
 import { Janggi } from "./games/Janggi";
 import { TicTacToe } from "./games/TicTacToe";
 import { Yut } from "./games/Yut";
 import { NumberBaseball } from "./games/NumberBaseball";
 import { Game2048 } from "./games/Game2048";
+import { Minesweeper } from "./games/Minesweeper";
 import { Ladder } from "./games/Ladder";
 import { SelfPlay } from "./games/SelfPlay";
 import { Tournament } from "./games/Tournament";
@@ -40,11 +42,13 @@ type GameKey =
   | "gomoku"
   | "go"
   | "reversi"
+  | "connectfour"
   | "janggi"
   | "tictactoe"
   | "yut"
   | "numberbaseball"
   | "game2048"
+  | "minesweeper"
   | "ladder"
   | "selfplay"
   | "tournament"
@@ -66,11 +70,13 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "gomoku", label: "오목", render: () => <Gomoku /> },
   { key: "go", label: "바둑", render: () => <Go /> },
   { key: "reversi", label: "오델로", render: () => <Reversi /> },
+  { key: "connectfour", label: "커넥트포", render: () => <ConnectFour /> },
   { key: "janggi", label: "장기", render: () => <Janggi /> },
   { key: "tictactoe", label: "틱택토", render: () => <TicTacToe /> },
   { key: "yut", label: "윷놀이", render: () => <Yut /> },
   { key: "numberbaseball", label: "숫자야구", render: () => <NumberBaseball /> },
   { key: "game2048", label: "2048", render: () => <Game2048 /> },
+  { key: "minesweeper", label: "지뢰찾기", render: () => <Minesweeper /> },
   { key: "ladder", label: "사다리타기", render: () => <Ladder /> },
   { key: "selfplay", label: "관전", render: () => <SelfPlay /> },
   { key: "tournament", label: "토너먼트", render: () => <Tournament /> },

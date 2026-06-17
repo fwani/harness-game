@@ -374,6 +374,65 @@ header h1 {
   background: rgba(255, 255, 255, 0.22);
 }
 
+/* --- connect four (커넥트포·사목) --- */
+
+.board.connectfour {
+  background: #1d4ed8;
+  border-color: #1e3a8a;
+}
+
+/* 셀은 비인터랙티브(div) — 착수는 상단 열 버튼으로만. 호버/포인터 단서를 끈다. */
+.board.connectfour .cell {
+  cursor: default;
+}
+
+.board.connectfour .cell:hover {
+  background: transparent;
+}
+
+/* 디스크: 색뿐 아니라 기호(●/○)로도 1·2를 구분(색각 이상 대응). */
+.disc {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.disc.p1 {
+  color: #ef4444;
+}
+
+.disc.p2 {
+  color: #fde047;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+/* 열 선택(▼) 버튼 행: 보드와 동일한 그리드(boardGridStyle)로 열을 정렬한다. */
+.connectfour-cols {
+  display: grid;
+  gap: 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 0.5rem 0 0;
+}
+
+.col-drop {
+  min-width: 0;
+  padding: 0.3rem 0;
+  border: 1px solid #1e3a8a;
+  background: #93c5fd;
+  color: #1e3a8a;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.col-drop:not(:disabled):hover {
+  background: #bfdbfe;
+}
+
+.col-drop:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* --- janggi --- */
 
 .board.janggi {
@@ -417,6 +476,38 @@ header h1 {
 
 .janggi-captured-name {
   font-size: 0.85rem;
+}
+
+/* --- minesweeper (지뢰찾기) --- */
+
+.board.minesweeper {
+  background: #94a3b8;
+  border-color: #475569;
+}
+
+/* 미공개 칸: 올라온(raised) 모양 — 공개된 칸과 색이 아니라 입체/배경으로도 구분된다. */
+.ms-cell.ms-hidden {
+  background: #cbd5e1;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.7),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.ms-cell.ms-hidden:not(:disabled):hover {
+  background: #e2e8f0;
+}
+
+/* 공개된 칸: 눌린(flat) 모양. 숫자/빈칸/지뢰를 텍스트·기호로 구분한다. */
+.ms-cell.ms-empty,
+.ms-cell.ms-number,
+.ms-cell.ms-mine {
+  background: #e5e7eb;
+  color: #1f2937;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.ms-cell.ms-mine {
+  background: #fecaca;
 }
 
 /* --- 2048 --- */
