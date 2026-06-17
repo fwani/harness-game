@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { startGame, applyMove, type GomokuState } from "./playGomoku";
+import { startGame, applyMove, isFinished, type GomokuState } from "./playGomoku";
 
 describe("playGomoku application", () => {
   it("startGame creates an empty board with black to move and no winner", () => {
@@ -137,12 +137,71 @@ describe("playGomoku application", () => {
     expect(() => applyMove(state, 6, 6)).toThrow();
   });
 
+  it("startGame starts not finished and not a draw", () => {
+    const state = startGame();
+    expect(state.isDraw).toBe(false);
+    expect(isFinished(state)).toBe(false);
+  });
+
+  it("declares a draw when a small board fills with no five-in-a-row", () => {
+    // 4×4: 5목이 물리적으로 불가능하므로 가득 차면 무조건 무승부.
+    let state = startGame(4);
+    for (let y = 0; y < 4; y += 1) {
+      for (let x = 0; x < 4; x += 1) {
+        expect(isFinished(state)).toBe(false); // 마지막 수 직전까지는 진행 중
+        state = applyMove(state, x, y);
+      }
+    }
+    expect(state.winner).toBeNull();
+    expect(state.isDraw).toBe(true);
+    expect(isFinished(state)).toBe(true);
+  });
+
+  it("throws when moving after a draw", () => {
+    let state = startGame(4);
+    for (let y = 0; y < 4; y += 1) {
+      for (let x = 0; x < 4; x += 1) {
+        state = applyMove(state, x, y);
+      }
+    }
+    expect(state.isDraw).toBe(true);
+    // 보드는 가득 찼고(빈 칸 없음) 종료 상태이므로 어떤 착수도 throw.
+    expect(() => applyMove(state, 0, 0)).toThrow();
+  });
+
+  it("keeps isDraw false on a win (no regression)", () => {
+    let state = startGame();
+    const blackMoves: Array<[number, number]> = [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [4, 0],
+    ];
+    const whiteMoves: Array<[number, number]> = [
+      [0, 5],
+      [1, 5],
+      [2, 5],
+      [3, 5],
+    ];
+    for (let i = 0; i < blackMoves.length; i += 1) {
+      state = applyMove(state, blackMoves[i]![0], blackMoves[i]![1]);
+      if (i < whiteMoves.length) {
+        state = applyMove(state, whiteMoves[i]![0], whiteMoves[i]![1]);
+      }
+    }
+    expect(state.winner).toBe("black");
+    expect(state.isDraw).toBe(false);
+    expect(isFinished(state)).toBe(true);
+  });
+
   it("does not mutate the input state or board", () => {
     const state = startGame();
     const snapshot: GomokuState = {
       board: state.board.map((row) => row.slice()),
       next: state.next,
       winner: state.winner,
+      isDraw: state.isDraw,
     };
     applyMove(state, 0, 0);
     expect(state.next).toBe(snapshot.next);

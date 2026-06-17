@@ -20,8 +20,8 @@
 
 | 레이어 | 위치 | 내용 | 상태 |
 | --- | --- | --- | --- |
-| 도메인 | [`src/domain/gomoku.ts`](../../src/domain/gomoku.ts) | `createBoard()`, `placeStone()`, `checkWin()` | ✅ |
-| 애플리케이션 | [`src/application/playGomoku.ts`](../../src/application/playGomoku.ts) | `startGame(size)`, `applyMove(state, x, y)` → `GomokuState{board, next, winner}` | ✅ |
+| 도메인 | [`src/domain/gomoku.ts`](../../src/domain/gomoku.ts) | `createBoard()`, `placeStone()`, `checkWin()`, `isBoardFull()` | ✅ |
+| 애플리케이션 | [`src/application/playGomoku.ts`](../../src/application/playGomoku.ts) | `startGame(size)`, `applyMove(state, x, y)` → `GomokuState{board, next, winner, isDraw}`, `isFinished(state)` (무승부 종료 포함) | ✅ |
 | UI | [`src/ui/games/Gomoku.tsx`](../../src/ui/games/Gomoku.tsx) | 2인 로컬 착수, 턴/승자 표시 | ✅ |
 | 기록 | `GameId="gomoku"` + [`src/ui/records.ts`](../../src/ui/records.ts) | 승자 확정 시 "흑"/"백"으로 저장 | ✅ |
 
@@ -32,10 +32,10 @@
 - [x] 이미 둔 칸/종료 후 입력 무시.
 - [x] "새 게임" 리셋 버튼.
 - [x] **기록 저장** — 승자 확정 시 결과를 저장하고 전적 탭에 노출.
-- [ ] **무승부(보드 가득 참)** — 5목 없이 꽉 차면? 현재 명시적 무승부 처리 없음(점검).
+- [x] **무승부(보드 가득 참)** — 5목 없이 꽉 차면 application(`playGomoku`)에서 `isDraw=true`로 종료, UI는 "무승부! 🤝" 표시 후 `draw` 기록.
 
 ## 5. 알려진 갭 / 백로그
 
 - ✅ ~~기록 연동~~: 승자 확정 시 `recordGame("gomoku", "흑", "백", …)` 저장(완료).
-- **무승부 처리**: 보드가 가득 차고 승자가 없을 때의 종료/표시 정의(도메인+UI). 현재 무승부는 기록되지 않음.
+- ✅ ~~무승부 처리~~: 승자 없이 보드가 가득 차면 application `applyMove`가 도메인 `isBoardFull`로 판정해 `isDraw=true`로 종료(`isFinished` 헬퍼 제공). UI는 application 상태만 소비해 "무승부! 🤝" 표시·`draw` 기록(완료).
 - **금수(렌주 룰)** 등 변형 규칙은 비목표 — 필요 시 별도 정의.
