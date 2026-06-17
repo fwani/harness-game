@@ -37,6 +37,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   slidepuzzle: "슬라이드 퍼즐",
   hangman: "행맨",
   pig: "피그",
+  bingo: "빙고",
   "rps-match": "다전제(가위바위보)",
 };
 

@@ -1059,6 +1059,42 @@ button.dots-edge:disabled {
   box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.6);
 }
 
+/* --- 빙고(Bingo) --- */
+
+.board.bingo {
+  background: #1e293b;
+  border-color: #0f172a;
+  gap: 6px;
+  padding: 6px;
+}
+
+/* 칸: 번호 텍스트로 구분(색 비의존). 마킹은 색뿐 아니라 ✓ 기호·강조 테두리로도 표시. */
+.bingo-cell {
+  position: relative;
+  flex-direction: column;
+  cursor: default;
+  background: #475569;
+  color: #f8fafc;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border-radius: 6px;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.18),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* 마킹된 칸: 가라앉은 모양 + 점선 테두리(색 외 단서)와 ✓ 기호. */
+.bingo-cell.bingo-marked {
+  background: #14532d;
+  border: 2px dashed #22c55e;
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.bingo-mark {
+  font-size: 0.8rem;
+  line-height: 1;
+  color: #bbf7d0;
+}
+
 /* --- 2048 --- */
 
 /* 좁은 화면(360px)에서도 깨지지 않도록 폭에 맞춰 줄어들고, 넓은 화면에선 max-width로 캡한다. */
