@@ -62,6 +62,7 @@ describe("createJanggiEngine — isLegal (throw 금지)", () => {
       next: "cho",
       finished: true,
       winner: "cho",
+      endReason: "capture",
     };
     expect(engine.status(finished).over).toBe(true);
     const move: JanggiMove = { from: { x: 0, y: 6 }, to: { x: 0, y: 5 } };
@@ -104,6 +105,7 @@ describe("createJanggiEngine — 종료 판정", () => {
       next: "cho",
       finished: false,
       winner: null,
+      endReason: null,
     };
     const move: JanggiMove = { from: { x: 4, y: 5 }, to: { x: 4, y: 1 } };
     expect(engine.isLegal(state, move, "p1")).toBe(true);
