@@ -28,6 +28,7 @@ export type GameId =
   | "tictactoe"
   | "minesweeper"
   | "dotsandboxes"
+  | "memory"
   | "rps-match";
 
 /** 한 판에서 한 플레이어의 결과. */
