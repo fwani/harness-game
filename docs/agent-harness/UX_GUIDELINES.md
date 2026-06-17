@@ -120,6 +120,10 @@
   (`playSnakesAndLadders`)만 있던 게임을 `SnakesAndLadders.tsx`로 연결 — vs CPU 한 판(주사위 굴리기 버튼·
   사람+CPU 한 라운드 조립·양측 진행도·사다리/뱀/초과/골 도달 로그·정확히 골 도달 승자 종료·새 게임·전적
   저장(`snakesandladders`))까지(완료, `snakesAndLaddersView` + `snakesAndLaddersView.test`).
+- **플러드 잇(Flood-It) UI 연동(application 무작위 보드 + 화면)**: 도메인(`floodIt`)만 존재 —
+  application 무작위·풀이 가능 시작 보드 생성(`createScrambledFloodIt`, `RandomSource` 주입,
+  `createScrambledLightsOut` 패턴 참고) + 화면(`FloodIt.tsx`, 색 비의존 라벨/기호 렌더·턴 수 표시·
+  클리어 판정·새 게임·전적 저장)이 후속 짝 이슈로 필요. 사양: [`docs/games/flood-it.md`](../games/flood-it.md).
 - **접근성/반응형 점검**: 보드 셀 키보드 내비게이션, 모바일 레이아웃, 명도 대비.
 
 ## 참고
