@@ -57,6 +57,23 @@ done
 > 필요해 `__HOME__` 플레이스홀더 **템플릿**으로 보관한다. 설치 시 위처럼 `$HOME`로
 > 치환한다. (PATH의 homebrew 경로는 `/opt/homebrew` 기준 — 인텔 맥이면 `/usr/local`로 수정.)
 
+## 다중 dev 워커
+
+`dev.sh`는 `AUTODEV_WORKER` 환경변수로 병렬 워커를 지원한다. 미설정이면 1차 워커
+(`repo-dev`/`dev.log`, actionable≥1). 설정하면 보조 워커(`repo-dev<N>`/`dev-<N>.log`,
+**actionable≥2일 때만**, 시작 시 25초 스태거)로 동작해 1차 워커와 같은 이슈를 동시에
+claim하지 않게 한다. `com.fwani.harness-game.dev2.plist.template`가 2번 워커 예시
+(`AUTODEV_WORKER=2`). 추가 설치:
+
+```sh
+sed "s#__HOME__#$HOME#g" automation/com.fwani.harness-game.dev2.plist.template \
+  > "$HOME/Library/LaunchAgents/com.fwani.harness-game.dev2.plist"
+launchctl bootstrap gui/$(id -u) "$HOME/Library/LaunchAgents/com.fwani.harness-game.dev2.plist"
+```
+
+> 보조 워커는 in-progress-ai claim + 스태거 + actionable≥2 게이트로 중복을 줄이지만,
+> 두 워커가 거의 동시에 목록을 조회하는 극히 짧은 창에선 같은 이슈를 집을 수 있다(드묾).
+
 ## 운영
 
 ```sh
