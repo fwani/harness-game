@@ -9,15 +9,20 @@
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 REPO="fwani/harness-game"
 BASE="$HOME/Library/Application Support/harness-game-autodev"
-WORKDIR="$BASE/repo-dev"
-LOG="$BASE/dev.log"
+# 다중 워커: AUTODEV_WORKER가 설정되면 보조 워커(전용 클론/로그/스탬프 분리, 백로그>=2일 때만).
+W="${AUTODEV_WORKER:-}"
+WORKDIR="$BASE/repo-dev${W}"
+LOG="$BASE/dev${W:+-$W}.log"
 ts() { date '+%F %T'; }
 mkdir -p "$BASE"
+
+# 보조 워커는 1차 워커가 가장 오래된 이슈를 먼저 claim(in-progress-ai)하도록 잠깐 스태거 — 중복 claim 방지.
+[ -n "$W" ] && sleep 25
 
 # 0) 시간대별 간격 게이트: 09~18시 = 180초(3분), 그 외 = 600초(10분).
 H=$((10#$(date +%H)))
 if [ "$H" -ge 9 ] && [ "$H" -lt 18 ]; then REQ=180; else REQ=600; fi
-STAMP="$BASE/.dev.laststamp"; NOW=$(date +%s)
+STAMP="$BASE/.dev${W:+-$W}.laststamp"; NOW=$(date +%s)
 LAST=$(cat "$STAMP" 2>/dev/null); [ -z "$LAST" ] && LAST=0
 [ $((NOW - LAST)) -lt "$REQ" ] && exit 0
 echo "$NOW" > "$STAMP"
@@ -28,7 +33,9 @@ actionable=$(gh issue list --repo "$REPO" --label ready-for-dev --state open \
   --jq '[.[] | select((.labels|map(.name)|index("in-progress-ai"))|not) | select(.assignees|length==0)] | length' \
   2>>"$LOG")
 [ -z "$actionable" ] && { echo "$(ts) gh 조회 실패 — skip" >>"$LOG"; exit 0; }
-[ "$actionable" -eq 0 ] && { echo "$(ts) ready-for-dev 작업 없음 — skip" >>"$LOG"; exit 0; }
+# 1차 워커는 1건 이상, 보조 워커는 2건 이상일 때만 동작(외톨이 이슈는 1차에 양보 → 같은 이슈 중복 claim 회피).
+MIN=1; [ -n "$W" ] && MIN=2
+[ "$actionable" -lt "$MIN" ] && { echo "$(ts) actionable=$actionable < $MIN — skip" >>"$LOG"; exit 0; }
 
 # 2) 전용 클론 보장
 if [ ! -d "$WORKDIR/.git" ]; then
