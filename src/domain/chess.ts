@@ -95,3 +95,190 @@ export function squareName(row: number, col: number): string {
   const rank = CHESS_SIZE - row;
   return `${file}${rank}`;
 }
+
+/** 보드 위 한 칸의 좌표(행·열). board[row][col] 컨벤션과 일치. */
+export interface ChessSquare {
+  row: number;
+  col: number;
+}
+
+/** 나이트의 L자 8방향 오프셋(row,col). */
+const KNIGHT_OFFSETS: ReadonlyArray<readonly [number, number]> = [
+  [-2, -1],
+  [-2, 1],
+  [-1, -2],
+  [-1, 2],
+  [1, -2],
+  [1, 2],
+  [2, -1],
+  [2, 1],
+];
+
+/** 킹의 인접 8방향 오프셋(row,col). 슬라이더(룩·비숍·퀸)의 방향 집합으로도 재사용한다. */
+const KING_OFFSETS: ReadonlyArray<readonly [number, number]> = [
+  [-1, -1],
+  [-1, 0],
+  [-1, 1],
+  [0, -1],
+  [0, 1],
+  [1, -1],
+  [1, 0],
+  [1, 1],
+];
+
+/** 룩의 직교 4방향. */
+const ROOK_DIRS: ReadonlyArray<readonly [number, number]> = [
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1],
+];
+
+/** 비숍의 대각 4방향. */
+const BISHOP_DIRS: ReadonlyArray<readonly [number, number]> = [
+  [-1, -1],
+  [-1, 1],
+  [1, -1],
+  [1, 1],
+];
+
+/** 슬라이더(룩·비숍·퀸)가 한 방향으로 빈 칸을 따라 진행하다 첫 기물에서 멈추는 수를 모은다. */
+function slidingMoves(
+  board: ChessBoard,
+  row: number,
+  col: number,
+  color: ChessColor,
+  dirs: ReadonlyArray<readonly [number, number]>,
+  moves: ChessSquare[],
+): void {
+  for (const [dr, dc] of dirs) {
+    let r = row + dr;
+    let c = col + dc;
+    while (isOnBoard(r, c)) {
+      const target = board[r]![c]!;
+      if (target === null) {
+        moves.push({ row: r, col: c });
+      } else {
+        // 첫 기물: 상대면 포획(그 칸까지), 자기 기물이면 그 앞까지. 어느 쪽이든 진행 종료.
+        if (target.color !== color) {
+          moves.push({ row: r, col: c });
+        }
+        break;
+      }
+      r += dr;
+      c += dc;
+    }
+  }
+}
+
+/** 보드 밖이 아니고 자기 기물도 아닌 칸(빈 칸/상대 기물)이면 수에 추가한다. 나이트·킹용. */
+function stepMove(
+  board: ChessBoard,
+  row: number,
+  col: number,
+  color: ChessColor,
+  moves: ChessSquare[],
+): void {
+  if (!isOnBoard(row, col)) {
+    return;
+  }
+  const target = board[row]![col]!;
+  if (target === null || target.color !== color) {
+    moves.push({ row, col });
+  }
+}
+
+/** 폰의 의사합법 수(전진·두 칸·대각 포획). 앙파상·승진은 제외. */
+function pawnMoves(
+  board: ChessBoard,
+  row: number,
+  col: number,
+  color: ChessColor,
+  moves: ChessSquare[],
+): void {
+  const dir = color === "white" ? -1 : 1; // white는 row 감소, black은 row 증가.
+  const startRow = color === "white" ? 6 : 1;
+  // 전진 1칸: 도착 칸이 비어 있을 때만.
+  const oneRow = row + dir;
+  if (isOnBoard(oneRow, col) && board[oneRow]![col]! === null) {
+    moves.push({ row: oneRow, col });
+    // 전진 2칸: 시작 랭크에서, 중간·도착 모두 비어 있을 때만.
+    const twoRow = row + 2 * dir;
+    if (row === startRow && isOnBoard(twoRow, col) && board[twoRow]![col]! === null) {
+      moves.push({ row: twoRow, col });
+    }
+  }
+  // 대각 포획: 상대 기물이 있을 때만(전진은 포획 아님).
+  for (const dc of [-1, 1]) {
+    const cr = row + dir;
+    const cc = col + dc;
+    if (isOnBoard(cr, cc)) {
+      const target = board[cr]![cc]!;
+      if (target !== null && target.color !== color) {
+        moves.push({ row: cr, col: cc });
+      }
+    }
+  }
+}
+
+/**
+ * 해당 칸 기물의 의사합법 도착칸 목록을 반환한다. 빈 칸/범위 밖이면 `[]`.
+ * "의사합법(pseudo-legal)"이므로 체크(자기 킹 노출)는 고려하지 않는다 — 후속 짝 이슈 범위.
+ * 캐슬링·앙파상·승진도 제외한다. 입력 board는 변형하지 않는다(순수 함수, 읽기만 함).
+ */
+export function pseudoLegalMoves(board: ChessBoard, row: number, col: number): ChessSquare[] {
+  const piece = pieceAt(board, row, col);
+  if (piece === null) {
+    return [];
+  }
+  const moves: ChessSquare[] = [];
+  switch (piece.type) {
+    case "pawn":
+      pawnMoves(board, row, col, piece.color, moves);
+      break;
+    case "knight":
+      for (const [dr, dc] of KNIGHT_OFFSETS) {
+        stepMove(board, row + dr, col + dc, piece.color, moves);
+      }
+      break;
+    case "bishop":
+      slidingMoves(board, row, col, piece.color, BISHOP_DIRS, moves);
+      break;
+    case "rook":
+      slidingMoves(board, row, col, piece.color, ROOK_DIRS, moves);
+      break;
+    case "queen":
+      slidingMoves(board, row, col, piece.color, ROOK_DIRS, moves);
+      slidingMoves(board, row, col, piece.color, BISHOP_DIRS, moves);
+      break;
+    case "king":
+      for (const [dr, dc] of KING_OFFSETS) {
+        stepMove(board, row + dr, col + dc, piece.color, moves);
+      }
+      break;
+  }
+  return moves;
+}
+
+/**
+ * 한 색의 모든 의사합법 수 목록(from→to)을 반환한다. 입력 board는 변형하지 않는다.
+ * 후속(체크/체크메이트 판정·UI)에서 한 색의 전체 수를 열거할 때 쓴다.
+ */
+export function pieceColorMoves(
+  board: ChessBoard,
+  color: ChessColor,
+): { from: ChessSquare; to: ChessSquare }[] {
+  const result: { from: ChessSquare; to: ChessSquare }[] = [];
+  for (let row = 0; row < CHESS_SIZE; row++) {
+    for (let col = 0; col < CHESS_SIZE; col++) {
+      const piece = board[row]![col]!;
+      if (piece === null || piece.color !== color) {
+        continue;
+      }
+      for (const to of pseudoLegalMoves(board, row, col)) {
+        result.push({ from: { row, col }, to });
+      }
+    }
+  }
+  return result;
+}
