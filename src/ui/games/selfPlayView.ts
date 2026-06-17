@@ -18,6 +18,14 @@ import {
   createDotsAndBoxesEngine,
   type DotsEngineState,
 } from "../../application/dotsAndBoxesEngine";
+import {
+  createCheckersEngine,
+  type CheckersEngineState,
+} from "../../application/checkersEngine";
+import {
+  createMancalaEngine,
+  type MancalaEngineState,
+} from "../../application/mancalaEngine";
 import { chooseRandomGomokuMove } from "../../application/gomokuAi";
 import { chooseRandomGoMove } from "../../application/goAi";
 import { chooseRandomReversiMove } from "../../application/reversiAi";
@@ -25,10 +33,14 @@ import { chooseRandomJanggiMove } from "../../application/janggiAi";
 import { chooseRandomConnectFourColumn } from "../../application/playConnectFour";
 import { chooseRandomTicTacToeMove } from "../../application/playTicTacToe";
 import { chooseRandomDotsEdge } from "../../application/playDotsAndBoxes";
+import { chooseRandomCheckersMove } from "../../application/playCheckers";
+import { chooseRandomMancalaMove } from "../../application/playMancala";
 import type { JanggiState } from "../../application/playJanggi";
 import { legalGoMoves } from "../../domain/goMoves";
 import type { Board as JanggiBoard } from "../../domain/janggi";
 import type { DotsBoard, DotsEdge } from "../../domain/dotsAndBoxes";
+import type { CheckersBoard, CheckersMove } from "../../domain/checkers";
+import type { MancalaBoard } from "../../domain/mancala";
 
 /** 자동 대국을 지원하는 보드 게임 키(무작위 수 선택기가 이미 머지된 게임들). */
 export type SelfPlayGameKey =
@@ -38,7 +50,9 @@ export type SelfPlayGameKey =
   | "janggi"
   | "connectfour"
   | "tictactoe"
-  | "dotsandboxes";
+  | "dotsandboxes"
+  | "checkers"
+  | "mancala";
 
 /**
  * 장기 무작위 자기대국 한 판의 수 상한. 무작위 장기는 외통/장 포획/빅장으로 보통 수백 수
@@ -46,6 +60,14 @@ export type SelfPlayGameKey =
  * playEngineGame이 throw 하며, 화면은 이를 "무종국(수 제한 도달)"으로 우아하게 처리한다.
  */
 const JANGGI_MAX_MOVES = 1000;
+
+/**
+ * 체커 무작위 자기대국 한 판의 수 상한. 무작위 체커는 양쪽 king이 서로를 피해 다니면
+ * 종국 없이 길어질 수 있으므로(영국식 체커는 무승부 종료 규칙을 도메인이 모델링하지 않음)
+ * 장기와 동일하게 합리적 상한을 둔다. 초과 시 playEngineGame이 throw 하며, 화면은 이를
+ * "무종국(수 제한 도달)"으로 우아하게 처리한다(runAndDescribeSelfPlay 경로 재사용).
+ */
+const CHECKERS_MAX_MOVES = 1000;
 
 export interface SelfPlayGameMeta {
   key: SelfPlayGameKey;
@@ -71,6 +93,11 @@ export const SELF_PLAY_GAMES: readonly SelfPlayGameMeta[] = [
   // 도트 앤 박스는 점·변·박스 격자(흑/백 돌 보드가 아님)라 최종 보드는 dotsGridCells로
   // 렌더한다. size는 기본 격자(3×3 박스)의 열 수, boardClass는 .board.dotsandboxes 재사용.
   { key: "dotsandboxes", label: "도트 앤 박스", size: 3, boardClass: "dotsandboxes" },
+  // 체커는 8×8 보드를 checkersView의 checkersCellView(●/○·♚/♔)로 색 비의존 렌더한다.
+  { key: "checkers", label: "체커", size: 8, boardClass: "checkers" },
+  // 만칼라는 구덩이·곳간 그리드(흑/백 돌 보드가 아님)라 최종 보드는 mancalaView 헬퍼로 렌더한다.
+  // size는 한쪽 구덩이 수(표준 6), boardClass는 .board.mancala 재사용.
+  { key: "mancala", label: "만칼라", size: 6, boardClass: "mancala" },
 ];
 
 /** 보드 한 칸의 상태(모든 지원 게임 공통: 흑/백 돌 또는 빈 칸). */
@@ -161,6 +188,36 @@ export function runSelfPlay(
         },
         { maxMoves },
       );
+    case "checkers":
+      // 무작위 체커는 king 회피로 무한 진행할 수 있으므로 장기처럼 CHECKERS_MAX_MOVES 상한을 둔다
+      // (초과 시 playEngineGame throw → 화면에서 무종국 처리). 합법 수가 없으면 도메인이 이미
+      // 종국(상대 승)이라 콜백이 불리지 않는다(null은 무효 수로 넘겨 엔진 isLegal이 방어).
+      return playEngineGame(
+        createCheckersEngine(),
+        (state) => {
+          const s = state as CheckersEngineState;
+          const move = chooseRandomCheckersMove(s.board, s.next, rng);
+          return (
+            move ??
+            ({
+              from: { row: -1, col: -1 },
+              to: { row: -1, col: -1 },
+            } as CheckersMove)
+          );
+        },
+        { maxMoves: maxMoves ?? CHECKERS_MAX_MOVES },
+      );
+    case "mancala":
+      // 씨앗 총량이 단조 감소(곳간 누적)하는 유한 게임 — 수 제한 불필요(커넥트포/도트앤박스와 동일).
+      // 합법 수가 없으면 게임이 이미 종국이라 콜백이 불리지 않는다(null은 무효 구덩이 -1로 방어).
+      return playEngineGame(
+        createMancalaEngine(),
+        (state) => {
+          const s = state as MancalaEngineState;
+          return chooseRandomMancalaMove(s.board, s.next, rng) ?? -1;
+        },
+        { maxMoves },
+      );
     default:
       throw new Error(`runSelfPlay: 지원하지 않는 게임입니다: ${String(game)}`);
   }
@@ -183,6 +240,14 @@ function sideLabelFor(game: SelfPlayGameKey, side: Side): string {
   }
   if (game === "dotsandboxes") {
     // 도트 앤 박스는 흑/백 돌이 아니라 박스 소유 진영(P1/P2)으로 구분한다(색 비의존).
+    return side === "p1" ? "1P" : "2P";
+  }
+  if (game === "checkers") {
+    // 체커는 dark(선)=흑(●/♚)=p1, light(후)=백(○/♔)=p2. checkersView 표기와 일치(색 비의존).
+    return side === "p1" ? "흑(선)" : "백(후)";
+  }
+  if (game === "mancala") {
+    // 만칼라는 선(1)=p1, 후(2)=p2. 색이 아니라 P1/P2 진영 라벨로 구분(색 비의존).
     return side === "p1" ? "1P" : "2P";
   }
   return side === "p1" ? "흑(선)" : "백(후)";
@@ -300,6 +365,45 @@ export function selfPlayDotsBoard(result: EngineGameResult<unknown>): DotsBoard 
     cols: 0,
     edges: { h: [], v: [] },
     boxes: [],
+  };
+}
+
+/**
+ * 체커 결과의 최종 보드(8×8 기물 격자)를 안전하게 추출한다(렌더 요약용).
+ * 흑/백 디스크 모델(SelfPlayCell)이 아니라 CheckersBoard(기물/king 셀)를 그대로 노출하므로,
+ * 컴포넌트는 checkersView의 checkersCellView(●/○·♚/♔ + 라벨)로 색 비의존 렌더한다.
+ * 비정상 결과(board 누락)면 빈 보드(0×0)를 반환해 throw 없이 안전하게 처리한다.
+ */
+export function selfPlayCheckersBoard(
+  result: EngineGameResult<unknown>,
+): CheckersBoard {
+  const board = (result.finalState as { board?: unknown }).board;
+  return Array.isArray(board) ? (board as CheckersBoard) : [];
+}
+
+/**
+ * 만칼라 결과의 최종 보드(구덩이·곳간)를 안전하게 추출한다(렌더 요약용).
+ * 흑/백 디스크 모델(SelfPlayCell)이 아니라 MancalaBoard(pits/stores)를 그대로 노출하므로,
+ * 컴포넌트는 mancalaView의 점수·구덩이/곳간 라벨로 색 비의존(P1/P2) 렌더한다.
+ * 비정상 결과(board 누락/형태 불일치)면 빈 기본 보드(구덩이 0개·곳간 0)를 반환해 안전 처리한다.
+ */
+export function selfPlayMancalaBoard(
+  result: EngineGameResult<unknown>,
+): MancalaBoard {
+  const board = (result.finalState as { board?: unknown }).board;
+  if (
+    typeof board === "object" &&
+    board !== null &&
+    "pitsPerSide" in board &&
+    "pits" in board &&
+    "stores" in board
+  ) {
+    return board as MancalaBoard;
+  }
+  return {
+    pitsPerSide: 0,
+    pits: { 1: [], 2: [] },
+    stores: { 1: 0, 2: 0 },
   };
 }
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
+import { isDarkSquare } from "../../domain/checkers";
 import { boardGridStyle } from "./boardView";
 import { pieceGlyph, pieceAriaLabel } from "./janggiView";
 import {
@@ -8,18 +9,30 @@ import {
   dotsScoreLabel,
   type DotsLabeler,
 } from "./dotsAndBoxesView";
+import { checkersCellView } from "./checkersView";
+import {
+  mancalaScoreLabel,
+  mancalaPitAriaLabel,
+  mancalaStoreAriaLabel,
+  type MancalaLabeler,
+} from "./mancalaView";
 import {
   SELF_PLAY_GAMES,
   runAndDescribeSelfPlay,
+  selfPlayCheckersBoard,
   selfPlayDotsBoard,
   selfPlayGlyphBoard,
   selfPlayJanggiBoard,
+  selfPlayMancalaBoard,
   type SelfPlayGameKey,
   type SelfPlayRun,
 } from "./selfPlayView";
 
 /** 도트 앤 박스 최종 보드 렌더용 진영 라벨(색 비의존: 1P/2P). */
 const dotsLabel: DotsLabeler = (p) => (p === 1 ? "1P" : "2P");
+
+/** 만칼라 최종 보드 렌더용 진영 라벨(색 비의존: P1/P2). */
+const mancalaLabel: MancalaLabeler = (p) => (p === 1 ? "1P" : "2P");
 
 /** 자동 대국 난수 어댑터(다른 게임 화면과 동일하게 infrastructure 어댑터 주입). */
 const rng = new MathRandomSource();
@@ -40,9 +53,13 @@ export function SelfPlay() {
   };
 
   // 최종 보드는 정상 종국일 때만 그린다(무종국이면 result=null).
-  // 도트 앤 박스는 점·변·박스 격자라 흑/백 글리프 경로를 타지 않는다.
+  // 도트 앤 박스·체커·만칼라는 흑/백 디스크 격자가 아니라 전용 뷰로 렌더한다(글리프 경로 제외).
   const glyphBoard =
-    run?.result && game !== "janggi" && game !== "dotsandboxes"
+    run?.result &&
+    game !== "janggi" &&
+    game !== "dotsandboxes" &&
+    game !== "checkers" &&
+    game !== "mancala"
       ? selfPlayGlyphBoard(run.result, game)
       : [];
   const janggiBoard =
@@ -50,6 +67,14 @@ export function SelfPlay() {
   const dotsBoard =
     run?.result && game === "dotsandboxes"
       ? selfPlayDotsBoard(run.result)
+      : null;
+  const checkersBoard =
+    run?.result && game === "checkers"
+      ? selfPlayCheckersBoard(run.result)
+      : null;
+  const mancalaBoard =
+    run?.result && game === "mancala"
+      ? selfPlayMancalaBoard(run.result)
       : null;
 
   return (
@@ -151,7 +176,132 @@ export function SelfPlay() {
             </>
           )}
 
-          {game !== "janggi" && game !== "dotsandboxes" && run.result && (
+          {game === "checkers" && checkersBoard && (
+            <div
+              className="board checkers"
+              style={boardGridStyle(meta.size)}
+              role="img"
+              aria-label={`${meta.label} 최종 보드`}
+            >
+              {checkersBoard.map((cells, row) =>
+                cells.map((cell, col) => {
+                  const view = checkersCellView(cell);
+                  const dark = isDarkSquare(row, col);
+                  return (
+                    <div
+                      key={`${col},${row}`}
+                      className={`cell ${dark ? "sq-dark" : "sq-light"}`}
+                      aria-hidden="true"
+                    >
+                      {cell && (
+                        <span
+                          className={`checker ${cell.color}${cell.king ? " king" : ""}`}
+                          title={view.label}
+                        >
+                          {view.glyph}
+                        </span>
+                      )}
+                    </div>
+                  );
+                }),
+              )}
+            </div>
+          )}
+
+          {game === "mancala" && mancalaBoard && (
+            <>
+              <p className="hint">
+                점수 ·{" "}
+                <strong>{mancalaScoreLabel(mancalaBoard, mancalaLabel)}</strong>
+              </p>
+              <div
+                className="board mancala"
+                role="img"
+                aria-label={`${meta.label} 최종 보드`}
+                style={{
+                  gridTemplateColumns: `auto repeat(${mancalaBoard.pitsPerSide}, 1fr) auto`,
+                }}
+              >
+                <div
+                  className="mancala-store owner-p2"
+                  style={{ gridColumn: 1, gridRow: "1 / 3" }}
+                  aria-label={mancalaStoreAriaLabel(
+                    2,
+                    mancalaBoard.stores[2],
+                    mancalaLabel,
+                  )}
+                >
+                  <span className="mancala-store-label" aria-hidden="true">
+                    {mancalaLabel(2)}
+                  </span>
+                  <span className="mancala-seeds">{mancalaBoard.stores[2]}</span>
+                </div>
+                {Array.from(
+                  { length: mancalaBoard.pitsPerSide },
+                  (_, col) => mancalaBoard.pitsPerSide - 1 - col,
+                ).map((index, col) => (
+                  <div
+                    key={`p2-${index}`}
+                    className="mancala-pit owner-p2"
+                    style={{ gridRow: 1, gridColumn: col + 2 }}
+                    aria-label={mancalaPitAriaLabel(
+                      2,
+                      index,
+                      mancalaBoard.pits[2][index]!,
+                      mancalaLabel,
+                    )}
+                  >
+                    <span className="mancala-pit-label" aria-hidden="true">
+                      {mancalaLabel(2)}
+                    </span>
+                    <span className="mancala-seeds">
+                      {mancalaBoard.pits[2][index]}
+                    </span>
+                  </div>
+                ))}
+                {Array.from({ length: mancalaBoard.pitsPerSide }, (_, index) => (
+                  <div
+                    key={`p1-${index}`}
+                    className="mancala-pit owner-p1"
+                    style={{ gridRow: 2, gridColumn: index + 2 }}
+                    aria-label={mancalaPitAriaLabel(
+                      1,
+                      index,
+                      mancalaBoard.pits[1][index]!,
+                      mancalaLabel,
+                    )}
+                  >
+                    <span className="mancala-pit-label" aria-hidden="true">
+                      {mancalaLabel(1)}
+                    </span>
+                    <span className="mancala-seeds">
+                      {mancalaBoard.pits[1][index]}
+                    </span>
+                  </div>
+                ))}
+                <div
+                  className="mancala-store owner-p1"
+                  style={{ gridColumn: mancalaBoard.pitsPerSide + 2, gridRow: "1 / 3" }}
+                  aria-label={mancalaStoreAriaLabel(
+                    1,
+                    mancalaBoard.stores[1],
+                    mancalaLabel,
+                  )}
+                >
+                  <span className="mancala-store-label" aria-hidden="true">
+                    {mancalaLabel(1)}
+                  </span>
+                  <span className="mancala-seeds">{mancalaBoard.stores[1]}</span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {game !== "janggi" &&
+            game !== "dotsandboxes" &&
+            game !== "checkers" &&
+            game !== "mancala" &&
+            run.result && (
             <div
               className={`board ${meta.boardClass}`.trim()}
               style={boardGridStyle(meta.size)}
