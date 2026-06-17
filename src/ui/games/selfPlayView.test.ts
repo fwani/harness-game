@@ -7,6 +7,7 @@ import {
   runAndDescribeSelfPlay,
   describeSelfPlayResult,
   selfPlayBoard,
+  selfPlayDotsBoard,
   selfPlayGlyphBoard,
   selfPlayJanggiBoard,
   type SelfPlayGameKey,
@@ -32,7 +33,7 @@ function resultWith(
 }
 
 describe("SELF_PLAY_GAMES", () => {
-  it("오목·바둑·오델로·장기·커넥트포·틱택토를 노출한다", () => {
+  it("오목·바둑·오델로·장기·커넥트포·틱택토·도트앤박스를 노출한다", () => {
     expect(SELF_PLAY_GAMES.map((g) => g.key)).toEqual([
       "gomoku",
       "go",
@@ -40,6 +41,7 @@ describe("SELF_PLAY_GAMES", () => {
       "janggi",
       "connectfour",
       "tictactoe",
+      "dotsandboxes",
     ]);
   });
 
@@ -63,6 +65,13 @@ describe("SELF_PLAY_GAMES", () => {
     expect(ttt.size).toBe(3);
     expect(ttt.boardClass).toBe("tictactoe");
   });
+
+  it("도트 앤 박스 메타가 포함된다(.board.dotsandboxes)", () => {
+    const dots = SELF_PLAY_GAMES.find((g) => g.key === "dotsandboxes")!;
+    expect(dots).toBeDefined();
+    expect(dots.label).toBe("도트 앤 박스");
+    expect(dots.boardClass).toBe("dotsandboxes");
+  });
 });
 
 describe("runSelfPlay", () => {
@@ -73,6 +82,7 @@ describe("runSelfPlay", () => {
     "janggi",
     "connectfour",
     "tictactoe",
+    "dotsandboxes",
   ];
 
   for (const game of games) {
@@ -102,6 +112,16 @@ describe("runSelfPlay", () => {
     expect(() =>
       runSelfPlay("chess" as unknown as SelfPlayGameKey, seededRng(1)),
     ).toThrow();
+  });
+
+  it("도트 앤 박스: 동일 rng면 동일 종국 결과를 낸다(throw 없음)", () => {
+    const a = runSelfPlay("dotsandboxes", seededRng(2026));
+    const b = runSelfPlay("dotsandboxes", seededRng(2026));
+    expect(a.status.over).toBe(true);
+    expect(a.moveCount).toBe(b.moveCount);
+    expect(a.status).toEqual(b.status);
+    // 3×3 박스 = 변 24개. 보너스 턴이 있어도 모든 변을 그어야 종국한다.
+    expect(a.moveCount).toBe(24);
   });
 });
 
@@ -176,6 +196,24 @@ describe("describeSelfPlayResult", () => {
     );
     expect(x.outcome).toBe("X(선) 승리 🎉");
     expect(o.outcome).toBe("O(후) 승리 🎉");
+    expect(draw.outcome).toBe("무승부 🤝");
+  });
+
+  it("도트 앤 박스 승자는 1P/2P로 매핑하고 무승부도 구분한다", () => {
+    const p1 = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p1", draw: false }, 24),
+      "dotsandboxes",
+    );
+    const p2 = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p2", draw: false }, 24),
+      "dotsandboxes",
+    );
+    const draw = describeSelfPlayResult(
+      resultWith({ over: true, winner: null, draw: true }, 24),
+      "dotsandboxes",
+    );
+    expect(p1.outcome).toBe("1P 승리 🎉");
+    expect(p2.outcome).toBe("2P 승리 🎉");
     expect(draw.outcome).toBe("무승부 🤝");
   });
 
@@ -288,5 +326,25 @@ describe("selfPlayJanggiBoard", () => {
       resultWith({ over: true, winner: null, draw: false }, 0),
     );
     expect(board).toEqual([]);
+  });
+});
+
+describe("selfPlayDotsBoard", () => {
+  it("실제 도트 앤 박스 자동 대국 결과에서 DotsBoard를 추출한다(종국=모든 변)", () => {
+    const board = selfPlayDotsBoard(runSelfPlay("dotsandboxes", seededRng(2026)));
+    expect(board.rows).toBe(3);
+    expect(board.cols).toBe(3);
+    // 모든 박스가 누군가에게 소유됐다(빈 박스 없음 = 종국).
+    expect(board.boxes.flat().every((owner) => owner === 1 || owner === 2)).toBe(true);
+  });
+
+  it("board가 없으면 빈 격자(0×0)를 반환한다", () => {
+    const board = selfPlayDotsBoard(
+      resultWith({ over: true, winner: null, draw: true }, 0),
+    );
+    expect(board.rows).toBe(0);
+    expect(board.cols).toBe(0);
+    expect(board.boxes).toEqual([]);
+    expect(board.edges).toEqual({ h: [], v: [] });
   });
 });

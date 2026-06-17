@@ -14,15 +14,21 @@ import { createReversiEngine } from "../../application/reversiEngine";
 import { createJanggiEngine } from "../../application/janggiEngine";
 import { createConnectFourEngine } from "../../application/connectFourEngine";
 import { createTicTacToeEngine } from "../../application/ticTacToeEngine";
+import {
+  createDotsAndBoxesEngine,
+  type DotsEngineState,
+} from "../../application/dotsAndBoxesEngine";
 import { chooseRandomGomokuMove } from "../../application/gomokuAi";
 import { chooseRandomGoMove } from "../../application/goAi";
 import { chooseRandomReversiMove } from "../../application/reversiAi";
 import { chooseRandomJanggiMove } from "../../application/janggiAi";
 import { chooseRandomConnectFourColumn } from "../../application/playConnectFour";
 import { chooseRandomTicTacToeMove } from "../../application/playTicTacToe";
+import { chooseRandomDotsEdge } from "../../application/playDotsAndBoxes";
 import type { JanggiState } from "../../application/playJanggi";
 import { legalGoMoves } from "../../domain/goMoves";
 import type { Board as JanggiBoard } from "../../domain/janggi";
+import type { DotsBoard, DotsEdge } from "../../domain/dotsAndBoxes";
 
 /** 자동 대국을 지원하는 보드 게임 키(무작위 수 선택기가 이미 머지된 게임들). */
 export type SelfPlayGameKey =
@@ -31,7 +37,8 @@ export type SelfPlayGameKey =
   | "reversi"
   | "janggi"
   | "connectfour"
-  | "tictactoe";
+  | "tictactoe"
+  | "dotsandboxes";
 
 /**
  * 장기 무작위 자기대국 한 판의 수 상한. 무작위 장기는 외통/장 포획/빅장으로 보통 수백 수
@@ -61,6 +68,9 @@ export const SELF_PLAY_GAMES: readonly SelfPlayGameMeta[] = [
   { key: "janggi", label: "장기", size: 9, boardClass: "janggi" },
   { key: "connectfour", label: "커넥트포", size: 7, boardClass: "connectfour" },
   { key: "tictactoe", label: "틱택토", size: 3, boardClass: "tictactoe" },
+  // 도트 앤 박스는 점·변·박스 격자(흑/백 돌 보드가 아님)라 최종 보드는 dotsGridCells로
+  // 렌더한다. size는 기본 격자(3×3 박스)의 열 수, boardClass는 .board.dotsandboxes 재사용.
+  { key: "dotsandboxes", label: "도트 앤 박스", size: 3, boardClass: "dotsandboxes" },
 ];
 
 /** 보드 한 칸의 상태(모든 지원 게임 공통: 흑/백 돌 또는 빈 칸). */
@@ -140,6 +150,17 @@ export function runSelfPlay(
         },
         { maxMoves },
       );
+    case "dotsandboxes":
+      // 유한 게임(변 개수 상한) — 수 제한 불필요(커넥트포/틱택토와 동일). 합법 수가 없으면
+      // 게임이 이미 종국이라 루프가 더 돌지 않는다(null은 무효 edge로 넘겨 엔진 isLegal이 방어).
+      return playEngineGame(
+        createDotsAndBoxesEngine(),
+        (state) => {
+          const edge = chooseRandomDotsEdge((state as DotsEngineState).board, rng);
+          return edge ?? ({ orientation: "h", row: -1, col: -1 } as DotsEdge);
+        },
+        { maxMoves },
+      );
     default:
       throw new Error(`runSelfPlay: 지원하지 않는 게임입니다: ${String(game)}`);
   }
@@ -159,6 +180,10 @@ function sideLabelFor(game: SelfPlayGameKey, side: Side): string {
   }
   if (game === "tictactoe") {
     return side === "p1" ? "X(선)" : "O(후)";
+  }
+  if (game === "dotsandboxes") {
+    // 도트 앤 박스는 흑/백 돌이 아니라 박스 소유 진영(P1/P2)으로 구분한다(색 비의존).
+    return side === "p1" ? "1P" : "2P";
   }
   return side === "p1" ? "흑(선)" : "백(후)";
 }
@@ -250,6 +275,32 @@ export function selfPlayJanggiBoard(
 ): JanggiBoard {
   const board = (result.finalState as { board?: unknown }).board;
   return Array.isArray(board) ? (board as JanggiBoard) : [];
+}
+
+/**
+ * 도트 앤 박스 결과의 최종 보드(점·변·박스 격자)를 안전하게 추출한다(렌더 요약용).
+ * 흑/백 디스크 모델(SelfPlayCell)이 아니라 DotsBoard(edges/boxes 격자)를 그대로 노출하므로,
+ * 컴포넌트는 dotsAndBoxesView의 dotsGridCells/dotsGridTemplate/dotsScoreLabel로 색 비의존 렌더한다.
+ * 비정상 결과(board 누락)면 빈 격자(0×0)를 반환해 throw 없이 안전하게 처리한다.
+ */
+export function selfPlayDotsBoard(result: EngineGameResult<unknown>): DotsBoard {
+  const board = (result.finalState as { board?: unknown }).board;
+  if (
+    typeof board === "object" &&
+    board !== null &&
+    "rows" in board &&
+    "cols" in board &&
+    "edges" in board &&
+    "boxes" in board
+  ) {
+    return board as DotsBoard;
+  }
+  return {
+    rows: 0,
+    cols: 0,
+    edges: { h: [], v: [] },
+    boxes: [],
+  };
 }
 
 /** 최종 보드 한 칸의 색 비의존 렌더 정보(장기 제외 모든 게임 공통). */

@@ -3,13 +3,23 @@ import { MathRandomSource } from "../../infrastructure/mathRandomSource";
 import { boardGridStyle } from "./boardView";
 import { pieceGlyph, pieceAriaLabel } from "./janggiView";
 import {
+  dotsGridCells,
+  dotsGridTemplate,
+  dotsScoreLabel,
+  type DotsLabeler,
+} from "./dotsAndBoxesView";
+import {
   SELF_PLAY_GAMES,
   runAndDescribeSelfPlay,
+  selfPlayDotsBoard,
   selfPlayGlyphBoard,
   selfPlayJanggiBoard,
   type SelfPlayGameKey,
   type SelfPlayRun,
 } from "./selfPlayView";
+
+/** 도트 앤 박스 최종 보드 렌더용 진영 라벨(색 비의존: 1P/2P). */
+const dotsLabel: DotsLabeler = (p) => (p === 1 ? "1P" : "2P");
 
 /** 자동 대국 난수 어댑터(다른 게임 화면과 동일하게 infrastructure 어댑터 주입). */
 const rng = new MathRandomSource();
@@ -30,12 +40,17 @@ export function SelfPlay() {
   };
 
   // 최종 보드는 정상 종국일 때만 그린다(무종국이면 result=null).
+  // 도트 앤 박스는 점·변·박스 격자라 흑/백 글리프 경로를 타지 않는다.
   const glyphBoard =
-    run?.result && game !== "janggi"
+    run?.result && game !== "janggi" && game !== "dotsandboxes"
       ? selfPlayGlyphBoard(run.result, game)
       : [];
   const janggiBoard =
     run?.result && game === "janggi" ? selfPlayJanggiBoard(run.result) : [];
+  const dotsBoard =
+    run?.result && game === "dotsandboxes"
+      ? selfPlayDotsBoard(run.result)
+      : null;
 
   return (
     <section className="game">
@@ -93,7 +108,50 @@ export function SelfPlay() {
             </div>
           )}
 
-          {game !== "janggi" && run.result && (
+          {game === "dotsandboxes" && dotsBoard && (
+            <>
+              <p className="hint">
+                점수 · <strong>{dotsScoreLabel(dotsBoard, dotsLabel)}</strong>
+              </p>
+              <div
+                className="board dotsandboxes"
+                role="img"
+                aria-label={`${meta.label} 최종 보드`}
+                style={{
+                  gridTemplateColumns: dotsGridTemplate(dotsBoard.cols),
+                  gridTemplateRows: dotsGridTemplate(dotsBoard.rows),
+                }}
+              >
+                {dotsGridCells(dotsBoard).map((cell) => {
+                  const key = `${cell.gridRow},${cell.gridCol}`;
+                  if (cell.kind === "dot") {
+                    return <span key={key} className="dots-dot" aria-hidden="true" />;
+                  }
+                  if (cell.kind === "box") {
+                    return (
+                      <span
+                        key={key}
+                        className={`dots-box${cell.owner ? ` owner-p${cell.owner}` : ""}`}
+                        aria-label={cell.owner ? `${dotsLabel(cell.owner)} 박스` : "빈 박스"}
+                      >
+                        {cell.owner ? dotsLabel(cell.owner) : ""}
+                      </span>
+                    );
+                  }
+                  // 변(수평/수직): 자동 대국 결과는 모든 변이 그어진 종국 상태다(빈 변도 색 외 단서로 표시).
+                  return (
+                    <span
+                      key={key}
+                      className={`dots-edge ${cell.kind}${cell.drawn ? " drawn" : ""}`}
+                      aria-hidden="true"
+                    />
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {game !== "janggi" && game !== "dotsandboxes" && run.result && (
             <div
               className={`board ${meta.boardClass}`.trim()}
               style={boardGridStyle(meta.size)}
