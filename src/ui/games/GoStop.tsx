@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { HwatuCard } from "../../domain/hwatu";
 import { createHwatuDeck } from "../../domain/hwatu";
 import type { GoStopFinalScore } from "../../domain/goStopBak";
@@ -8,8 +8,10 @@ import {
   type GoStopShowdownResult,
 } from "../../application/settleGoStopShowdown";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
-import { recordGame } from "../records";
+import { listRecords, recordGame, subscribe } from "../records";
 import { formatGoStopFinalScore, describeGoStopOutcome } from "./goStopView";
+import { selfStreakSummary, SELF_PLAYER } from "./streakView";
+import { StreakPanel } from "./StreakPanel";
 
 const rng = new MathRandomSource();
 
@@ -64,6 +66,9 @@ export function GoStop() {
   const [piles, setPiles] = useState<{ a: HwatuCard[]; b: HwatuCard[] } | null>(null);
   const [goCount, setGoCount] = useState(0);
   const [result, setResult] = useState<GoStopShowdownResult | null>(null);
+  // 고스톱 통산 전적("gostop")을 화면에 표시한다(저장 변경을 구독해 즉시 갱신).
+  const records = useSyncExternalStore(subscribe, listRecords);
+  const streak = selfStreakSummary(records, "gostop");
 
   function startDeal() {
     const deck = shuffle(createHwatuDeck(), rng);
@@ -83,7 +88,8 @@ export function GoStop() {
     );
     setResult(r);
     // 매치 단위로 한 번만 기록(쇼다운 확정 시점).
-    recordGame("gostop", "나", "CPU", r.winner);
+    // 표시(selfStreakSummary)와 기록이 동일 라벨을 쓰도록 SELF_PLAYER 상수 사용.
+    recordGame("gostop", SELF_PLAYER, "CPU", r.winner);
   }
 
   function reset() {
@@ -160,6 +166,8 @@ export function GoStop() {
           </button>
         </div>
       )}
+
+      <StreakPanel title="고스톱 통산 전적 (나)" summary={streak} />
     </section>
   );
 }
