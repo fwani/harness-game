@@ -9,13 +9,24 @@ import {
 import { startGame, applyMove, type JanggiState } from "../../application/playJanggi";
 import { recordGame } from "../records";
 import { boardGridStyle } from "./boardView";
-import { pieceGlyph, sideMark, pieceAriaLabel } from "./janggiView";
+import {
+  pieceGlyph,
+  sideMark,
+  pieceName,
+  pieceAriaLabel,
+  capturedPieces,
+} from "./janggiView";
 
 const SIDE_LABEL: Record<Side, string> = { cho: "초(楚)", han: "한(漢)" };
+
+/** 따낸 기물이 속했던(잃은) 진영 = 잡은 진영의 반대. */
+const lostSideOf = (capturer: Side): Side => (capturer === "cho" ? "han" : "cho");
 
 export function Janggi() {
   const [state, setState] = useState<JanggiState>(() => startGame());
   const [selected, setSelected] = useState<Pos | null>(null);
+  // 직전 수(from→to) 칸 강조용. 2인 핫시트에서 상대가 무엇을 두고 잡았는지 인지하게 한다.
+  const [lastMove, setLastMove] = useState<{ from: Pos; to: Pos } | null>(null);
 
   // 선택한 기물이 갈 수 있는 합법 수(현재 차례 기준).
   const targets: Pos[] =
@@ -34,6 +45,7 @@ export function Janggi() {
       const next = applyMove(state, selected, { x, y });
       setState(next);
       setSelected(null);
+      setLastMove({ from: selected, to: { x, y } });
       if (next.finished && next.winner !== null) {
         recordGame("janggi", "초", "한", next.winner === "cho" ? "a" : "b");
       }
@@ -50,9 +62,39 @@ export function Janggi() {
   const reset = () => {
     setState(startGame());
     setSelected(null);
+    setLastMove(null);
   };
 
   const inCheck = !state.finished && isInCheck(state.board, state.next);
+
+  // 따냄 현황(보드만으로 도출). captured[side] = 그 진영이 잡은 상대 기물 집계.
+  const captured = capturedPieces(state.board);
+  const isLastMove = (x: number, y: number) =>
+    lastMove !== null &&
+    ((lastMove.from.x === x && lastMove.from.y === y) ||
+      (lastMove.to.x === x && lastMove.to.y === y));
+
+  // 한 진영의 따냄 목록을 글자+텍스트(색 비의존)로 렌더한다. 비어 있으면 "없음".
+  const renderCaptures = (side: Side) => {
+    const list = captured[side];
+    const lost = lostSideOf(side);
+    if (list.length === 0) {
+      return <span className="janggi-captures-empty">없음</span>;
+    }
+    return list.map((c) => (
+      <span key={c.type} className="janggi-captured-item">
+        <span
+          className={`piece ${lost} legend-mark`}
+          aria-hidden="true"
+        >
+          {pieceGlyph(c.type, lost)}
+        </span>
+        <span className="janggi-captured-name">
+          {pieceName(c.type, lost)}×{c.count}
+        </span>
+      </span>
+    ));
+  };
 
   return (
     <section className="game">
@@ -80,6 +122,14 @@ export function Janggi() {
         </span>{" "}
         한(漢)은 각형·정자(車包馬象士).
       </p>
+      <div className="hint janggi-captures" role="status" aria-live="polite">
+        <span className="janggi-captures-row">
+          <strong>{SIDE_LABEL.cho} 따냄:</strong> {renderCaptures("cho")}
+        </span>
+        <span className="janggi-captures-row">
+          <strong>{SIDE_LABEL.han} 따냄:</strong> {renderCaptures("han")}
+        </span>
+      </div>
       <div
         className="board janggi"
         style={boardGridStyle(WIDTH)}
@@ -92,6 +142,7 @@ export function Janggi() {
               "janggi-cell",
               sel ? "selected" : "",
               isTarget(x, y) ? "target" : "",
+              isLastMove(x, y) ? "last-move" : "",
             ]
               .filter(Boolean)
               .join(" ");
