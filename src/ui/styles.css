@@ -2074,3 +2074,81 @@ button.dots-edge:disabled {
   margin: 8px 0;
   gap: 4px;
 }
+
+/* --- 네모로직(Nonogram) --- */
+
+/* 좁은 화면에서 단서+격자가 잘리지 않게 가로 스크롤을 허용한다. */
+.nonogram-scroll {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.nonogram-grid {
+  gap: 2px;
+  background: #1f2937;
+  border: 2px solid #111827;
+  border-radius: 4px;
+  padding: 4px;
+}
+
+/* 좌상단 빈 코너(단서 격자 정렬용). */
+.nonogram-corner {
+  background: transparent;
+}
+
+/* 행/열 단서: 색이 아니라 숫자 텍스트로 안내(색 비의존). */
+.nonogram-clue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e5e7eb;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  line-height: 1.1;
+  min-height: 1.6rem;
+  padding: 0 4px;
+}
+
+/* 열 단서는 위→아래로 묶음을 세로로 쌓는다. */
+.nonogram-col-clue {
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0;
+}
+
+.nonogram-row-clue {
+  justify-content: flex-end;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* 격자 칸: 색뿐 아니라 기호(■/✕)와 aria-label로 구분(색 비의존). */
+.nonogram-cell {
+  background: #f8fafc;
+  border: 1px solid #9ca3af;
+  color: #111827;
+  font-size: 1rem;
+  line-height: 1;
+  min-width: 1.6rem;
+}
+
+.nonogram-cell:not(:disabled):hover,
+.nonogram-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 칠해진 칸: 어두운 채움 + ■ 기호. */
+.nonogram-cell.nono-filled {
+  background: #1f2937;
+  color: #f8fafc;
+}
+
+/* X 표시 칸: 밝은 바탕 + ✕ 기호. */
+.nonogram-cell.nono-crossed {
+  color: #b91c1c;
+}
+
+.nonogram-cell:disabled {
+  cursor: default;
+  opacity: 0.95;
+}

@@ -46,6 +46,7 @@ export type GameId =
   | "snakesandladders"
   | "wordle"
   | "mastermind"
+  | "nonogram"
   | "rps-match";
 
 /** 한 판에서 한 플레이어의 결과. */
