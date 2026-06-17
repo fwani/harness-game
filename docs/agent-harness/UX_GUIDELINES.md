@@ -55,6 +55,7 @@
 | 카드 딜 (`Deal.tsx`) | 인원·장수 입력 → 딜 | ✅ 딜만 | 게임이 아닌 유틸. 입력 검증 에러 표시 있음 |
 | 하이카드 (`HighCard.tsx`) | 카드 뽑기 → CPU와 비교 | ✅ vs CPU | `playHighCard` 연동, 결과를 전적에 저장 |
 | 바카라 (`Baccarat.tsx`) | 딜링 → 뱅커와 1판 | ✅ vs 뱅커 | `playBaccaratRound` 연동(punto banco 타블로), 손패·끗수·승패 표시, 전적 저장 |
+| 블랙잭 (`Blackjack.tsx`) | 딜링 → 딜러와 1판 자동 진행 | ✅ vs 딜러 | `playBlackjackRound` 연동. 양측 손패·합계(버스트/블랙잭 라벨)·승패 표시, 전적 저장 |
 | 오목 (`Gomoku.tsx`) | 2인 로컬 착수 | ✅ 승자 판정까지 | 턴/승자 표시·리셋·전적 저장(레퍼런스 구현) |
 | 바둑 (`Go.tsx`) | 2인 로컬 착수+따냄+패스 | ✅ 계가·승자까지 | `playGo`+`scoreArea` 연동. 패스→2패스 종료→계가, 전적 저장 |
 | 오델로 (`Reversi.tsx`) | 2인 로컬 합법 수 착수 | ✅ 자동 패스·계가·승자까지 | `playReversi` 연동. 합법 수만 활성·자동 패스 안내·디스크 점수·전적 저장 |
