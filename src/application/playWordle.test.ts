@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  WORDLE_VALID_GUESSES,
   WORDLE_WORDS,
+  isWordleGuessWord,
   pickRandomWordleAnswer,
   playWordleGuess,
   startWordleGame,
@@ -52,6 +54,36 @@ describe("WORDLE_WORDS", () => {
       expect(() => createWordleGame(word)).not.toThrow();
       expect(word).toMatch(/^[a-z]+$/);
       expect(word.length).toBe(len);
+    }
+  });
+});
+
+describe("WORDLE_VALID_GUESSES / isWordleGuessWord", () => {
+  it("사전의 모든 단어가 createWordleGame을 통과한다(영문자만, 5글자)", () => {
+    expect(WORDLE_VALID_GUESSES.size).toBeGreaterThan(0);
+    for (const word of WORDLE_VALID_GUESSES) {
+      expect(word).toMatch(/^[a-z]+$/);
+      expect(word.length).toBe(5);
+      expect(() => createWordleGame(word)).not.toThrow();
+    }
+  });
+
+  it("정답 후보(WORDLE_WORDS)는 모두 사전에 포함된다(정답은 항상 유효 추측)", () => {
+    for (const word of WORDLE_WORDS) {
+      expect(WORDLE_VALID_GUESSES.has(word)).toBe(true);
+      expect(isWordleGuessWord(word)).toBe(true);
+    }
+  });
+
+  it("실제 영단어는 등재로 본다(대소문자·앞뒤 공백 무관)", () => {
+    expect(isWordleGuessWord("apple")).toBe(true);
+    expect(isWordleGuessWord("APPLE")).toBe(true);
+    expect(isWordleGuessWord("  Crane ")).toBe(true);
+  });
+
+  it("사전에 없는 임의 자음 나열은 비단어로 거른다", () => {
+    for (const nonWord of ["zxqvw", "fghjk", "bcdfg", "pqrst", "vwxyz", "jklmn"]) {
+      expect(isWordleGuessWord(nonWord)).toBe(false);
     }
   });
 });

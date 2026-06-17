@@ -127,4 +127,34 @@ describe("wordleView.parseWordleGuess", () => {
       error: "5글자 영단어를 입력하세요. (입력: 3글자)",
     });
   });
+
+  it("사전 미지정이면 사전 검증을 건너뛴다(형식만 검사, 기존 동작 유지)", () => {
+    expect(parseWordleGuess("zxqvw", 5)).toEqual({ guess: "zxqvw" });
+  });
+
+  it("사전이 주어지면 등재된 단어만 통과한다(대소문자·공백 무관)", () => {
+    const dict = new Set(["apple", "brave"]);
+    expect(parseWordleGuess("  Apple ", 5, dict)).toEqual({ guess: "apple" });
+    expect(parseWordleGuess("BRAVE", 5, dict)).toEqual({ guess: "brave" });
+  });
+
+  it("사전에 없는 임의 5글자(예: ZXQVW)는 시도 소진 없이 사유를 안내한다", () => {
+    const dict = new Set(["apple", "brave"]);
+    for (const nonWord of ["zxqvw", "fghjk", "bcdfg", "pqrst", "vwxyz", "jklmn"]) {
+      expect(parseWordleGuess(nonWord, 5, dict)).toEqual({
+        error: "사전에 없는 단어입니다. 실제 영단어를 입력하세요.",
+      });
+    }
+  });
+
+  it("사전 검증은 형식 검사(길이/영문) 다음에 적용된다", () => {
+    const dict = new Set(["apple"]);
+    // 비영문/길이 오류가 사전 미등재보다 먼저 안내된다.
+    expect(parseWordleGuess("appl3", 5, dict)).toEqual({
+      error: "영문자만 입력하세요(공백/숫자/기호 불가).",
+    });
+    expect(parseWordleGuess("app", 5, dict)).toEqual({
+      error: "5글자 영단어를 입력하세요. (입력: 3글자)",
+    });
+  });
 });

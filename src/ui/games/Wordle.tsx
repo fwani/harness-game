@@ -1,5 +1,6 @@
 import { useState, useSyncExternalStore } from "react";
 import {
+  WORDLE_VALID_GUESSES,
   playWordleGuess,
   startWordleGame,
   type WordleStatus,
@@ -38,8 +39,9 @@ export function Wordle() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (finished) return;
-    // 길이/비영문은 화면에서 먼저 한국어로 안내한다(조용한 무시 금지). 보드는 불변.
-    const parsed = parseWordleGuess(input, state.wordLength);
+    // 길이/비영문/사전 미등재는 화면에서 먼저 한국어로 안내한다(조용한 무시 금지). 보드는 불변,
+    // 시도도 소진하지 않는다. 사전 미등재(예: ZXQVW 같은 비단어)는 표준 워들처럼 거른다.
+    const parsed = parseWordleGuess(input, state.wordLength, WORDLE_VALID_GUESSES);
     if ("error" in parsed) {
       setError(parsed.error);
       return;

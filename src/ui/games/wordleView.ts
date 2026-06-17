@@ -114,9 +114,16 @@ export type ParsedWordleGuess = { guess: string } | { error: string };
  * - 앞뒤 공백은 무시한다. 빈 입력이면 길이 안내.
  * - 영문자(a–z) 이외 문자가 있으면: "영문자만 입력하세요(공백/숫자/기호 불가)."
  * - 길이가 wordLength와 다르면: "{wordLength}글자 영단어를 입력하세요." (입력 길이 안내 포함)
+ * - dictionary가 주어지면 사전에 없는 단어(예: ZXQVW 같은 비단어)는 거른다:
+ *   "사전에 없는 단어입니다. 실제 영단어를 입력하세요." (안내문이 "영단어"를 약속하므로 일치시킴)
  * 성공 시 결과는 항상 도메인 isLegalWordleGuess의 길이·영문 조건을 만족한다(소문자).
+ * 사전 검증을 통과하지 못한 입력은 사유만 돌려주고 시도를 소진시키지 않는다(시도 적용은 호출부 책임).
  */
-export function parseWordleGuess(raw: string, wordLength: number): ParsedWordleGuess {
+export function parseWordleGuess(
+  raw: string,
+  wordLength: number,
+  dictionary?: ReadonlySet<string>,
+): ParsedWordleGuess {
   const compact = raw.trim();
   if (compact === "") {
     return { error: `${wordLength}글자 영단어를 입력하세요.` };
@@ -129,5 +136,9 @@ export function parseWordleGuess(raw: string, wordLength: number): ParsedWordleG
       error: `${wordLength}글자 영단어를 입력하세요. (입력: ${compact.length}글자)`,
     };
   }
-  return { guess: compact.toLowerCase() };
+  const guess = compact.toLowerCase();
+  if (dictionary !== undefined && !dictionary.has(guess)) {
+    return { error: "사전에 없는 단어입니다. 실제 영단어를 입력하세요." };
+  }
+  return { guess };
 }
