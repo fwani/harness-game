@@ -9,6 +9,7 @@ import {
 } from "../../domain/janggi";
 import { startGame, applyMove, type JanggiState } from "../../application/playJanggi";
 import { recordGame } from "../records";
+import { boardGridStyle } from "./boardView";
 
 // [cho 쪽 한자, han 쪽 한자]
 const GLYPH: Record<PieceType, [string, string]> = {
@@ -83,7 +84,7 @@ export function Janggi() {
       </p>
       <div
         className="board janggi"
-        style={{ gridTemplateColumns: `repeat(${WIDTH}, 1fr)` }}
+        style={boardGridStyle(WIDTH)}
       >
         {state.board.map((row, y) =>
           row.map((piece, x) => {
