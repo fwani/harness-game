@@ -12,6 +12,7 @@ launchd (로컬 macOS, 컴퓨터가 켜져 있을 때)
  ├─ com.fwani.harness-game.planner → planner.sh → 백로그<TARGET(기본 6)이면 planner-prompt.md로 이슈 생성
  ├─ com.fwani.harness-game.dev     → dev.sh     → ready-for-dev 있으면 dev-prompt.md로 구현→PR→머지
  ├─ com.fwani.harness-game.dev2    → dev.sh (AUTODEV_WORKER=2) → 2번째 병렬 개발 워커
+ ├─ com.fwani.harness-game.dev3    → dev.sh (AUTODEV_WORKER=3) → 3번째 병렬 개발 워커
  └─ com.fwani.harness-game.qa      → qa.sh      → 게임 1개를 브라우저로 플레이테스트 → qa-finding 이슈
 ```
 
@@ -66,19 +67,23 @@ done
 ## 다중 dev 워커
 
 `dev.sh`는 `AUTODEV_WORKER` 환경변수로 병렬 워커를 지원한다. 미설정이면 1차 워커
-(`repo-dev`/`dev.log`, actionable≥1). 설정하면 보조 워커(`repo-dev<N>`/`dev-<N>.log`,
-**actionable≥2일 때만**, 시작 시 25초 스태거)로 동작해 1차 워커와 같은 이슈를 동시에
-claim하지 않게 한다. `com.fwani.harness-game.dev2.plist.template`가 2번 워커 예시
-(`AUTODEV_WORKER=2`). 추가 설치:
+(`repo-dev`/`dev.log`, actionable≥1). `N`을 설정하면 워커 N(`repo-dev<N>`/`dev-<N>.log`)으로
+동작하며, **actionable이 N건 이상일 때만** + **(N-1)×20초 스태거** 후 시작한다. 즉 dev=1·
+dev2=2·dev3=3건 이상에서만 깨어나 낮은 번호 워커가 먼저 claim하므로, 워커들이 항상 서로
+다른 이슈를 잡는다. `com.fwani.harness-game.dev2/dev3.plist.template`가 예시
+(`AUTODEV_WORKER=2`/`3`). 워커 추가(예: dev3) 설치:
 
 ```sh
-sed "s#__HOME__#$HOME#g" automation/com.fwani.harness-game.dev2.plist.template \
-  > "$HOME/Library/LaunchAgents/com.fwani.harness-game.dev2.plist"
-launchctl bootstrap gui/$(id -u) "$HOME/Library/LaunchAgents/com.fwani.harness-game.dev2.plist"
+for N in 2 3; do
+  sed "s#__HOME__#$HOME#g" "automation/com.fwani.harness-game.dev$N.plist.template" \
+    > "$HOME/Library/LaunchAgents/com.fwani.harness-game.dev$N.plist"
+  launchctl bootstrap gui/$(id -u) "$HOME/Library/LaunchAgents/com.fwani.harness-game.dev$N.plist"
+done
 ```
 
-> 보조 워커는 in-progress-ai claim + 스태거 + actionable≥2 게이트로 중복을 줄이지만,
-> 두 워커가 거의 동시에 목록을 조회하는 극히 짧은 창에선 같은 이슈를 집을 수 있다(드묾).
+> 워커 수가 늘면 백로그도 그만큼 필요하다(planner `TARGET` ≥ 워커 수). 현재 TARGET=6.
+> in-progress-ai claim + 번호별 스태거 + actionable≥N 게이트로 중복을 막지만, 거의 동시에
+> 목록을 조회하는 극히 짧은 창에선 같은 이슈를 집을 수 있다(드묾).
 
 ## 운영
 

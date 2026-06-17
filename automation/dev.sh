@@ -16,8 +16,8 @@ LOG="$BASE/dev${W:+-$W}.log"
 ts() { date '+%F %T'; }
 mkdir -p "$BASE"
 
-# 보조 워커는 1차 워커가 가장 오래된 이슈를 먼저 claim(in-progress-ai)하도록 잠깐 스태거 — 중복 claim 방지.
-[ -n "$W" ] && sleep 25
+# 보조 워커는 낮은 번호 워커가 먼저 claim(in-progress-ai)하도록 번호별 스태거 — 중복 claim 방지.
+[ -n "$W" ] && sleep $(( (10#$W - 1) * 20 ))
 
 # 0) 시간대별 간격 게이트: 09~18시 = 180초(3분), 그 외 = 600초(10분).
 H=$((10#$(date +%H)))
@@ -33,8 +33,8 @@ actionable=$(gh issue list --repo "$REPO" --label ready-for-dev --state open \
   --jq '[.[] | select((.labels|map(.name)|index("in-progress-ai"))|not) | select(.assignees|length==0)] | length' \
   2>>"$LOG")
 [ -z "$actionable" ] && { echo "$(ts) gh 조회 실패 — skip" >>"$LOG"; exit 0; }
-# 1차 워커는 1건 이상, 보조 워커는 2건 이상일 때만 동작(외톨이 이슈는 1차에 양보 → 같은 이슈 중복 claim 회피).
-MIN=1; [ -n "$W" ] && MIN=2
+# 워커 N은 actionable이 N건 이상일 때만 동작(dev=1, dev2=2, dev3=3 …) → 셋이 항상 서로 다른 이슈를 잡도록 보장.
+MIN=1; [ -n "$W" ] && MIN=$((10#$W))
 [ "$actionable" -lt "$MIN" ] && { echo "$(ts) actionable=$actionable < $MIN — skip" >>"$LOG"; exit 0; }
 
 # 2) 전용 클론 보장
