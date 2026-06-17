@@ -5,6 +5,7 @@ import type { GameId } from "../../domain/gameRecord";
 
 export const GAME_LABEL: Record<GameId, string> = {
   rps: "가위바위보",
+  mukjjippa: "묵찌빠",
   oddEven: "홀짝",
   gomoku: "오목",
   go: "바둑",
