@@ -35,6 +35,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   battleship: "배틀십",
   hanoi: "하노이탑",
   slidepuzzle: "슬라이드 퍼즐",
+  hangman: "행맨",
   "rps-match": "다전제(가위바위보)",
 };
 
