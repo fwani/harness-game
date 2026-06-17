@@ -73,7 +73,11 @@ export function Janggi() {
       <h2>장기 (2인)</h2>
       <p className="hint">
         {state.finished
-          ? `${SIDE_LABEL[state.winner!]} 승리! 🎉 (상대 장 포획)`
+          ? `${SIDE_LABEL[state.winner!]} 승리! 🎉 ${
+              state.endReason === "checkmate"
+                ? "(외통수(체크메이트)로 승리)"
+                : "(상대 장 포획)"
+            }`
           : `${SIDE_LABEL[state.next]} 차례 — 기물을 누르면 갈 수 있는 곳이 표시됩니다.`}
         {inCheck ? " · 장군!" : ""}
       </p>

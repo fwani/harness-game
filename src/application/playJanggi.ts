@@ -1,23 +1,29 @@
 // Application layer: orchestrates a single 2-player Janggi game. Depends on domain only.
-// 장기(Janggi)의 2인 교대 진행 + 차례 관리 + 승패(장군 포획) 판정을 도메인 위에 얇게 올린다.
-// 장군/외통(check/checkmate)·빅장 금지·점수제·기록 저장은 이 모듈 범위 밖이다(별도 이슈).
+// 장기(Janggi)의 2인 교대 진행 + 차례 관리 + 승패(장 포획·외통) 판정을 도메인 위에 얇게 올린다.
+// 외통(checkmate)은 도메인 isCheckmate로 정식 판정한다. 빅장 금지·점수제·기록 저장은 범위 밖이다(별도 이슈).
 import {
   createInitialBoard,
   legalMovesFrom,
   applyMove as applyDomainMove,
+  isCheckmate,
   type Board,
   type Side,
   type Pos,
 } from "../domain/janggi";
 
+/** 게임 종료 사유. "capture"=상대 장 포획, "checkmate"=외통수. 미종료면 null. */
+export type JanggiEndReason = "capture" | "checkmate";
+
 export interface JanggiState {
   board: Board;
   /** 다음에 둘 차례. 시작은 "cho". */
   next: Side;
-  /** 게임 종료 여부(상대 general 포획 시 true). */
+  /** 게임 종료 여부(상대 general 포획 또는 외통 시 true). */
   finished: boolean;
   /** 승자. 미종료면 null. */
   winner: Side | null;
+  /** 종료 사유. 미종료면 null. */
+  endReason: JanggiEndReason | null;
 }
 
 /** 상대 진영으로 토글한다. */
@@ -44,6 +50,7 @@ export function startGame(): JanggiState {
     next: "cho",
     finished: false,
     winner: null,
+    endReason: null,
   };
 }
 
@@ -51,7 +58,10 @@ export function startGame(): JanggiState {
  * 현재 차례(state.next)의 from→to 한 수를 적용한 새 상태를 반환한다(불변: 입력 state는 변형하지 않는다).
  * - 이미 종료(finished)면 throw.
  * - 도메인 applyMove가 throw하는 경우(불법 수)는 그대로 전파한다.
- * - 결과적으로 상대 general이 보드에서 사라지면 finished=true, winner=둔 쪽. 아니면 next 토글.
+ * - 종료 판정 우선순위:
+ *   1) 상대 general이 보드에서 사라지면(직접 포획) finished=true, winner=둔 쪽, endReason="capture".
+ *   2) 그렇지 않더라도 상대가 외통수(isCheckmate)면 finished=true, winner=둔 쪽, endReason="checkmate".
+ *   3) 둘 다 아니면 next 토글(미종료).
  */
 export function applyMove(state: JanggiState, from: Pos, to: Pos): JanggiState {
   if (state.finished) {
@@ -59,12 +69,22 @@ export function applyMove(state: JanggiState, from: Pos, to: Pos): JanggiState {
   }
   const side = state.next;
   const board = applyDomainMove(state.board, side, from, to);
-  const opponentCaptured = !hasGeneral(board, opponent(side));
+  const foe = opponent(side);
+  const opponentCaptured = !hasGeneral(board, foe);
+  // 장 포획이면 즉시 종료. 아니면 외통(상대가 어떤 합법 수로도 장군을 벗어나지 못함) 판정.
+  const checkmated = !opponentCaptured && isCheckmate(board, foe);
+  const finished = opponentCaptured || checkmated;
+  const endReason: JanggiEndReason | null = opponentCaptured
+    ? "capture"
+    : checkmated
+      ? "checkmate"
+      : null;
   return {
     board,
-    next: opponentCaptured ? side : opponent(side),
-    finished: opponentCaptured,
-    winner: opponentCaptured ? side : null,
+    next: finished ? side : foe,
+    finished,
+    winner: finished ? side : null,
+    endReason,
   };
 }
 
