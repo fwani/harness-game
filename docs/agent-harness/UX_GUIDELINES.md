@@ -64,7 +64,7 @@
 | 오델로 (`Reversi.tsx`) | 2인 로컬 / vs CPU 합법 수 착수 | ✅ vs CPU·자동 패스·계가·승자까지 | `playReversi`+`reversiCpuView`(`chooseRandomReversiMove`) 연동. 모드 토글·합법 수만 활성·자동 패스 안내·디스크 점수·전적 저장 |
 | 장기 (`Janggi.tsx`) | 2인 로컬 / vs CPU 기물 이동 | ✅ vs CPU·승부까지 | 모드 토글(2인 로컬/vs CPU). vs CPU는 사람=초(선)·CPU=한이며 `chooseCpuJanggiMove`(`janggiCpuView`→`chooseRandomJanggiMove`)로 한을 자동 착수(둘 수 없으면 사람 승리). 선택·합법 수·이동·턴·장군 경고·외통/포획/빅장 승부·전적 저장. 진영 구분은 색뿐 아니라 자형(초=이체자)·도형(초 원형/한 각형)·접근성 라벨로도 표시(`janggiView`, 색 비의존) |
 | 윷놀이 (`Yut.tsx`) | 윷 던지기 → CPU 자동 던지기 → 외곽 20칸 완주 경주 | ✅ vs CPU | `playYutTurn` 연동. 도개걸윷모 텍스트 라벨·진행도 막대(traveled/20)·승패 표시, 전적 저장(`yut`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
-| 관전 (`SelfPlay.tsx`) | 보드 게임 선택 → CPU vs CPU 한 판 자동 진행 → 결과 | ✅ 종료·승자/무승부까지 | `playEngineGame`+엔진 어댑터(`createGomokuEngine`/`createGoEngine`/`createReversiEngine`)+`chooseRandom*Move`를 `selfPlayView`로 묶어 호출. 오목/바둑/오델로 지원, 승자(side 라벨)·무승부·수순 길이·최종 보드 요약 표시, 다시 돌리기 회복 경로 |
+| 관전 (`SelfPlay.tsx`) | 보드 게임 선택 → CPU vs CPU 한 판 자동 진행 → 결과 | ✅ 종료·승자/무승부까지 | `playEngineGame`+엔진 어댑터(`createGomokuEngine`/`createGoEngine`/`createReversiEngine`/`createJanggiEngine`)+`chooseRandom*Move`를 `selfPlayView`로 묶어 호출. 오목/바둑/오델로/장기 지원, 승자(게임별 side 라벨: 흑/백 또는 초/한)·무승부·수순 길이·최종 보드 요약 표시, 다시 돌리기 회복 경로. 장기는 `janggiView` 기물 자형/도형/접근성 라벨로 색 비의존 렌더하고 수 제한(무작위 무한 진행) 도달 시 "무종국(수 제한 도달)"으로 우아하게 안내 |
 | 녹아웃 (`SingleElimination.tsx`) | 참가자 입력 → 대진(부전승) → 라운드별 승자 선택 → 우승자 | ✅ 우승자까지 | `generateSingleEliminationFirstRound`+`advanceSingleEliminationRound` 연동. 시드 부전승 안내·라운드 라벨(결승/준결승/N강)·우승 표시·리셋 |
 | 전적 (`Records.tsx`) | 플레이어별 승/패/무 + ELO 레이팅 + 상대 전적 + 기록 | ✅ | 공유 저장소 구독, 빈 상태 표시, localStorage 영속(새로고침 후 유지). 맞붙은 쌍별 상대 전적(`headToHead`) 표 노출 |
 
