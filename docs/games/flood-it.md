@@ -26,7 +26,7 @@
 | 레이어 | 위치 | 내용 | 상태 |
 | --- | --- | --- | --- |
 | 도메인 | [`src/domain/floodIt.ts`](../../src/domain/floodIt.ts) | `createFloodIt`/`currentRegion`/`isLegalFloodMove`/`legalFloodMoves`/`applyFloodMove`/`isFloodItSolved`/`topLeftColor` | ✅ |
-| 애플리케이션 | (후속 짝 이슈) | `createScrambledFloodIt`(또는 `createFloodItBoard`, `RandomSource` 주입으로 무작위·풀이 가능 시작 보드 생성) | ❌ |
+| 애플리케이션 | [`src/application/createScrambledFloodIt.ts`](../../src/application/createScrambledFloodIt.ts) | `createScrambledFloodIt`(`RandomSource` 주입으로 무작위 시작 보드 생성, 시작은 단색 미완성 보장) | ✅ |
 | UI | (후속 짝 이슈) | `FloodIt.tsx`(색 비의존 라벨/기호 렌더, 턴 수 제한 표시, 클리어 판정, 새 게임, 전적 저장) | ❌ |
 
 ## 4. UI/UX 요구사항 (후속 UI 이슈에서 충족)
@@ -44,7 +44,7 @@
 
 ## 5. 알려진 갭 / 백로그
 
-- **무작위 시작 보드 생성(application)**: `RandomSource` 주입으로 결정적·풀이 가능 보드 생성
-  헬퍼가 후속 짝 이슈로 필요(`createScrambledLightsOut` 패턴 참고).
-- **플레이 UI 연동(`FloodIt.tsx`)**: 도메인만 존재 — UI 연동 후속 짝 이슈로 필요.
+- ~~**무작위 시작 보드 생성(application)**~~: `createScrambledFloodIt`로 구현됨
+  (`RandomSource` 주입·시작은 단색 미완성 보장, 플러드 잇은 임의 격자가 항상 풀이 가능해 solvability 보정 불필요).
+- **플레이 UI 연동(`FloodIt.tsx`)**: 도메인·application은 존재 — UI 연동 후속 짝 이슈로 필요.
 - **턴 수 제한/목표 수**: 최소 수 계산·턴 제한 규칙은 도메인 범위 밖(정의 시 application/UI).
