@@ -197,7 +197,7 @@ export function DotsAndBoxes() {
                   cell.owner ? `${label(cell.owner)} 박스` : "빈 박스"
                 }
               >
-                {cell.owner ? `P${cell.owner}` : ""}
+                {cell.owner ? label(cell.owner) : ""}
               </span>
             );
           }
