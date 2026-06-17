@@ -10,6 +10,7 @@ import { Baccarat } from "./games/Baccarat";
 import { Blackjack } from "./games/Blackjack";
 import { Sutda } from "./games/Sutda";
 import { Poker } from "./games/Poker";
+import { OneCard } from "./games/OneCard";
 import { GoStop } from "./games/GoStop";
 import { Gomoku } from "./games/Gomoku";
 import { Go } from "./games/Go";
@@ -59,6 +60,7 @@ type GameKey =
   | "blackjack"
   | "sutda"
   | "poker"
+  | "onecard"
   | "gostop"
   | "gomoku"
   | "go"
@@ -107,6 +109,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "blackjack", label: "블랙잭", render: () => <Blackjack /> },
   { key: "sutda", label: "섯다", render: () => <Sutda /> },
   { key: "poker", label: "포커", render: () => <Poker /> },
+  { key: "onecard", label: "원카드", render: () => <OneCard /> },
   { key: "gostop", label: "고스톱", render: () => <GoStop /> },
   { key: "gomoku", label: "오목", render: () => <Gomoku /> },
   { key: "go", label: "바둑", render: () => <Go /> },

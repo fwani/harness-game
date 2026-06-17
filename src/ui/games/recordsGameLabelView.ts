@@ -17,6 +17,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   baccarat: "바카라",
   sutda: "섯다",
   poker: "포커",
+  onecard: "원카드",
   // 레거시 공유 키로 저장된 과거 기록(여러 카드 게임이 섞여 있음)을 구분해 표시한다.
   card: "카드(이전 기록)",
   reversi: "오델로",
