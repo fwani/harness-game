@@ -27,20 +27,25 @@
 | --- | --- | --- | --- |
 | 도메인 | [`src/domain/floodIt.ts`](../../src/domain/floodIt.ts) | `createFloodIt`/`currentRegion`/`isLegalFloodMove`/`legalFloodMoves`/`applyFloodMove`/`isFloodItSolved`/`topLeftColor` | ✅ |
 | 애플리케이션 | [`src/application/createScrambledFloodIt.ts`](../../src/application/createScrambledFloodIt.ts) | `createScrambledFloodIt`(`RandomSource` 주입으로 무작위 시작 보드 생성, 시작은 단색 미완성 보장) | ✅ |
-| UI | (후속 짝 이슈) | `FloodIt.tsx`(색 비의존 라벨/기호 렌더, 턴 수 제한 표시, 클리어 판정, 새 게임, 전적 저장) | ❌ |
+| UI | [`src/ui/games/FloodIt.tsx`](../../src/ui/games/FloodIt.tsx) · [`floodItView.ts`](../../src/ui/games/floodItView.ts) | `FloodIt.tsx`(색 비의존 라벨/기호 렌더, 턴 수 제한 표시, 클리어 판정, 새 게임, 전적 저장) | ✅ |
 
-## 4. UI/UX 요구사항 (후속 UI 이슈에서 충족)
+## 4. UI/UX 요구사항 (`FloodIt.tsx`에서 충족)
 
-- [ ] 목적·조작 한 줄 안내(`.hint`): 색을 골라 좌상단 영역을 넓혀 전부 한 색으로 만든다.
-- [ ] 진행 상태 표시: 사용한 턴 수(/제한)·현재 영역 크기 등. 턴제가 아니므로 진행을 노출.
-- [ ] 종료·승패 명확 구분(`.outcome`): 클리어(단색)와 턴 소진 실패를 구분.
-- [ ] 잘못된 입력 피드백: 같은 색(보드 불변) 선택은 `.error`로 안내.
-- [ ] 회복 경로: "새 게임" 버튼으로 무작위 보드 재생성 리셋.
-- [ ] 키보드 조작: 색 선택을 실제 `<button>`/키보드로.
-- [ ] 색 비의존: 색뿐 아니라 라벨/기호로 칸을 구분(색각 이상 대응).
-- [ ] 좁은 화면 미파손: 보드 `max-width`·반응형 셀.
-- [ ] 구현 로직 실제 호출: 화면이 도메인/application을 호출(보기 전용 아님).
-- [ ] 기록 저장 + 화면 내 통산 전적·연승(`StreakPanel`).
+- [x] 목적·조작 한 줄 안내(`.hint`): 색을 골라 좌상단 영역을 넓혀 전부 한 색으로 만든다.
+- [x] 진행 상태 표시: 사용한 턴 수(/제한)·현재 영역 크기 등. 턴제가 아니므로 진행을 노출.
+- [x] 종료·승패 명확 구분(`.outcome`): 클리어(단색)와 턴 소진 실패를 구분.
+- [x] 잘못된 입력 피드백: 같은 색(보드 불변) 선택은 `.error`로 안내(현재 색 버튼은 비활성).
+- [x] 회복 경로: "새 게임" 버튼으로 무작위 보드 재생성 리셋(보드 크기 변경 시에도 리셋).
+- [x] 키보드 조작: 색 선택을 실제 `<button>`/키보드로(팔레트 버튼).
+- [x] 색 비의존: 색뿐 아니라 문자 라벨(A~E)/기호로 칸을 구분(색각 이상 대응).
+- [x] 좁은 화면 미파손: 보드 `max-width`·반응형 셀(`boardGridStyle`).
+- [x] 구현 로직 실제 호출: 화면이 도메인(`applyFloodMove`/`isFloodItSolved` 등)/application(`createScrambledFloodIt`)을 호출(보기 전용 아님).
+- [x] 기록 저장 + 화면 내 통산 전적·연승(`GameId`=`floodit`, `StreakPanel`).
+
+## 4-1. 턴 제한
+
+- 뷰 레이어(`floodItView.floodItMoveLimit`)에서 `size * 2 + colorCount`로 정의해 화면에 노출한다
+  (도메인/application은 제한값을 제공하지 않으므로). 색은 5색 고정, 크기는 5/6/8 선택(기본 6×6).
 
 ## 5. 알려진 갭 / 백로그
 
