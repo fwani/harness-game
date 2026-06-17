@@ -31,6 +31,7 @@ import { Hanoi } from "./games/Hanoi";
 import { SlidePuzzle } from "./games/SlidePuzzle";
 import { PegSolitaire } from "./games/PegSolitaire";
 import { Sokoban } from "./games/Sokoban";
+import { FloodIt } from "./games/FloodIt";
 import { MemoryMatch } from "./games/MemoryMatch";
 import { Hangman } from "./games/Hangman";
 import { Pig } from "./games/Pig";
@@ -77,6 +78,7 @@ type GameKey =
   | "slidepuzzle"
   | "pegsolitaire"
   | "sokoban"
+  | "floodit"
   | "memory"
   | "hangman"
   | "pig"
@@ -122,6 +124,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "slidepuzzle", label: "슬라이드 퍼즐", render: () => <SlidePuzzle /> },
   { key: "pegsolitaire", label: "페그 솔리테어", render: () => <PegSolitaire /> },
   { key: "sokoban", label: "소코반", render: () => <Sokoban /> },
+  { key: "floodit", label: "플러드 잇", render: () => <FloodIt /> },
   { key: "memory", label: "메모리", render: () => <MemoryMatch /> },
   { key: "hangman", label: "행맨", render: () => <Hangman /> },
   { key: "pig", label: "피그", render: () => <Pig /> },

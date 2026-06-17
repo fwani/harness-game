@@ -1300,6 +1300,46 @@ button.dots-edge:disabled {
   box-shadow: inset 0 0 0 2px rgba(253, 224, 71, 0.85);
 }
 
+/* --- 플러드 잇(Flood-It) --- */
+
+.board.floodit {
+  background: #27272a;
+  border-color: #18181b;
+}
+
+/* 칸은 비인터랙티브 표시(색 선택은 팔레트 버튼). 색만이 아니라 문자(A~E)+aria-label로 구분. */
+.floodit-cell {
+  cursor: default;
+  font-weight: 700;
+  font-size: clamp(11px, 3.5vw, 18px);
+  color: #18181b;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+/* 색 선택 팔레트: 실제 버튼(키보드 포커스 가능). */
+.controls.palette {
+  flex-wrap: wrap;
+}
+
+.flood-swatch {
+  min-width: 3rem;
+  font-weight: 700;
+  color: #18181b;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(0, 0, 0, 0.45);
+}
+
+.flood-swatch:not(:disabled):hover,
+.flood-swatch:not(:disabled):focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.flood-swatch:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 /* --- 빙고(Bingo) --- */
 
 .board.bingo {
