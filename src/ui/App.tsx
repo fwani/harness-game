@@ -40,6 +40,7 @@ import { Bingo } from "./games/Bingo";
 import { SnakesAndLadders } from "./games/SnakesAndLadders";
 import { Wordle } from "./games/Wordle";
 import { Mastermind } from "./games/Mastermind";
+import { Nonogram } from "./games/Nonogram";
 import { Ladder } from "./games/Ladder";
 import { SelfPlay } from "./games/SelfPlay";
 import { Tournament } from "./games/Tournament";
@@ -89,6 +90,7 @@ type GameKey =
   | "snakesandladders"
   | "wordle"
   | "mastermind"
+  | "nonogram"
   | "ladder"
   | "selfplay"
   | "tournament"
@@ -137,6 +139,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "snakesandladders", label: "뱀과 사다리", render: () => <SnakesAndLadders /> },
   { key: "wordle", label: "워들", render: () => <Wordle /> },
   { key: "mastermind", label: "마스터마인드", render: () => <Mastermind /> },
+  { key: "nonogram", label: "네모로직", render: () => <Nonogram /> },
   { key: "ladder", label: "사다리타기", render: () => <Ladder /> },
   { key: "selfplay", label: "관전", render: () => <SelfPlay /> },
   { key: "tournament", label: "토너먼트", render: () => <Tournament /> },
