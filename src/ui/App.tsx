@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Rps } from "./games/Rps";
+import { BestOfN } from "./games/BestOfN";
 import { OddEven } from "./games/OddEven";
 import { Deal } from "./games/Deal";
 import { HighCard } from "./games/HighCard";
@@ -8,6 +9,7 @@ import { Baccarat } from "./games/Baccarat";
 import { Blackjack } from "./games/Blackjack";
 import { Sutda } from "./games/Sutda";
 import { Poker } from "./games/Poker";
+import { GoStop } from "./games/GoStop";
 import { Gomoku } from "./games/Gomoku";
 import { Go } from "./games/Go";
 import { Reversi } from "./games/Reversi";
@@ -20,6 +22,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 
 type GameKey =
   | "rps"
+  | "best-of-n"
   | "oddeven"
   | "deal"
   | "highcard"
@@ -28,6 +31,7 @@ type GameKey =
   | "blackjack"
   | "sutda"
   | "poker"
+  | "gostop"
   | "gomoku"
   | "go"
   | "reversi"
@@ -39,6 +43,7 @@ type GameKey =
 
 const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "rps", label: "가위바위보", render: () => <Rps /> },
+  { key: "best-of-n", label: "다전제", render: () => <BestOfN /> },
   { key: "oddeven", label: "홀짝", render: () => <OddEven /> },
   { key: "deal", label: "카드 딜", render: () => <Deal /> },
   { key: "highcard", label: "하이카드", render: () => <HighCard /> },
@@ -47,6 +52,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "blackjack", label: "블랙잭", render: () => <Blackjack /> },
   { key: "sutda", label: "섯다", render: () => <Sutda /> },
   { key: "poker", label: "포커", render: () => <Poker /> },
+  { key: "gostop", label: "고스톱", render: () => <GoStop /> },
   { key: "gomoku", label: "오목", render: () => <Gomoku /> },
   { key: "go", label: "바둑", render: () => <Go /> },
   { key: "reversi", label: "오델로", render: () => <Reversi /> },
