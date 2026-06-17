@@ -2152,3 +2152,71 @@ button.dots-edge:disabled {
   cursor: default;
   opacity: 0.95;
 }
+
+/* 스도쿠 9×9 보드: 밝은 바탕, 3×3 박스 경계는 굵게 구분. */
+.board.sudoku {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.sudoku-cell {
+  position: relative;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 0.5px solid #b9b08a;
+}
+
+/* 고정 단서: 굵게 + 구분 바탕(흐리게 처리하지 않는다). */
+.sudoku-cell.given {
+  font-weight: 800;
+  color: #111827;
+  background: #ece4c9;
+  opacity: 1;
+}
+
+.sudoku-cell:disabled {
+  cursor: default;
+}
+
+.sudoku-cell:not(:disabled):hover,
+.sudoku-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
+.sudoku-cell.selected {
+  background: #cfe8ff;
+  outline: 2px solid #1d4ed8;
+  outline-offset: -2px;
+}
+
+/* 충돌 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.sudoku-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.sudoku-cell .sudoku-conflict-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+/* 3×3 박스 경계(오른쪽/아래)는 굵은 선으로 구분. */
+.sudoku-cell.box-right {
+  border-right: 2px solid #1f2937;
+}
+
+.sudoku-cell.box-bottom {
+  border-bottom: 2px solid #1f2937;
+}
+
+/* 숫자 입력 패드: 줄바꿈 허용으로 좁은 화면 대응. */
+.controls.num-pad {
+  flex-wrap: wrap;
+}
