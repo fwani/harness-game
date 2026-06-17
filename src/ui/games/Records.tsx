@@ -1,24 +1,10 @@
 import { useSyncExternalStore } from "react";
-import type { GameId } from "../../domain/gameRecord";
 import { getStandings, listRecords, recordsPersisted, subscribe } from "../records";
 import { toEloLeaderboard } from "./recordsEloView";
 import { recordsPersistenceHint } from "./recordsHintView";
 import { toHeadToHeadList } from "./recordsHeadToHeadView";
 import { buildRecordsByGameRows } from "./recordsByGameView";
-
-const GAME_LABEL: Record<GameId, string> = {
-  rps: "가위바위보",
-  oddEven: "홀짝",
-  gomoku: "오목",
-  card: "하이카드",
-  go: "바둑",
-  janggi: "장기",
-  reversi: "오델로",
-  dice: "주사위",
-  yut: "윷놀이",
-  gostop: "고스톱",
-  "rps-match": "다전제(가위바위보)",
-};
+import { GAME_LABEL } from "./recordsGameLabelView";
 
 const RESULT_LABEL = { win: "승", loss: "패", draw: "무" } as const;
 

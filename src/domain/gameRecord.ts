@@ -10,6 +10,13 @@ export type GameId =
   | "gomoku"
   | "go"
   | "janggi"
+  // 카드 게임은 각자 고유 GameId로 구분한다(하이카드/블랙잭/바카라/섯다/포커).
+  | "highcard"
+  | "blackjack"
+  | "baccarat"
+  | "sutda"
+  | "poker"
+  // 레거시: 위 카드 게임들이 과거 공유하던 키. 이미 영속된 기록을 읽기 위해서만 유지한다(신규 기록 미사용).
   | "card"
   | "reversi"
   | "dice"
