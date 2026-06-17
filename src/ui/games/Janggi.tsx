@@ -67,7 +67,7 @@ export function Janggi() {
                   : "(상대 장 포획)"
               }`
           : `${SIDE_LABEL[state.next]} 차례 — 기물을 누르면 갈 수 있는 곳이 표시됩니다.`}
-        {inCheck ? " · 장군!" : ""}
+        {inCheck ? " · 장군! (장군을 푸는 수만 둘 수 있습니다)" : ""}
       </p>
       <p className="hint janggi-legend">
         진영 구분(색에 의존하지 않음):{" "}
