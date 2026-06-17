@@ -18,6 +18,14 @@ import {
   createDotsAndBoxesEngine,
   type DotsEngineState,
 } from "../../application/dotsAndBoxesEngine";
+import {
+  createCheckersEngine,
+  type CheckersEngineState,
+} from "../../application/checkersEngine";
+import {
+  createMancalaEngine,
+  type MancalaEngineState,
+} from "../../application/mancalaEngine";
 import { chooseRandomGomokuMove } from "../../application/gomokuAi";
 import { chooseRandomGoMove } from "../../application/goAi";
 import { chooseRandomReversiMove } from "../../application/reversiAi";
@@ -25,10 +33,14 @@ import { chooseRandomJanggiMove } from "../../application/janggiAi";
 import { chooseRandomConnectFourColumn } from "../../application/playConnectFour";
 import { chooseRandomTicTacToeMove } from "../../application/playTicTacToe";
 import { chooseRandomDotsEdge } from "../../application/playDotsAndBoxes";
+import { chooseRandomCheckersMove } from "../../application/playCheckers";
+import { chooseRandomMancalaMove } from "../../application/playMancala";
 import type { JanggiState } from "../../application/playJanggi";
 import { legalGoMoves } from "../../domain/goMoves";
 import type { Board as JanggiBoard } from "../../domain/janggi";
 import type { DotsBoard, DotsEdge } from "../../domain/dotsAndBoxes";
+import type { CheckersBoard, CheckersMove } from "../../domain/checkers";
+import type { MancalaBoard } from "../../domain/mancala";
 
 /** 자동 대국을 지원하는 보드 게임 키(무작위 수 선택기가 이미 머지된 게임들). */
 export type SelfPlayGameKey =
@@ -38,7 +50,9 @@ export type SelfPlayGameKey =
   | "janggi"
   | "connectfour"
   | "tictactoe"
-  | "dotsandboxes";
+  | "dotsandboxes"
+  | "checkers"
+  | "mancala";
 
 /**
  * 장기 무작위 자기대국 한 판의 수 상한. 무작위 장기는 외통/장 포획/빅장으로 보통 수백 수
@@ -46,6 +60,19 @@ export type SelfPlayGameKey =
  * playEngineGame이 throw 하며, 화면은 이를 "무종국(수 제한 도달)"으로 우아하게 처리한다.
  */
 const JANGGI_MAX_MOVES = 1000;
+
+/**
+ * 체커 무작위 자기대국 한 판의 수 상한. 무작위 체커는 왕(king)끼리 서로 회피하며 끝없이
+ * 맴돌 수 있어(강제 점프가 없는 국면) 무한 진행이 가능하다. 합리적 상한을 둬 초과 시
+ * playEngineGame이 throw 하고 화면은 "무종국(수 제한 도달)"으로 우아하게 처리한다.
+ */
+const CHECKERS_MAX_MOVES = 1000;
+
+/** 무작위 선택기가 null(둘 곳 없음)을 줄 때 넘기는 명백히 불법인 체커 수(엔진 isLegal이 방어). */
+const ILLEGAL_CHECKERS_MOVE: CheckersMove = {
+  from: { row: -1, col: -1 },
+  to: { row: -1, col: -1 },
+};
 
 export interface SelfPlayGameMeta {
   key: SelfPlayGameKey;
@@ -71,6 +98,11 @@ export const SELF_PLAY_GAMES: readonly SelfPlayGameMeta[] = [
   // 도트 앤 박스는 점·변·박스 격자(흑/백 돌 보드가 아님)라 최종 보드는 dotsGridCells로
   // 렌더한다. size는 기본 격자(3×3 박스)의 열 수, boardClass는 .board.dotsandboxes 재사용.
   { key: "dotsandboxes", label: "도트 앤 박스", size: 3, boardClass: "dotsandboxes" },
+  // 체커는 8×8. 최종 보드는 흑/백 디스크가 아니라 checkersView의 셀 뷰(●/○·♚/♔)로 렌더한다.
+  { key: "checkers", label: "체커", size: 8, boardClass: "checkers" },
+  // 만칼라는 구덩이·곳간 격자(흑/백 돌 보드가 아님)라 mancalaView로 전용 렌더한다.
+  // size는 한쪽 구덩이 수(6)이며, 실제 격자 배치는 컴포넌트가 .board.mancala로 구성한다.
+  { key: "mancala", label: "만칼라", size: 6, boardClass: "mancala" },
 ];
 
 /** 보드 한 칸의 상태(모든 지원 게임 공통: 흑/백 돌 또는 빈 칸). */
@@ -161,6 +193,29 @@ export function runSelfPlay(
         },
         { maxMoves },
       );
+    case "checkers":
+      // 무작위 체커는 왕끼리 회피로 무한 진행이 가능하므로 장기처럼 수 상한을 둔다(초과 시
+      // throw → 화면에서 무종국 처리). 둘 곳이 없으면(이론상 이미 종국) 불법 수를 넘겨 엔진
+      // isLegal이 방어한다. chooseRandomCheckersMove는 state.next 색의 합법 수를 고른다.
+      return playEngineGame(
+        createCheckersEngine(),
+        (state) => {
+          const s = state as CheckersEngineState;
+          return chooseRandomCheckersMove(s.board, s.next, rng) ?? ILLEGAL_CHECKERS_MOVE;
+        },
+        { maxMoves: maxMoves ?? CHECKERS_MAX_MOVES },
+      );
+    case "mancala":
+      // 씨앗 총량이 단조 감소(곳간 누적)하는 유한 게임 — 수 제한 불필요(커넥트포/도트앤박스와 동일).
+      // 둘 곳이 없으면 -1(불법 구덩이)을 넘겨 엔진 isLegal이 방어한다.
+      return playEngineGame(
+        createMancalaEngine(),
+        (state) => {
+          const s = state as MancalaEngineState;
+          return chooseRandomMancalaMove(s.board, s.next, rng) ?? -1;
+        },
+        { maxMoves },
+      );
     default:
       throw new Error(`runSelfPlay: 지원하지 않는 게임입니다: ${String(game)}`);
   }
@@ -181,10 +236,11 @@ function sideLabelFor(game: SelfPlayGameKey, side: Side): string {
   if (game === "tictactoe") {
     return side === "p1" ? "X(선)" : "O(후)";
   }
-  if (game === "dotsandboxes") {
-    // 도트 앤 박스는 흑/백 돌이 아니라 박스 소유 진영(P1/P2)으로 구분한다(색 비의존).
+  if (game === "dotsandboxes" || game === "mancala") {
+    // 도트 앤 박스·만칼라는 흑/백 돌이 아니라 진영(P1/P2)으로 구분한다(색 비의존).
     return side === "p1" ? "1P" : "2P";
   }
+  // 오목/바둑/오델로/체커는 흑(선)/백(후). 체커는 checkersView 표기(흑 ●/♚ vs 백 ○/♔)와 일치한다.
   return side === "p1" ? "흑(선)" : "백(후)";
 }
 
@@ -301,6 +357,41 @@ export function selfPlayDotsBoard(result: EngineGameResult<unknown>): DotsBoard 
     edges: { h: [], v: [] },
     boxes: [],
   };
+}
+
+/**
+ * 체커 결과의 최종 보드(기물 2차원 배열)를 안전하게 추출한다(렌더 요약용).
+ * 흑/백 디스크 모델(SelfPlayCell)이 아니라 체커 기물 셀(CheckersCell)을 그대로 노출하므로,
+ * 컴포넌트는 checkersView의 checkersCellView(●/○·♚/♔ + 라벨)로 색 비의존 렌더한다.
+ * 비정상 결과(board 누락)면 빈 보드를 반환해 throw 없이 안전하게 처리한다.
+ */
+export function selfPlayCheckersBoard(
+  result: EngineGameResult<unknown>,
+): CheckersBoard {
+  const board = (result.finalState as { board?: unknown }).board;
+  return Array.isArray(board) ? (board as CheckersBoard) : [];
+}
+
+/**
+ * 만칼라 결과의 최종 보드(구덩이·곳간)를 안전하게 추출한다(렌더 요약용).
+ * 흑/백 디스크 모델이 아니라 MancalaBoard(pits/stores)를 그대로 노출하므로,
+ * 컴포넌트는 mancalaView(구덩이·곳간 그리드, P1/P2 aria-label)로 색 비의존 렌더한다.
+ * 비정상 결과(board 누락/형태 불일치)면 빈 보드(구덩이 0개)를 반환해 throw 없이 안전하게 처리한다.
+ */
+export function selfPlayMancalaBoard(
+  result: EngineGameResult<unknown>,
+): MancalaBoard {
+  const board = (result.finalState as { board?: unknown }).board;
+  if (
+    typeof board === "object" &&
+    board !== null &&
+    "pitsPerSide" in board &&
+    "pits" in board &&
+    "stores" in board
+  ) {
+    return board as MancalaBoard;
+  }
+  return { pitsPerSide: 0, pits: { 1: [], 2: [] }, stores: { 1: 0, 2: 0 } };
 }
 
 /** 최종 보드 한 칸의 색 비의존 렌더 정보(장기 제외 모든 게임 공통). */

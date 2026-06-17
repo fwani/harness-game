@@ -7,9 +7,11 @@ import {
   runAndDescribeSelfPlay,
   describeSelfPlayResult,
   selfPlayBoard,
+  selfPlayCheckersBoard,
   selfPlayDotsBoard,
   selfPlayGlyphBoard,
   selfPlayJanggiBoard,
+  selfPlayMancalaBoard,
   type SelfPlayGameKey,
 } from "./selfPlayView";
 
@@ -33,7 +35,7 @@ function resultWith(
 }
 
 describe("SELF_PLAY_GAMES", () => {
-  it("오목·바둑·오델로·장기·커넥트포·틱택토·도트앤박스를 노출한다", () => {
+  it("오목·바둑·오델로·장기·커넥트포·틱택토·도트앤박스·체커·만칼라를 노출한다", () => {
     expect(SELF_PLAY_GAMES.map((g) => g.key)).toEqual([
       "gomoku",
       "go",
@@ -42,7 +44,23 @@ describe("SELF_PLAY_GAMES", () => {
       "connectfour",
       "tictactoe",
       "dotsandboxes",
+      "checkers",
+      "mancala",
     ]);
+  });
+
+  it("체커 메타는 8열·.board.checkers를 쓴다", () => {
+    const checkers = SELF_PLAY_GAMES.find((g) => g.key === "checkers")!;
+    expect(checkers.label).toBe("체커");
+    expect(checkers.size).toBe(8);
+    expect(checkers.boardClass).toBe("checkers");
+  });
+
+  it("만칼라 메타는 6열(한쪽 구덩이)·.board.mancala를 쓴다", () => {
+    const mancala = SELF_PLAY_GAMES.find((g) => g.key === "mancala")!;
+    expect(mancala.label).toBe("만칼라");
+    expect(mancala.size).toBe(6);
+    expect(mancala.boardClass).toBe("mancala");
   });
 
   it("장기 메타는 9×10 보드 클래스(.board.janggi)를 쓴다", () => {
@@ -83,6 +101,9 @@ describe("runSelfPlay", () => {
     "connectfour",
     "tictactoe",
     "dotsandboxes",
+    // 만칼라는 씨앗 총량이 단조 감소하는 유한 게임이라 항상 종국한다(체커는 수 제한에
+    // 걸릴 수 있어 아래 별도 describe에서 종국·무종국 양쪽을 검증한다).
+    "mancala",
   ];
 
   for (const game of games) {
@@ -122,6 +143,30 @@ describe("runSelfPlay", () => {
     expect(a.status).toEqual(b.status);
     // 3×3 박스 = 변 24개. 보너스 턴이 있어도 모든 변을 그어야 종국한다.
     expect(a.moveCount).toBe(24);
+  });
+
+  it("만칼라: 동일 rng면 동일 종국 결과를 낸다(유한 게임, throw 없음)", () => {
+    const a = runSelfPlay("mancala", seededRng(2026));
+    const b = runSelfPlay("mancala", seededRng(2026));
+    expect(a.status.over).toBe(true);
+    expect(a.moveCount).toBe(b.moveCount);
+    expect(a.status).toEqual(b.status);
+  });
+
+  it("체커: 동일 rng면 동일하게 진행한다(종국 시 동일 결과)", () => {
+    // 무작위 체커는 수 제한에 걸릴 수 있으므로 throw를 잡는 runAndDescribeSelfPlay로 비교한다.
+    const a = runAndDescribeSelfPlay("checkers", seededRng(12345));
+    const b = runAndDescribeSelfPlay("checkers", seededRng(12345));
+    expect(a.unfinished).toBe(b.unfinished);
+    expect(a.outcome).toBe(b.outcome);
+    expect(a.moves).toBe(b.moves);
+  });
+
+  it("체커: maxMoves=1이면 끝나지 않아 throw → 무종국으로 처리된다", () => {
+    const run = runAndDescribeSelfPlay("checkers", seededRng(12345), 1);
+    expect(run.unfinished).toBe(true);
+    expect(run.result).toBeNull();
+    expect(run.outcome).toContain("무종국");
   });
 });
 
@@ -211,6 +256,37 @@ describe("describeSelfPlayResult", () => {
     const draw = describeSelfPlayResult(
       resultWith({ over: true, winner: null, draw: true }, 24),
       "dotsandboxes",
+    );
+    expect(p1.outcome).toBe("1P 승리 🎉");
+    expect(p2.outcome).toBe("2P 승리 🎉");
+    expect(draw.outcome).toBe("무승부 🤝");
+  });
+
+  it("체커 승자는 흑(선)/백(후)로 매핑한다(checkersView 표기와 일치)", () => {
+    const p1 = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p1", draw: false }, 30),
+      "checkers",
+    );
+    const p2 = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p2", draw: false }, 31),
+      "checkers",
+    );
+    expect(p1.outcome).toBe("흑(선) 승리 🎉");
+    expect(p2.outcome).toBe("백(후) 승리 🎉");
+  });
+
+  it("만칼라 승자는 1P/2P로 매핑하고 무승부도 구분한다", () => {
+    const p1 = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p1", draw: false }, 20),
+      "mancala",
+    );
+    const p2 = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p2", draw: false }, 21),
+      "mancala",
+    );
+    const draw = describeSelfPlayResult(
+      resultWith({ over: true, winner: null, draw: true }, 22),
+      "mancala",
     );
     expect(p1.outcome).toBe("1P 승리 🎉");
     expect(p2.outcome).toBe("2P 승리 🎉");
@@ -346,5 +422,49 @@ describe("selfPlayDotsBoard", () => {
     expect(board.cols).toBe(0);
     expect(board.boxes).toEqual([]);
     expect(board.edges).toEqual({ h: [], v: [] });
+  });
+});
+
+describe("selfPlayCheckersBoard", () => {
+  it("실제 체커 자동 대국 결과에서 8×8 기물 보드를 추출한다", () => {
+    const run = runAndDescribeSelfPlay("checkers", seededRng(12345));
+    // 종국이면 보드가, 무종국이면 result=null이라 추출 대상이 없으므로 종국일 때만 검증.
+    if (run.result) {
+      const board = selfPlayCheckersBoard(run.result);
+      expect(board.length).toBe(8);
+      expect(board[0]!.length).toBe(8);
+    }
+  });
+
+  it("board가 없으면 빈 배열을 반환한다", () => {
+    const board = selfPlayCheckersBoard(
+      resultWith({ over: true, winner: null, draw: false }, 0),
+    );
+    expect(board).toEqual([]);
+  });
+});
+
+describe("selfPlayMancalaBoard", () => {
+  it("실제 만칼라 자동 대국 결과에서 보드(구덩이·곳간)를 추출한다(종국)", () => {
+    const board = selfPlayMancalaBoard(runSelfPlay("mancala", seededRng(2026)));
+    expect(board.pitsPerSide).toBe(6);
+    expect(board.pits[1].length).toBe(6);
+    expect(board.pits[2].length).toBe(6);
+    // 종국이면 한쪽 구덩이가 모두 비고 모든 씨앗이 곳간/한쪽에 모인다 — 곳간 합으로 안전 검증.
+    const total =
+      board.stores[1] +
+      board.stores[2] +
+      board.pits[1].reduce((s, n) => s + n, 0) +
+      board.pits[2].reduce((s, n) => s + n, 0);
+    expect(total).toBe(6 * 4 * 2); // 표준 Kalah 6·4: 총 씨앗 48개 보존.
+  });
+
+  it("board가 없거나 형태가 다르면 안전 기본 보드(구덩이 0개)를 반환한다", () => {
+    const board = selfPlayMancalaBoard(
+      resultWith({ over: true, winner: null, draw: true }, 0),
+    );
+    expect(board.pitsPerSide).toBe(0);
+    expect(board.pits).toEqual({ 1: [], 2: [] });
+    expect(board.stores).toEqual({ 1: 0, 2: 0 });
   });
 });
