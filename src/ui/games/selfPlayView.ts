@@ -12,16 +12,26 @@ import { createGomokuEngine } from "../../application/gameEngine";
 import { createGoEngine } from "../../application/goEngine";
 import { createReversiEngine } from "../../application/reversiEngine";
 import { createJanggiEngine } from "../../application/janggiEngine";
+import { createConnectFourEngine } from "../../application/connectFourEngine";
+import { createTicTacToeEngine } from "../../application/ticTacToeEngine";
 import { chooseRandomGomokuMove } from "../../application/gomokuAi";
 import { chooseRandomGoMove } from "../../application/goAi";
 import { chooseRandomReversiMove } from "../../application/reversiAi";
 import { chooseRandomJanggiMove } from "../../application/janggiAi";
+import { chooseRandomConnectFourColumn } from "../../application/playConnectFour";
+import { chooseRandomTicTacToeMove } from "../../application/playTicTacToe";
 import type { JanggiState } from "../../application/playJanggi";
 import { legalGoMoves } from "../../domain/goMoves";
 import type { Board as JanggiBoard } from "../../domain/janggi";
 
 /** 자동 대국을 지원하는 보드 게임 키(무작위 수 선택기가 이미 머지된 게임들). */
-export type SelfPlayGameKey = "gomoku" | "go" | "reversi" | "janggi";
+export type SelfPlayGameKey =
+  | "gomoku"
+  | "go"
+  | "reversi"
+  | "janggi"
+  | "connectfour"
+  | "tictactoe";
 
 /**
  * 장기 무작위 자기대국 한 판의 수 상한. 무작위 장기는 외통/장 포획/빅장으로 보통 수백 수
@@ -49,6 +59,8 @@ export const SELF_PLAY_GAMES: readonly SelfPlayGameMeta[] = [
   { key: "go", label: "바둑", size: 9, boardClass: "go" },
   { key: "reversi", label: "오델로", size: 8, boardClass: "reversi" },
   { key: "janggi", label: "장기", size: 9, boardClass: "janggi" },
+  { key: "connectfour", label: "커넥트포", size: 7, boardClass: "connectfour" },
+  { key: "tictactoe", label: "틱택토", size: 3, boardClass: "tictactoe" },
 ];
 
 /** 보드 한 칸의 상태(모든 지원 게임 공통: 흑/백 돌 또는 빈 칸). */
@@ -107,6 +119,27 @@ export function runSelfPlay(
         },
         { maxMoves: maxMoves ?? JANGGI_MAX_MOVES },
       );
+    case "connectfour":
+      // 유한 게임(최대 42수) — 수 제한 불필요. 합법 열이 없으면 게임이 이미 종료라
+      // 루프가 더 돌지 않는다(null은 -1로 넘겨 엔진 isLegal이 방어).
+      return playEngineGame(
+        createConnectFourEngine(),
+        (state) => {
+          const col = chooseRandomConnectFourColumn(state.board, rng);
+          return { col: col ?? -1 };
+        },
+        { maxMoves },
+      );
+    case "tictactoe":
+      // 유한 게임(최대 9수) — 수 제한 불필요.
+      return playEngineGame(
+        createTicTacToeEngine(),
+        (state) => {
+          const move = chooseRandomTicTacToeMove(state.board, rng);
+          return move ?? { row: -1, col: -1 };
+        },
+        { maxMoves },
+      );
     default:
       throw new Error(`runSelfPlay: 지원하지 않는 게임입니다: ${String(game)}`);
   }
@@ -120,6 +153,12 @@ export function runSelfPlay(
 function sideLabelFor(game: SelfPlayGameKey, side: Side): string {
   if (game === "janggi") {
     return side === "p1" ? "초(선)" : "한(후)";
+  }
+  if (game === "connectfour") {
+    return side === "p1" ? "1P(●)" : "2P(○)";
+  }
+  if (game === "tictactoe") {
+    return side === "p1" ? "X(선)" : "O(후)";
   }
   return side === "p1" ? "흑(선)" : "백(후)";
 }
@@ -211,4 +250,66 @@ export function selfPlayJanggiBoard(
 ): JanggiBoard {
   const board = (result.finalState as { board?: unknown }).board;
   return Array.isArray(board) ? (board as JanggiBoard) : [];
+}
+
+/** 최종 보드 한 칸의 색 비의존 렌더 정보(장기 제외 모든 게임 공통). */
+export interface SelfPlayGlyphCell {
+  /** 색 비의존 기호(예: ●/○, X/O). */
+  glyph: string;
+  /** 셀 안 span에 붙일 클래스(기존 stone/disc/ttt-mark 스타일 재사용). */
+  className: string;
+  /** 접근성/툴팁 라벨(스크린리더·호버). */
+  label: string;
+}
+
+/** 보드(장기 제외)를 색 비의존 글리프 셀 2차원 배열로 변환한 결과. */
+export type SelfPlayGlyphBoard = (SelfPlayGlyphCell | null)[][];
+
+// 흑/백 돌(오목/바둑/오델로) — 채움(●) vs 테두리(○)로 색 비의존 구분.
+const STONE_GLYPH: Record<"black" | "white", SelfPlayGlyphCell> = {
+  black: { glyph: "●", className: "stone black", label: "흑" },
+  white: { glyph: "○", className: "stone white", label: "백" },
+};
+
+// 커넥트포 디스크(1/2) — ConnectFour.tsx와 동일한 ●/○ + .disc.p1/p2 스타일 재사용.
+const CONNECT_FOUR_GLYPH: Record<1 | 2, SelfPlayGlyphCell> = {
+  1: { glyph: "●", className: "disc p1", label: "1P" },
+  2: { glyph: "○", className: "disc p2", label: "2P" },
+};
+
+// 틱택토 마크(X/O) — TicTacToe.tsx와 동일한 .ttt-mark.mark-X/O 스타일 재사용.
+const TICTACTOE_GLYPH: Record<"X" | "O", SelfPlayGlyphCell> = {
+  X: { glyph: "X", className: "ttt-mark mark-X", label: "X" },
+  O: { glyph: "O", className: "ttt-mark mark-O", label: "O" },
+};
+
+/**
+ * 결과 최종 보드를 색 비의존 글리프 셀 2차원 배열로 변환한다(장기 제외 모든 게임 공통 렌더).
+ * - 오목/바둑/오델로: 흑(●)/백(○) 돌(selfPlayBoard 재사용).
+ * - 커넥트포: 1P(●)/2P(○) 디스크(보드 셀 값 1/2).
+ * - 틱택토: X/O 마크.
+ * 색만으로 진영을 구분하지 않도록 기호·라벨을 함께 제공한다(UX 원칙: 색 비의존).
+ */
+export function selfPlayGlyphBoard(
+  result: EngineGameResult<unknown>,
+  game: SelfPlayGameKey,
+): SelfPlayGlyphBoard {
+  const raw = (result.finalState as { board?: unknown }).board;
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  if (game === "connectfour") {
+    return (raw as number[][]).map((row) =>
+      row.map((c) => (c === 1 || c === 2 ? CONNECT_FOUR_GLYPH[c] : null)),
+    );
+  }
+  if (game === "tictactoe") {
+    return (raw as (string | null)[][]).map((row) =>
+      row.map((c) => (c === "X" || c === "O" ? TICTACTOE_GLYPH[c] : null)),
+    );
+  }
+  // 오목/바둑/오델로: 흑/백 돌 모델(selfPlayBoard 재사용).
+  return selfPlayBoard(result).map((row) =>
+    row.map((c) => (c === "black" || c === "white" ? STONE_GLYPH[c] : null)),
+  );
 }
