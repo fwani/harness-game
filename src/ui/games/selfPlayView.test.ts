@@ -7,9 +7,11 @@ import {
   runAndDescribeSelfPlay,
   describeSelfPlayResult,
   selfPlayBoard,
+  selfPlayCheckersBoard,
   selfPlayDotsBoard,
   selfPlayGlyphBoard,
   selfPlayJanggiBoard,
+  selfPlayMancalaBoard,
   type SelfPlayGameKey,
 } from "./selfPlayView";
 
@@ -33,7 +35,7 @@ function resultWith(
 }
 
 describe("SELF_PLAY_GAMES", () => {
-  it("오목·바둑·오델로·장기·커넥트포·틱택토·도트앤박스를 노출한다", () => {
+  it("오목·바둑·오델로·장기·커넥트포·틱택토·도트앤박스·체커·만칼라를 노출한다", () => {
     expect(SELF_PLAY_GAMES.map((g) => g.key)).toEqual([
       "gomoku",
       "go",
@@ -42,6 +44,8 @@ describe("SELF_PLAY_GAMES", () => {
       "connectfour",
       "tictactoe",
       "dotsandboxes",
+      "checkers",
+      "mancala",
     ]);
   });
 
@@ -72,6 +76,20 @@ describe("SELF_PLAY_GAMES", () => {
     expect(dots.label).toBe("도트 앤 박스");
     expect(dots.boardClass).toBe("dotsandboxes");
   });
+
+  it("체커 메타는 8열·.board.checkers를 쓴다", () => {
+    const checkers = SELF_PLAY_GAMES.find((g) => g.key === "checkers")!;
+    expect(checkers.label).toBe("체커");
+    expect(checkers.size).toBe(8);
+    expect(checkers.boardClass).toBe("checkers");
+  });
+
+  it("만칼라 메타가 포함된다(.board.mancala)", () => {
+    const mancala = SELF_PLAY_GAMES.find((g) => g.key === "mancala")!;
+    expect(mancala).toBeDefined();
+    expect(mancala.label).toBe("만칼라");
+    expect(mancala.boardClass).toBe("mancala");
+  });
 });
 
 describe("runSelfPlay", () => {
@@ -83,6 +101,8 @@ describe("runSelfPlay", () => {
     "connectfour",
     "tictactoe",
     "dotsandboxes",
+    "checkers",
+    "mancala",
   ];
 
   for (const game of games) {
@@ -122,6 +142,22 @@ describe("runSelfPlay", () => {
     expect(a.status).toEqual(b.status);
     // 3×3 박스 = 변 24개. 보너스 턴이 있어도 모든 변을 그어야 종국한다.
     expect(a.moveCount).toBe(24);
+  });
+
+  it("체커: 동일 rng면 동일 종국 결과를 낸다", () => {
+    const a = runSelfPlay("checkers", seededRng(12345));
+    const b = runSelfPlay("checkers", seededRng(12345));
+    expect(a.status.over).toBe(true);
+    expect(a.moveCount).toBe(b.moveCount);
+    expect(a.status).toEqual(b.status);
+  });
+
+  it("만칼라: 동일 rng면 동일 종국 결과를 낸다(유한 게임, 수 제한 불필요)", () => {
+    const a = runSelfPlay("mancala", seededRng(12345));
+    const b = runSelfPlay("mancala", seededRng(12345));
+    expect(a.status.over).toBe(true);
+    expect(a.moveCount).toBe(b.moveCount);
+    expect(a.status).toEqual(b.status);
   });
 });
 
@@ -217,6 +253,37 @@ describe("describeSelfPlayResult", () => {
     expect(draw.outcome).toBe("무승부 🤝");
   });
 
+  it("체커 승자는 흑(선)/백(후)로 매핑한다(색 비의존)", () => {
+    const dark = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p1", draw: false }, 44),
+      "checkers",
+    );
+    const light = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p2", draw: false }, 54),
+      "checkers",
+    );
+    expect(dark.outcome).toBe("흑(선) 승리 🎉");
+    expect(light.outcome).toBe("백(후) 승리 🎉");
+  });
+
+  it("만칼라 승자는 1P/2P로 매핑하고 무승부도 구분한다", () => {
+    const p1 = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p1", draw: false }, 29),
+      "mancala",
+    );
+    const p2 = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p2", draw: false }, 30),
+      "mancala",
+    );
+    const draw = describeSelfPlayResult(
+      resultWith({ over: true, winner: null, draw: true }, 31),
+      "mancala",
+    );
+    expect(p1.outcome).toBe("1P 승리 🎉");
+    expect(p2.outcome).toBe("2P 승리 🎉");
+    expect(draw.outcome).toBe("무승부 🤝");
+  });
+
   it("기존 3종 라벨 회귀 없음(흑/백 유지)", () => {
     for (const game of ["gomoku", "go", "reversi"] as SelfPlayGameKey[]) {
       expect(
@@ -249,6 +316,28 @@ describe("runAndDescribeSelfPlay", () => {
     expect(run.unfinished).toBe(true);
     expect(run.result).toBeNull();
     expect(run.outcome).toContain("무종국");
+  });
+
+  it("체커: 정상 종국이면 흑/백 승자 문구를 반환한다", () => {
+    const run = runAndDescribeSelfPlay("checkers", seededRng(12345));
+    expect(run.unfinished).toBe(false);
+    expect(run.result).not.toBeNull();
+    expect(run.outcome).toMatch(/(흑\(선\)|백\(후\)) 승리/);
+  });
+
+  it("체커: 수 제한(maxMoves=1) 도달 시 무종국 문구로 우아하게 처리한다", () => {
+    // maxMoves=1로는 체커가 끝나지 않으므로 playEngineGame throw → 무종국 처리(크래시 없음).
+    const run = runAndDescribeSelfPlay("checkers", seededRng(12345), 1);
+    expect(run.unfinished).toBe(true);
+    expect(run.result).toBeNull();
+    expect(run.outcome).toContain("무종국");
+  });
+
+  it("만칼라: 정상 종국이면 1P/2P 승자 또는 무승부 문구를 반환한다", () => {
+    const run = runAndDescribeSelfPlay("mancala", seededRng(12345));
+    expect(run.unfinished).toBe(false);
+    expect(run.result).not.toBeNull();
+    expect(run.outcome).toMatch(/(1P|2P) 승리|무승부/);
   });
 });
 
@@ -346,5 +435,42 @@ describe("selfPlayDotsBoard", () => {
     expect(board.cols).toBe(0);
     expect(board.boxes).toEqual([]);
     expect(board.edges).toEqual({ h: [], v: [] });
+  });
+});
+
+describe("selfPlayCheckersBoard", () => {
+  it("실제 체커 자동 대국 결과에서 8×8 기물 보드를 추출한다", () => {
+    const board = selfPlayCheckersBoard(runSelfPlay("checkers", seededRng(12345)));
+    expect(board.length).toBe(8);
+    expect(board[0]!.length).toBe(8);
+  });
+
+  it("board가 없으면 빈 배열을 반환한다", () => {
+    const board = selfPlayCheckersBoard(
+      resultWith({ over: true, winner: "p1", draw: false }, 0),
+    );
+    expect(board).toEqual([]);
+  });
+});
+
+describe("selfPlayMancalaBoard", () => {
+  it("실제 만칼라 자동 대국 결과에서 구덩이·곳간 보드를 추출한다(종국)", () => {
+    const board = selfPlayMancalaBoard(runSelfPlay("mancala", seededRng(12345)));
+    expect(board.pitsPerSide).toBe(6);
+    expect(board.pits[1].length).toBe(6);
+    expect(board.pits[2].length).toBe(6);
+    // 종국: 한쪽 구덩이가 전부 비었다(0).
+    const side1Empty = board.pits[1].every((s) => s === 0);
+    const side2Empty = board.pits[2].every((s) => s === 0);
+    expect(side1Empty || side2Empty).toBe(true);
+  });
+
+  it("board가 없거나 형태가 다르면 빈 기본 보드를 반환한다", () => {
+    const board = selfPlayMancalaBoard(
+      resultWith({ over: true, winner: null, draw: true }, 0),
+    );
+    expect(board.pitsPerSide).toBe(0);
+    expect(board.pits).toEqual({ 1: [], 2: [] });
+    expect(board.stores).toEqual({ 1: 0, 2: 0 });
   });
 });
