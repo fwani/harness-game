@@ -4,6 +4,7 @@ import { getStandings, listRecords, recordsPersisted, subscribe } from "../recor
 import { toEloLeaderboard } from "./recordsEloView";
 import { recordsPersistenceHint } from "./recordsHintView";
 import { toHeadToHeadList } from "./recordsHeadToHeadView";
+import { buildRecordsByGameRows } from "./recordsByGameView";
 
 const GAME_LABEL: Record<GameId, string> = {
   rps: "가위바위보",
@@ -29,6 +30,8 @@ export function Records() {
   const leaderboard = toEloLeaderboard(records);
   // 맞붙은 플레이어 쌍별 상대 전적(domain/headToHead 재사용, 표시용 변환).
   const headToHead = toHeadToHeadList(records);
+  // 게임별(per-game) 전적(domain/summarizeByGame 재사용, 표시용 변환).
+  const byGame = buildRecordsByGameRows(records, (game) => GAME_LABEL[game]);
 
   return (
     <section className="game">
@@ -123,6 +126,52 @@ export function Records() {
                 ))}
               </tbody>
             </table>
+          )}
+        </>
+      )}
+
+      {standings.length > 0 && (
+        <>
+          <h3>게임별 전적</h3>
+          <p className="hint">
+            게임 종류별로 묶은 플레이어별 승/패/무입니다(기록이 있는 게임만, 처음 등장한
+            순서).
+          </p>
+          {byGame.length === 0 ? (
+            <p className="hint">아직 게임별로 집계할 기록이 없습니다.</p>
+          ) : (
+            <div className="table-scroll">
+              <table className="standings">
+                <thead>
+                  <tr>
+                    <th>게임</th>
+                    <th>총 판수</th>
+                    <th>플레이어</th>
+                    <th>승</th>
+                    <th>패</th>
+                    <th>무</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byGame.map((row) =>
+                    row.players.map((p, i) => (
+                      <tr key={`${row.game}:${p.player}`}>
+                        {i === 0 ? (
+                          <>
+                            <td rowSpan={row.players.length}>{row.gameLabel}</td>
+                            <td rowSpan={row.players.length}>{row.totalGames}</td>
+                          </>
+                        ) : null}
+                        <td>{p.player}</td>
+                        <td>{p.wins}</td>
+                        <td>{p.losses}</td>
+                        <td>{p.draws}</td>
+                      </tr>
+                    )),
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       )}
