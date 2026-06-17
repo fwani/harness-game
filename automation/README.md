@@ -33,14 +33,15 @@ launchd (로컬 macOS, 컴퓨터가 켜져 있을 때)
 - **비용 절감**: 두 스크립트 모두 gh로 일거리 유무를 먼저 확인하고, 있을 때만 claude 호출.
 - **격리**: 봇은 전용 클론(`~/Library/Application Support/harness-game-autodev/repo-{dev,planner}`)에서 작업 — 사용자 작업 디렉터리를 건드리지 않는다.
 - **시간대별 간격**: planner/dev/dev2는 09~18시 3분·그 외 10분(plist `StartInterval=180`). QA는 09~18시 5분·그 외 10분(`StartInterval=300`). 각 스크립트 내 시간 게이트로 제어.
-- **QA**: 한 실행에 게임 1개를 회전(`.qa.rotation`)하며 플레이테스트. 발견은 `qa-finding` 라벨로만 등록(자동 수정 X — 사람/planner 검토용). 중복·폭주 방지 게이트 내장.
+- **QA**: 한 실행에 게임 1개를 회전(`.qa.rotation`)하며 플레이테스트. 발견은 `qa-finding` 라벨로 등록. 중복·폭주 방지 게이트 내장.
+- **QA→dev 트리아지**: planner가 매 실행 §1에서 open `qa-finding`을 검토해, **명백한 결함**(크래시·콘솔에러·플레이불가)은 `ready-for-dev`로 자동 승격(최대 3건/회)해 dev가 고치게 한다. 주관적 UX 제안은 사람 검토로 남긴다. 그래서 planner는 백로그가 차 있어도 미승격 qa-finding이 있으면 실행된다.
 - **보안 바닥**: 파괴적 명령/auth/권한/데이터 삭제는 `needs-human` 라벨로 에스컬레이션(자동 처리 금지).
 
 ## 라벨
 
 - `ready-for-dev` — 개발 큐(봇이 집어 구현). 사람이 직접 붙여 작업을 시킬 수도 있다.
 - `in-progress-ai` — 봇이 작업 중.
-- `qa-finding` — QA 봇이 플레이테스트로 찾은 문제(검토 후 ready-for-dev로 승격).
+- `qa-finding` — QA 봇이 플레이테스트로 찾은 문제. planner가 명백한 결함은 ready-for-dev로 자동 승격, 주관적 제안은 사람 검토 대기.
 - `needs-human` — 사람 확인 필요(에스컬레이션).
 
 ## 설치 (1회)
