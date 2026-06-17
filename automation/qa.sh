@@ -16,9 +16,9 @@ ROT="$BASE/.qa.rotation"
 ts() { date '+%F %T'; }
 mkdir -p "$BASE"
 
-# 0) 시간대별 간격 게이트: 09~18시 = 300초(5분), 그 외 = 600초(10분).
+# 0) 시간대별 간격 게이트: 09~18시 = 60초(1분), 그 외 = 600초(10분). (실제 실행 시간이 1분보다 길면 연속 실행됨)
 H=$((10#$(date +%H)))
-if [ "$H" -ge 9 ] && [ "$H" -lt 18 ]; then REQ=300; else REQ=600; fi
+if [ "$H" -ge 9 ] && [ "$H" -lt 18 ]; then REQ=60; else REQ=600; fi
 STAMP="$BASE/.qa.laststamp"; NOW=$(date +%s)
 LAST=$(cat "$STAMP" 2>/dev/null); [ -z "$LAST" ] && LAST=0
 [ $((NOW - LAST)) -lt "$REQ" ] && exit 0
