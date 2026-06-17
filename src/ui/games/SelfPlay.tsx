@@ -5,7 +5,7 @@ import { pieceGlyph, pieceAriaLabel } from "./janggiView";
 import {
   SELF_PLAY_GAMES,
   runAndDescribeSelfPlay,
-  selfPlayBoard,
+  selfPlayGlyphBoard,
   selfPlayJanggiBoard,
   type SelfPlayGameKey,
   type SelfPlayRun,
@@ -13,8 +13,6 @@ import {
 
 /** 자동 대국 난수 어댑터(다른 게임 화면과 동일하게 infrastructure 어댑터 주입). */
 const rng = new MathRandomSource();
-
-const STONE = { black: "●", white: "○" } as const;
 
 export function SelfPlay() {
   const [game, setGame] = useState<SelfPlayGameKey>("gomoku");
@@ -32,8 +30,10 @@ export function SelfPlay() {
   };
 
   // 최종 보드는 정상 종국일 때만 그린다(무종국이면 result=null).
-  const discBoard =
-    run?.result && game !== "janggi" ? selfPlayBoard(run.result) : [];
+  const glyphBoard =
+    run?.result && game !== "janggi"
+      ? selfPlayGlyphBoard(run.result, game)
+      : [];
   const janggiBoard =
     run?.result && game === "janggi" ? selfPlayJanggiBoard(run.result) : [];
 
@@ -100,11 +100,13 @@ export function SelfPlay() {
               role="img"
               aria-label={`${meta.label} 최종 보드`}
             >
-              {discBoard.map((row, y) =>
+              {glyphBoard.map((row, y) =>
                 row.map((cell, x) => (
                   <div key={`${x},${y}`} className="cell" aria-hidden="true">
                     {cell && (
-                      <span className={`stone ${cell}`}>{STONE[cell]}</span>
+                      <span className={cell.className} title={cell.label}>
+                        {cell.glyph}
+                      </span>
                     )}
                   </div>
                 )),
