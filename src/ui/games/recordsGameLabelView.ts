@@ -45,6 +45,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   snakesandladders: "뱀과 사다리",
   wordle: "워들",
   mastermind: "마스터마인드",
+  nonogram: "네모로직",
   "rps-match": "다전제(가위바위보)",
 };
 
