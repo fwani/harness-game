@@ -36,6 +36,7 @@ export type GameId =
   | "battleship"
   | "hanoi"
   | "slidepuzzle"
+  | "hangman"
   | "bingo"
   | "rps-match";
 
