@@ -64,6 +64,7 @@
 | 오델로 (`Reversi.tsx`) | 2인 로컬 합법 수 착수 | ✅ 자동 패스·계가·승자까지 | `playReversi` 연동. 합법 수만 활성·자동 패스 안내·디스크 점수·전적 저장 |
 | 장기 (`Janggi.tsx`) | 2인 로컬 기물 이동 | ✅ 승부까지 | 선택·합법 수·이동·턴·장군 경고·승부·전적 저장 |
 | 윷놀이 (`Yut.tsx`) | 윷 던지기 → CPU 자동 던지기 → 외곽 20칸 완주 경주 | ✅ vs CPU | `playYutTurn` 연동. 도개걸윷모 텍스트 라벨·진행도 막대(traveled/20)·승패 표시, 전적 저장(`yut`) |
+| 녹아웃 (`SingleElimination.tsx`) | 참가자 입력 → 대진(부전승) → 라운드별 승자 선택 → 우승자 | ✅ 우승자까지 | `generateSingleEliminationFirstRound`+`advanceSingleEliminationRound` 연동. 시드 부전승 안내·라운드 라벨(결승/준결승/N강)·우승 표시·리셋 |
 | 전적 (`Records.tsx`) | 플레이어별 승/패/무 + ELO 레이팅 + 상대 전적 + 기록 | ✅ | 공유 저장소 구독, 빈 상태 표시, localStorage 영속(새로고침 후 유지). 맞붙은 쌍별 상대 전적(`headToHead`) 표 노출 |
 
 ## 알려진 UI/UX 갭 (백로그 후보)
