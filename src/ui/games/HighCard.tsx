@@ -34,9 +34,9 @@ function BigCard({ card }: { card: Card }) {
 
 export function HighCard() {
   const [round, setRound] = useState<HighCardRoundResult | null>(null);
-  // 카드 게임 5종이 공유하는 "card" 통산 전적을 화면에 표시한다.
+  // 하이카드 통산 전적을 화면에 표시한다(게임별 고유 키 "highcard").
   const records = useSyncExternalStore(subscribe, listRecords);
-  const streak = selfStreakSummary(records, "card");
+  const streak = selfStreakSummary(records, "highcard");
 
   return (
     <section className="game">
@@ -50,7 +50,7 @@ export function HighCard() {
           const result = playHighCardRound(rng);
           setRound(result);
           recordGame(
-            "card",
+            "highcard",
             SELF_PLAYER,
             "CPU",
             result.result === "first" ? "a" : result.result === "second" ? "b" : "draw",
@@ -75,7 +75,7 @@ export function HighCard() {
           <p className="outcome">{OUTCOME[round.result]}</p>
         </div>
       )}
-      <StreakPanel title="카드 게임 통산 전적 (나)" summary={streak} />
+      <StreakPanel title="하이카드 통산 전적 (나)" summary={streak} />
     </section>
   );
 }
