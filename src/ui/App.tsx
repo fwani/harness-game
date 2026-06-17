@@ -15,6 +15,7 @@ import { Janggi } from "./games/Janggi";
 import { Yut } from "./games/Yut";
 import { Tournament } from "./games/Tournament";
 import { Records } from "./games/Records";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 type GameKey =
   | "rps"
@@ -73,7 +74,11 @@ export function App() {
           ))}
         </nav>
       </header>
-      <main>{active.render()}</main>
+      <main>
+        {/* 한 게임이 크래시해도 앱 전체가 백스크린되지 않게 분리한다.
+            key=game이라 탭을 바꾸면 바운더리가 재마운트되어 에러 상태가 초기화된다. */}
+        <ErrorBoundary key={game}>{active.render()}</ErrorBoundary>
+      </main>
     </div>
   );
 }
