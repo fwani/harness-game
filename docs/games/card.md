@@ -32,7 +32,10 @@
 | 인프라 | [`src/infrastructure/mathRandomSource.ts`](../../src/infrastructure/mathRandomSource.ts) | 셔플용 난수 | ✅ |
 | UI(딜) | [`src/ui/games/Deal.tsx`](../../src/ui/games/Deal.tsx) | 인원·장수 입력 → 딜, 입력 검증 에러 표시 | ✅ |
 | UI(하이카드) | [`src/ui/games/HighCard.tsx`](../../src/ui/games/HighCard.tsx) | "카드 뽑기" → 나 vs CPU 카드·승패 표시 | ✅ |
-| 기록 | `GameId="card"` + [`src/ui/records.ts`](../../src/ui/records.ts) | 하이카드 결과를 "나"/"CPU"로 저장 | ✅ |
+| 도메인(포커) | [`src/domain/pokerHand.ts`](../../src/domain/pokerHand.ts) | `evaluatePokerHand`/`comparePokerHands`/`findPokerWinners` | ✅ |
+| 애플리케이션(포커) | [`src/application/playPokerShowdown.ts`](../../src/application/playPokerShowdown.ts) | `playPokerShowdown(rng, players)` — 셔플→5장 분배→승자 | ✅ |
+| UI(포커) | [`src/ui/games/Poker.tsx`](../../src/ui/games/Poker.tsx) | "딜링" → 나 vs CPU 5장 쇼다운·족보·승패 표시 | ✅ |
+| 기록 | `GameId="card"` + [`src/ui/records.ts`](../../src/ui/records.ts) | 하이카드·포커 결과를 "나"/"CPU"로 저장 | ✅ |
 
 ## 4. UI/UX 요구사항
 
@@ -44,6 +47,12 @@
 - [x] 덱에서 두 카드를 뽑아 비교, 승자(승/패/무)를 명확히 표시.
 - [x] "카드 뽑기"로 다시 뽑기(회복 경로).
 - [x] 카드 표시는 색만이 아닌 기호+랭크 병행(`card-chip` 재사용).
+- [x] 결과를 기록(`recordGame("card", …)`)에 저장 → 전적 탭 노출.
+
+### 포커(구현 완료)
+- [x] "딜링"으로 나(0) vs CPU(1) 5장 쇼다운(`playPokerShowdown(rng, 2)`).
+- [x] 양측 5장(무늬 기호+랭크)·족보 이름(`evaluatePokerHand`)·승패(동률 무승부) 표시.
+- [x] "다시 딜링"으로 새 판(회복 경로).
 - [x] 결과를 기록(`recordGame("card", …)`)에 저장 → 전적 탭 노출.
 
 ## 5. 알려진 갭 / 백로그
