@@ -39,7 +39,7 @@ export function SlidePuzzle() {
 
   const solved = isSlidePuzzleSolved(state);
   const status = describeSlidePuzzleStatus(solved);
-  const cells = slidePuzzleCells(state);
+  const cells = slidePuzzleCells(state, solved);
 
   const moveTile = (tile: number) => {
     if (solved) return; // 클리어 후 입력 차단.
