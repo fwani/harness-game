@@ -2013,3 +2013,64 @@ button.dots-edge:disabled {
   font-weight: 700;
   color: #334155;
 }
+
+/* --- 마스터마인드(Mastermind) --- */
+
+/* 핀(추측 색 칸·이력 칸): 색뿐 아니라 기호+문자로 구분(색 비의존). */
+.peg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6rem;
+  min-height: 2.2rem;
+  margin: 0 3px 3px 0;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #18181b;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(0, 0, 0, 0.45);
+}
+
+/* 입력 중인 칸: 빈 칸도 누를 수 있게 버튼 형태(채워지면 색 표시). */
+.peg-slot {
+  cursor: pointer;
+  background: #e2e8f0;
+}
+
+.peg-slot:not(:disabled):hover,
+.peg-slot:not(:disabled):focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.peg-slot:disabled {
+  cursor: default;
+}
+
+.mastermind-history {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.mastermind-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mastermind-pegs,
+.mastermind-current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mastermind-current {
+  margin: 8px 0;
+  gap: 4px;
+}
