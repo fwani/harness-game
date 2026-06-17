@@ -36,6 +36,7 @@ export type GameId =
   | "battleship"
   | "hanoi"
   | "slidepuzzle"
+  | "bingo"
   | "rps-match";
 
 /** 한 판에서 한 플레이어의 결과. */
