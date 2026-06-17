@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { Card, Suit } from "../../domain/card";
 import { evaluatePokerHand } from "../../domain/pokerHand";
 import { playPokerShowdown, type PokerShowdownResult } from "../../application/playPokerShowdown";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
-import { recordGame } from "../records";
+import { listRecords, recordGame, subscribe } from "../records";
 import { pokerCategoryLabel, pokerOutcomeLabel, winnersToWinSide } from "./pokerView";
+import { selfStreakSummary, SELF_PLAYER } from "./streakView";
+import { StreakPanel } from "./StreakPanel";
 
 const rng = new MathRandomSource();
 
@@ -46,6 +48,9 @@ function Hand({ label, cards, winner }: { label: string; cards: Card[]; winner: 
 
 export function Poker() {
   const [round, setRound] = useState<PokerShowdownResult | null>(null);
+  // 카드 게임 5종이 공유하는 "card" 통산 전적을 화면에 표시한다.
+  const records = useSyncExternalStore(subscribe, listRecords);
+  const streak = selfStreakSummary(records, "card");
 
   return (
     <section className="game">
@@ -58,7 +63,7 @@ export function Poker() {
         onClick={() => {
           const result = playPokerShowdown(rng, 2);
           setRound(result);
-          recordGame("card", "나", "CPU", winnersToWinSide(result.winners));
+          recordGame("card", SELF_PLAYER, "CPU", winnersToWinSide(result.winners));
         }}
       >
         {round ? "다시 딜링" : "딜링"}
@@ -73,6 +78,7 @@ export function Poker() {
           <p className="outcome">{pokerOutcomeLabel(round.winners)}</p>
         </div>
       )}
+      <StreakPanel title="카드 게임 통산 전적 (나)" summary={streak} />
     </section>
   );
 }

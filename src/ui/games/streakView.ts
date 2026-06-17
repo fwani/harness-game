@@ -51,6 +51,24 @@ export function summarizeStreakForGame(
   };
 }
 
+/**
+ * 단판 vs CPU 화면이 사람 결과를 기록할 때 쓰는 고정 player 라벨.
+ * 표시(selfStreakSummary)와 기록(recordGame)이 동일한 라벨을 쓰도록 한곳에 둔다
+ * — 라벨이 어긋나면 패널이 조용히 0으로 보이는 버그가 난다.
+ */
+export const SELF_PLAYER = "나";
+
+/**
+ * 특정 게임의 "나"(SELF_PLAYER) 통산 전적·연속을 요약한다.
+ * summarizeStreakForGame을 SELF_PLAYER로 고정 호출하는 얇은 래퍼(불변·결정적).
+ */
+export function selfStreakSummary(
+  records: GameRecord[],
+  game: GameRecord["game"],
+): StreakSummary {
+  return summarizeStreakForGame(records, game, SELF_PLAYER);
+}
+
 function currentStreakLabel(
   type: "win" | "loss" | "draw" | "none",
   length: number,
