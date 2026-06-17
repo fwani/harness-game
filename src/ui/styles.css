@@ -234,6 +234,11 @@ header h1 {
   margin-top: 0.3rem;
 }
 
+.dice-total {
+  margin-top: 0.4rem;
+  font-weight: 600;
+}
+
 /* --- boards (gomoku / go / janggi) --- */
 
 .board {

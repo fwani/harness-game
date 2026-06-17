@@ -16,7 +16,7 @@
 - 승패 조합 유효성: `(win, loss)` 또는 `(draw, draw)`만 허용 — 그 외 조합이면 throw.
 - 플레이어 라벨은 공백 아닌 문자열, 두 플레이어는 서로 달라야 한다.
 - `summarize`: 여러 판을 플레이어별 `{wins, losses, draws}`로 집계. 등장 순서 보존(결정적).
-- **`GameId` = `"rps" | "oddEven" | "gomoku" | "card" | "go" | "janggi"`** (전 게임 커버).
+- **`GameId` = `"rps" | "oddEven" | "gomoku" | "card" | "go" | "janggi" | "reversi" | "dice"`** (전 게임 커버).
 
 ## 3. 구현 상태
 
@@ -40,7 +40,7 @@
 
 ## 5. 알려진 갭 / 백로그
 
-- ✅ ~~`GameId` 확장~~: `"go"`·`"janggi"` 추가(완료).
+- ✅ ~~`GameId` 확장~~: `"go"`·`"janggi"`·`"reversi"`·`"dice"` 추가(완료).
 - ✅ ~~기록 저장 연동~~: 전 게임 "종료 → 저장" 연결(완료).
 - ✅ ~~기록 노출 UI~~: "전적" 탭 신설(완료).
 - **영속성**: 현재 인메모리만 — 새로고침 시 소실. 영속 저장소(localStorage/서버) 필요 여부 정의.
