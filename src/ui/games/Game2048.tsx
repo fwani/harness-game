@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { play2048, startGame } from "../../application/play2048";
 import type { Board, Direction } from "../../domain/game2048";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
@@ -33,6 +33,14 @@ export function Game2048() {
   });
   // 마지막 입력이 막힌(변화 없는) 방향이었는지 — 잘못된 입력 피드백용.
   const [blocked, setBlocked] = useState(false);
+
+  // 키 핸들러가 보드 div에 걸려 있어 포커스가 있어야 화살표 키가 동작한다.
+  // 클릭 없이도 바로 조작 가능하도록 마운트·"새 게임" 직후 보드에 자동 포커스를 준다.
+  const boardRef = useRef<HTMLDivElement>(null);
+  const focusBoard = () => boardRef.current?.focus({ preventScroll: true });
+  useEffect(() => {
+    focusBoard();
+  }, []);
 
   // 저장소 변경(한 판 기록)에 맞춰 통산 전적·연승 표시를 갱신한다.
   const records = useSyncExternalStore(subscribe, listRecords);
@@ -72,6 +80,8 @@ export function Game2048() {
     setScore(0);
     setStatus({ won: false, over: false });
     setBlocked(false);
+    // "새 게임" 클릭 후 포커스가 버튼에 남아 화살표 키가 죽지 않도록 보드로 되돌린다.
+    focusBoard();
   };
 
   const best = highestTile(board);
@@ -95,9 +105,10 @@ export function Game2048() {
       </div>
 
       <div
+        ref={boardRef}
         className="board2048"
         role="grid"
-        aria-label="2048 보드"
+        aria-label="2048 보드 — 화살표 키로 타일을 미세요"
         tabIndex={0}
         onKeyDown={onKeyDown}
       >
