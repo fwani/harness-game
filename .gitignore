@@ -21,3 +21,6 @@ coverage/
 # Logs / OS
 *.log
 .DS_Store
+
+# Playwright MCP 임시 산출물
+.playwright-mcp/
