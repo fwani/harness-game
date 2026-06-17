@@ -3,6 +3,7 @@ import { Rps } from "./games/Rps";
 import { OddEven } from "./games/OddEven";
 import { Deal } from "./games/Deal";
 import { HighCard } from "./games/HighCard";
+import { Baccarat } from "./games/Baccarat";
 import { Blackjack } from "./games/Blackjack";
 import { Gomoku } from "./games/Gomoku";
 import { Go } from "./games/Go";
@@ -15,6 +16,7 @@ type GameKey =
   | "oddeven"
   | "deal"
   | "highcard"
+  | "baccarat"
   | "blackjack"
   | "gomoku"
   | "go"
@@ -27,6 +29,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "oddeven", label: "홀짝", render: () => <OddEven /> },
   { key: "deal", label: "카드 딜", render: () => <Deal /> },
   { key: "highcard", label: "하이카드", render: () => <HighCard /> },
+  { key: "baccarat", label: "바카라", render: () => <Baccarat /> },
   { key: "blackjack", label: "블랙잭", render: () => <Blackjack /> },
   { key: "gomoku", label: "오목", render: () => <Gomoku /> },
   { key: "go", label: "바둑", render: () => <Go /> },
