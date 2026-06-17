@@ -606,6 +606,49 @@ button.dots-edge:disabled {
   color: #991b1b;
 }
 
+/* --- 메모리(짝 맞추기) --- */
+
+.board.memory {
+  background: #1e293b;
+  border-color: #0f172a;
+  gap: 6px;
+  padding: 6px;
+}
+
+/* 카드: 상태(덮임/뒤집힘/매치)를 색뿐 아니라 입체·테두리·기호(?)·라벨로 구분한다. */
+.memory-card {
+  border-radius: 6px;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+/* 덮인 카드: 올라온(raised) 모양 — 뒤집힌 카드와 색이 아니라 입체로도 구분. 값은 ?로 가림. */
+.memory-card.memory-down {
+  background: #475569;
+  color: #cbd5e1;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.25),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.memory-card.memory-down:not(:disabled):hover,
+.memory-card.memory-down:not(:disabled):focus-visible {
+  background: #64748b;
+}
+
+/* 뒤집힌(판정 대기) 카드: 눌린(flat) 모양 + 강조 테두리. */
+.memory-card.memory-up {
+  background: #f8fafc;
+  color: #0f172a;
+  border: 2px solid #f59e0b;
+}
+
+/* 짝 완성 카드: 가라앉은 모양 + 점선 테두리(색 외 단서). */
+.memory-card.memory-matched {
+  background: #dcfce7;
+  color: #14532d;
+  border: 2px dashed #16a34a;
+}
+
 /* --- 2048 --- */
 
 /* 좁은 화면(360px)에서도 깨지지 않도록 폭에 맞춰 줄어들고, 넓은 화면에선 max-width로 캡한다. */
