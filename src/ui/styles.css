@@ -768,6 +768,93 @@ button.dots-edge:disabled {
   font-size: 1.5rem;
 }
 
+/* --- 님(Nim) --- */
+
+/* 더미들을 세로로 쌓고, 좁은 화면에서 깨지지 않게 한다(색 비의존: 숫자+기호+라벨). */
+.board.nim {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 480px;
+  padding: 10px;
+}
+
+.nim-pile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 2px solid #475569;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.nim-pile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nim-pile-label {
+  font-weight: 700;
+}
+
+.nim-stones {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 돌 기호: 색이 아니라 ● 개수로 양을 표현. 좁은 화면에서 줄바꿈 허용. */
+.nim-stones-symbol {
+  letter-spacing: 2px;
+  color: #1e293b;
+  overflow-wrap: anywhere;
+}
+
+.nim-stones-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* 가져갈 개수 버튼들: 실제 <button>, 좁은 화면에서 줄바꿈. */
+.nim-take {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nim-take-btn {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 2px solid #1e3a8a;
+  border-radius: 6px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.nim-take-btn:not(:disabled):hover,
+.nim-take-btn:not(:disabled):focus-visible {
+  outline: 2px solid #f59e0b;
+}
+
+.nim-take-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.nim-empty {
+  color: #64748b;
+  font-style: italic;
+}
+
 /* --- 메모리(짝 맞추기) --- */
 
 .board.memory {
