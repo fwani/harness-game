@@ -33,6 +33,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   checkers: "체커",
   nim: "님",
   battleship: "배틀십",
+  hanoi: "하노이탑",
   "rps-match": "다전제(가위바위보)",
 };
 
