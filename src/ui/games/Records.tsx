@@ -12,6 +12,7 @@ const GAME_LABEL: Record<GameId, string> = {
   janggi: "장기",
   reversi: "오델로",
   dice: "주사위",
+  yut: "윷놀이",
 };
 
 const RESULT_LABEL = { win: "승", loss: "패", draw: "무" } as const;

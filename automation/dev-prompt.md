@@ -29,8 +29,16 @@
 ## 6. AI 셀프 코드리뷰
 PR diff를 정독해 치명적 버그·회귀·보안 문제를 high 기준으로 점검한다. 문제 발견 시 수정하고 4번부터 재검증한다. 최대 3회 반복하고도 치명 문제가 남으면 머지하지 말고 8번 에스컬레이션으로 간다.
 
-## 7. 자동 머지 (게이트 = CI + 셀프리뷰)
-`gh pr checks <pr> --watch` 로 harness 체크가 green인지 확인한다. green이고 셀프리뷰 통과면 `gh pr merge <pr> --squash --auto --delete-branch`. branch protection이 CI 통과를 강제하므로 미통과 시 머지되지 않는다. 사람 승인은 요구하지 않는다.
+## 7. 자동 머지 (게이트 = CI + 셀프리뷰) — 머지 확인까지 책임진다
+1) `gh pr merge <pr> --squash --auto --delete-branch` 로 auto-merge를 예약한다.
+2) **머지가 실제로 될 때까지 관찰한다(최대 ~15분, fire-and-forget 금지).** 반복:
+   - `gh pr view <pr> --json state,mergeStateStatus` 확인.
+   - `state=MERGED` → 완료.
+   - `mergeStateStatus=BEHIND` (main이 앞서감) → `gh pr update-branch <pr>` 로 베이스를 병합해 최신화하고(merge 커밋, **force-push 아님**) CI 재통과를 기다린다. **이걸 안 하면 strict branch protection 때문에 PR이 영영 BEHIND로 멈춘다.**
+   - `mergeStateStatus`가 BLOCKED/UNSTABLE 등이면 `gh pr checks <pr>` 로 CI를 확인하고, harness 실패면 원인을 고쳐 다시 push→4번 재검증.
+   - 충돌(CONFLICTING)이면 main을 머지해 해결하거나, 못 풀면 8번 에스컬레이션.
+3) ~15분 반복해도 머지가 안 되면 needs-human 라벨 + 코멘트로 에스컬레이션한다(브랜치는 남겨둔다).
+- branch protection이 "CI 통과 + 최신 상태"를 강제하므로, 빠른 main에서는 update-branch로 따라잡지 않으면 머지되지 않는다. 사람 승인은 요구하지 않는다.
 
 ## 8. 보안 바닥 — 절대 준수 (.agent-harness.yml)
 - 파괴적 명령(git reset --hard, git push --force/-f, git clean -f, git branch -D, rm -rf 등)을 실행하지 않는다.
