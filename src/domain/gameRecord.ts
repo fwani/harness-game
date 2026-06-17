@@ -10,6 +10,7 @@ export type GameId =
   | "gomoku"
   | "go"
   | "janggi"
+  | "connectfour"
   // 카드 게임은 각자 고유 GameId로 구분한다(하이카드/블랙잭/바카라/섯다/포커).
   | "highcard"
   | "blackjack"

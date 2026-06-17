@@ -13,6 +13,7 @@ import { GoStop } from "./games/GoStop";
 import { Gomoku } from "./games/Gomoku";
 import { Go } from "./games/Go";
 import { Reversi } from "./games/Reversi";
+import { ConnectFour } from "./games/ConnectFour";
 import { Janggi } from "./games/Janggi";
 import { Yut } from "./games/Yut";
 import { NumberBaseball } from "./games/NumberBaseball";
@@ -39,6 +40,7 @@ type GameKey =
   | "gomoku"
   | "go"
   | "reversi"
+  | "connectfour"
   | "janggi"
   | "yut"
   | "numberbaseball"
@@ -64,6 +66,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "gomoku", label: "오목", render: () => <Gomoku /> },
   { key: "go", label: "바둑", render: () => <Go /> },
   { key: "reversi", label: "오델로", render: () => <Reversi /> },
+  { key: "connectfour", label: "커넥트포", render: () => <ConnectFour /> },
   { key: "janggi", label: "장기", render: () => <Janggi /> },
   { key: "yut", label: "윷놀이", render: () => <Yut /> },
   { key: "numberbaseball", label: "숫자야구", render: () => <NumberBaseball /> },
