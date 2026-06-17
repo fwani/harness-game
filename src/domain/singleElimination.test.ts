@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  advanceSingleEliminationRound,
   generateSingleEliminationFirstRound,
   type BracketPairing,
 } from "./singleElimination";
@@ -123,5 +124,125 @@ describe("generateSingleEliminationFirstRound", () => {
     const snapshot = [...players];
     generateSingleEliminationFirstRound(players);
     expect(players).toEqual(snapshot);
+  });
+});
+
+describe("advanceSingleEliminationRound", () => {
+  it("advances a quarterfinal (8강) round into the semifinal (4강) in seed order", () => {
+    const round: BracketPairing[] = [
+      { a: "s1", b: "s8" },
+      { a: "s4", b: "s5" },
+      { a: "s3", b: "s6" },
+      { a: "s2", b: "s7" },
+    ];
+    const next = advanceSingleEliminationRound(round, ["s1", "s5", "s3", "s2"]);
+    expect(next).toEqual([
+      { a: "s1", b: "s5" },
+      { a: "s3", b: "s2" },
+    ]);
+  });
+
+  it("auto-advances a bye pairing when its winner is omitted (null)", () => {
+    const round: BracketPairing[] = [
+      { a: "s1", b: null },
+      { a: "s2", b: "s3" },
+    ];
+    const next = advanceSingleEliminationRound(round, [null, "s2"]);
+    expect(next).toEqual([{ a: "s1", b: "s2" }]);
+  });
+
+  it("accepts an explicit bye winner that matches the auto-advancing seat", () => {
+    const round: BracketPairing[] = [
+      { a: "s1", b: null },
+      { a: "s2", b: "s3" },
+    ];
+    const next = advanceSingleEliminationRound(round, ["s1", "s3"]);
+    expect(next).toEqual([{ a: "s1", b: "s3" }]);
+  });
+
+  it("throws when a bye winner does not match the auto-advancing seat", () => {
+    const round: BracketPairing[] = [{ a: "s1", b: null }];
+    expect(() => advanceSingleEliminationRound(round, ["nope"])).toThrow();
+  });
+
+  it("gives the last advancer a bye when the number of advancers is odd", () => {
+    const round: BracketPairing[] = [
+      { a: "s1", b: "s8" },
+      { a: "s4", b: "s5" },
+      { a: "s3", b: null },
+    ];
+    const next = advanceSingleEliminationRound(round, ["s1", "s4", null]);
+    expect(next).toEqual([
+      { a: "s1", b: "s4" },
+      { a: "s3", b: null },
+    ]);
+  });
+
+  it("returns an empty bracket (champion decided) when only one advancer remains", () => {
+    const round: BracketPairing[] = [{ a: "s1", b: "s2" }];
+    expect(advanceSingleEliminationRound(round, ["s1"])).toEqual([]);
+  });
+
+  it("returns an empty bracket for an empty round", () => {
+    expect(advanceSingleEliminationRound([], [])).toEqual([]);
+  });
+
+  it("throws when a real match winner is null", () => {
+    const round: BracketPairing[] = [{ a: "s1", b: "s2" }];
+    expect(() => advanceSingleEliminationRound(round, [null])).toThrow();
+  });
+
+  it("throws when a winner is not one of the pairing's participants", () => {
+    const round: BracketPairing[] = [{ a: "s1", b: "s2" }];
+    expect(() => advanceSingleEliminationRound(round, ["s3"])).toThrow();
+  });
+
+  it("throws when winners length does not match the round length", () => {
+    const round: BracketPairing[] = [
+      { a: "s1", b: "s2" },
+      { a: "s3", b: "s4" },
+    ];
+    expect(() => advanceSingleEliminationRound(round, ["s1"])).toThrow();
+  });
+
+  it("preserves advancer order deterministically", () => {
+    const round: BracketPairing[] = [
+      { a: "s2", b: "s7" },
+      { a: "s3", b: "s6" },
+      { a: "s4", b: "s5" },
+      { a: "s1", b: "s8" },
+    ];
+    const next = advanceSingleEliminationRound(round, ["s7", "s3", "s5", "s1"]);
+    expect(next).toEqual([
+      { a: "s7", b: "s3" },
+      { a: "s5", b: "s1" },
+    ]);
+  });
+
+  it("does not mutate the input round or winners arrays", () => {
+    const round: BracketPairing[] = [
+      { a: "s1", b: "s8" },
+      { a: "s4", b: "s5" },
+    ];
+    const roundSnapshot = round.map((p) => ({ ...p }));
+    const winners = ["s1", "s5"];
+    const winnersSnapshot = [...winners];
+    advanceSingleEliminationRound(round, winners);
+    expect(round).toEqual(roundSnapshot);
+    expect(winners).toEqual(winnersSnapshot);
+  });
+
+  it("chains generateSingleEliminationFirstRound into successive rounds (5 players to champion)", () => {
+    const first = generateSingleEliminationFirstRound(["s1", "s2", "s3", "s4", "s5"]);
+    // first (seed order [1,8,4,5,2,7,3,6]): [{s1,null},{s4,s5},{s2,null},{s3,null}]
+    const semi = advanceSingleEliminationRound(first, [null, "s4", null, null]);
+    expect(semi).toEqual([
+      { a: "s1", b: "s4" },
+      { a: "s2", b: "s3" },
+    ]);
+    const final = advanceSingleEliminationRound(semi, ["s1", "s2"]);
+    expect(final).toEqual([{ a: "s1", b: "s2" }]);
+    const champion = advanceSingleEliminationRound(final, ["s1"]);
+    expect(champion).toEqual([]);
   });
 });
