@@ -9,7 +9,7 @@ CI 통과를 강제한다.
 
 ```
 launchd (로컬 macOS, 컴퓨터가 켜져 있을 때)
- ├─ com.fwani.harness-game.planner → planner.sh → 백로그<TARGET(기본 5)이면 planner-prompt.md로 이슈 생성
+ ├─ com.fwani.harness-game.planner → planner.sh → 백로그<TARGET(기본 6)이면 planner-prompt.md로 이슈 생성
  ├─ com.fwani.harness-game.dev     → dev.sh     → ready-for-dev 있으면 dev-prompt.md로 구현→PR→머지
  ├─ com.fwani.harness-game.dev2    → dev.sh (AUTODEV_WORKER=2) → 2번째 병렬 개발 워커
  └─ com.fwani.harness-game.qa      → qa.sh      → 게임 1개를 브라우저로 플레이테스트 → qa-finding 이슈
@@ -28,7 +28,7 @@ launchd (로컬 macOS, 컴퓨터가 켜져 있을 때)
 
 ## 동작 규칙 (요약)
 
-- **폭주 방지**: 기획은 open `ready-for-dev`가 `TARGET`(기본 5) 미만일 때만 부족분 보충 (dev 워커 2개가 늘 서로 다른 이슈를 잡도록 백로그를 넉넉히 유지).
+- **폭주 방지**: 기획은 open `ready-for-dev`가 `TARGET`(기본 6) 미만일 때만 부족분 보충 (dev 워커 2개가 늘 서로 다른 이슈를 잡도록 백로그를 넉넉히 유지).
 - **비용 절감**: 두 스크립트 모두 gh로 일거리 유무를 먼저 확인하고, 있을 때만 claude 호출.
 - **격리**: 봇은 전용 클론(`~/Library/Application Support/harness-game-autodev/repo-{dev,planner}`)에서 작업 — 사용자 작업 디렉터리를 건드리지 않는다.
 - **시간대별 간격**: planner/dev/dev2는 09~18시 3분·그 외 10분(plist `StartInterval=180`). QA는 09~18시 5분·그 외 10분(`StartInterval=300`). 각 스크립트 내 시간 게이트로 제어.
