@@ -21,6 +21,7 @@ export type GameId =
   // 레거시: 위 카드 게임들이 과거 공유하던 키. 이미 영속된 기록을 읽기 위해서만 유지한다(신규 기록 미사용).
   | "card"
   | "reversi"
+  | "chess"
   | "dice"
   | "yut"
   | "gostop"
