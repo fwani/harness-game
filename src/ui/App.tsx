@@ -28,6 +28,7 @@ import { Nim } from "./games/Nim";
 import { Battleship } from "./games/Battleship";
 import { Hanoi } from "./games/Hanoi";
 import { SlidePuzzle } from "./games/SlidePuzzle";
+import { Sokoban } from "./games/Sokoban";
 import { MemoryMatch } from "./games/MemoryMatch";
 import { Hangman } from "./games/Hangman";
 import { Pig } from "./games/Pig";
@@ -71,6 +72,7 @@ type GameKey =
   | "battleship"
   | "hanoi"
   | "slidepuzzle"
+  | "sokoban"
   | "memory"
   | "hangman"
   | "pig"
@@ -113,6 +115,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "battleship", label: "배틀십", render: () => <Battleship /> },
   { key: "hanoi", label: "하노이탑", render: () => <Hanoi /> },
   { key: "slidepuzzle", label: "슬라이드 퍼즐", render: () => <SlidePuzzle /> },
+  { key: "sokoban", label: "소코반", render: () => <Sokoban /> },
   { key: "memory", label: "메모리", render: () => <MemoryMatch /> },
   { key: "hangman", label: "행맨", render: () => <Hangman /> },
   { key: "pig", label: "피그", render: () => <Pig /> },

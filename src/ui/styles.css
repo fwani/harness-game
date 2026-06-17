@@ -1111,6 +1111,66 @@ button.dots-edge:disabled {
   box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.6);
 }
 
+/* --- 소코반(Sokoban) --- */
+
+.board.sokoban {
+  background: #3f3f46;
+  border-color: #27272a;
+  font-size: clamp(14px, 5vw, 22px);
+  line-height: 1;
+}
+
+/* 화살표 키 포커스가 보이도록 명시적 아웃라인(키보드 조작 단서). */
+.board.sokoban:focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* 칸은 색만이 아니라 기호(#/◎/□/■/@)와 aria-label로 구분한다. 비인터랙티브 표시 칸. */
+.sokoban-cell {
+  font-weight: 700;
+  color: #f4f4f5;
+  cursor: default;
+}
+
+.sokoban-wall {
+  background: #52525b;
+  color: #18181b;
+}
+
+.sokoban-floor {
+  background: #71717a;
+}
+
+/* 목표 칸: 노란 표식(◎) + 색. */
+.sokoban-target {
+  background: #71717a;
+  color: #fde047;
+}
+
+.sokoban-box {
+  background: #a16207;
+  color: #fff7ed;
+}
+
+/* 목표 위 상자(완료): 굵은 테두리로 색 외 단서도 준다. */
+.sokoban-box-on-target {
+  background: #15803d;
+  color: #ecfccb;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+.sokoban-player,
+.sokoban-player-on-target {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+/* 플레이어가 목표 위에 있을 때: 노란 테두리로 목표 칸임을 함께 표시. */
+.sokoban-player-on-target {
+  box-shadow: inset 0 0 0 2px rgba(253, 224, 71, 0.85);
+}
+
 /* --- 빙고(Bingo) --- */
 
 .board.bingo {
