@@ -8,6 +8,7 @@ import {
 import { countReversiDiscs } from "../../domain/reversiScore";
 import { recordGame } from "../records";
 import { moveKey, legalMoveKeySet, reversiWinSide } from "./reversiView";
+import { boardGridStyle } from "./boardView";
 
 const SIZE = 8;
 
@@ -74,7 +75,7 @@ export function Reversi() {
       )}
       <div
         className="board reversi"
-        style={{ gridTemplateColumns: `repeat(${SIZE}, 1fr)` }}
+        style={boardGridStyle(SIZE)}
       >
         {state.board.map((row, y) =>
           row.map((cell, x) => {

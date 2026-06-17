@@ -264,7 +264,9 @@ header h1 {
 .board {
   display: grid;
   gap: 0;
-  width: max-content;
+  /* 좁은 폭(예: 360px)에서는 컨테이너에 맞춰 줄어들고, 넓은 화면에서는 인라인 maxWidth
+     (열 수 × 셀 폭, boardGridStyle)로 캡해 기존 칸 크기를 유지한다. #202 */
+  width: 100%;
   max-width: 100%;
   margin: 1rem 0;
   background: #b8860b;
@@ -273,8 +275,10 @@ header h1 {
 }
 
 .cell {
-  width: 26px;
-  height: 26px;
+  /* 고정 26px 대신 트랙(minmax(0, 1fr))을 채워 좁은 폭에서 칸이 함께 줄어든다. */
+  width: 100%;
+  aspect-ratio: 1;
+  min-width: 0;
   padding: 0;
   border: 0.5px solid rgba(0, 0, 0, 0.4);
   background: transparent;
