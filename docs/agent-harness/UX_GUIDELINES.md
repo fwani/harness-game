@@ -60,7 +60,7 @@
 | 섯다 (`Sutda.tsx`) | 딜링 → CPU와 2장 1판 | ✅ vs CPU | `playSutdaRound` 연동. 양측 2장(월 표기)·등급(땡/특수패/끗)·승패 표시, 전적 저장 |
 | 포커 (`Poker.tsx`) | 딜링 → CPU와 5장 쇼다운 | ✅ vs CPU | `playPokerShowdown` 연동. 양측 5장(무늬+숫자)·족보 이름·승패(동률 무승부) 표시, 전적 저장 |
 | 오목 (`Gomoku.tsx`) | 2인 로컬 / vs CPU 착수 | ✅ vs CPU | 모드 토글(2인 로컬/vs CPU). vs CPU는 `chooseCpuGomokuMove`(`gomokuCpuView`)로 백을 자동 착수. 턴/승자·무승부 표시·리셋·전적 저장 |
-| 바둑 (`Go.tsx`) | 2인 로컬 착수+따냄+패스 | ✅ 계가·승자까지 | `playGo`+`scoreArea` 연동. 패스→2패스 종료→계가, 전적 저장 |
+| 바둑 (`Go.tsx`) | 2인 로컬 착수+따냄+패스 | ✅ 계가·승자까지 | `playGo`+`scoreArea` 연동. 패스→2패스 종료→계가, 전적 저장. 무효수 사유는 `goView` 한국어 매핑 |
 | 오델로 (`Reversi.tsx`) | 2인 로컬 합법 수 착수 | ✅ 자동 패스·계가·승자까지 | `playReversi` 연동. 합법 수만 활성·자동 패스 안내·디스크 점수·전적 저장 |
 | 장기 (`Janggi.tsx`) | 2인 로컬 기물 이동 | ✅ 승부까지 | 선택·합법 수·이동·턴·장군 경고·승부·전적 저장 |
 | 윷놀이 (`Yut.tsx`) | 윷 던지기 → CPU 자동 던지기 → 외곽 20칸 완주 경주 | ✅ vs CPU | `playYutTurn` 연동. 도개걸윷모 텍스트 라벨·진행도 막대(traveled/20)·승패 표시, 전적 저장(`yut`) |
