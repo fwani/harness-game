@@ -37,6 +37,7 @@ export type GameId =
   | "battleship"
   | "hanoi"
   | "slidepuzzle"
+  | "pegsolitaire"
   | "sokoban"
   | "hangman"
   | "pig"
