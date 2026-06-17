@@ -29,6 +29,7 @@ export type GameId =
   | "minesweeper"
   | "dotsandboxes"
   | "memory"
+  | "mancala"
   | "checkers"
   | "rps-match";
 
