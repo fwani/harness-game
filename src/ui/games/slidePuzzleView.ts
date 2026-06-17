@@ -36,11 +36,19 @@ export interface SlidePuzzleCellView {
 /**
  * 보드를 셀 표시 모델 배열로 변환한다(순수·결정적, 입력 불변).
  * - movable은 도메인 `legalSlidePuzzleMoves`가 돌려준 타일만 true로 표시한다(규칙 재구현 금지).
+ * - `solved`(클리어)면 입력이 차단되므로 어떤 타일도 movable로 강조·안내하지 않는다
+ *   (종료 상태와 시각/접근성 표시 일치 — 완성 판정은 호출부에서 `isSlidePuzzleSolved`로 산출해 넘긴다).
  * - 좌표는 기존 보드 렌더와 동일하게 row-major(index = row*size + col)로 계산한다.
  */
-export function slidePuzzleCells(state: SlidePuzzleState): SlidePuzzleCellView[] {
+export function slidePuzzleCells(
+  state: SlidePuzzleState,
+  solved = false,
+): SlidePuzzleCellView[] {
   const { tiles, size } = state;
-  const movableTiles = new Set(legalSlidePuzzleMoves(state).map((m) => m.tile));
+  // 클리어 상태에서는 합법 수를 계산하지 않고 모든 타일을 movable=false로 둔다.
+  const movableTiles = solved
+    ? new Set<number>()
+    : new Set(legalSlidePuzzleMoves(state).map((m) => m.tile));
   return tiles.map((tile, index) => {
     const row = Math.floor(index / size);
     const col = index % size;

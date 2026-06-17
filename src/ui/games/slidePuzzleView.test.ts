@@ -73,10 +73,37 @@ describe("slidePuzzleView.slidePuzzleCells", () => {
     expect(movable).toEqual([2, 4, 5, 7]);
   });
 
+  it("클리어(solved) 상태에서는 어떤 타일도 movable이 아니고 aria에 '밀 수 있음'이 없다", () => {
+    // 완성 보드라도 solved=true면 종료 상태와 표시를 일치시켜 강조/안내를 제거한다(#403).
+    const cells = slidePuzzleCells(createSlidePuzzle(3), true);
+    expect(cells.every((c) => c.movable === false)).toBe(true);
+    expect(cells.every((c) => !c.ariaLabel.includes("밀 수 있음"))).toBe(true);
+
+    // 클리어 직후 빈 칸과 인접하던 6·8 타일도 더는 강조/안내되지 않는다.
+    const six = cells.find((c) => c.tile === 6)!;
+    const eight = cells.find((c) => c.tile === 8)!;
+    expect(six.movable).toBe(false);
+    expect(six.ariaLabel).not.toContain("밀 수 있음");
+    expect(eight.movable).toBe(false);
+    expect(eight.ariaLabel).not.toContain("밀 수 있음");
+  });
+
+  it("solved=false(기본)면 합법 수 기준 movable을 그대로 계산한다", () => {
+    const state = createSlidePuzzle(3);
+    // 기본값(false)과 명시적 false가 동일하게 동작한다.
+    const fromDefault = slidePuzzleCells(state);
+    const fromExplicit = slidePuzzleCells(state, false);
+    const tilesOf = (cs: ReturnType<typeof slidePuzzleCells>) =>
+      cs.filter((c) => c.movable).map((c) => c.tile).sort((a, b) => a - b);
+    expect(tilesOf(fromDefault)).toEqual([6, 8]);
+    expect(tilesOf(fromExplicit)).toEqual([6, 8]);
+  });
+
   it("입력 상태를 변형하지 않는다", () => {
     const state = createSlidePuzzle(3);
     const snapshot = state.tiles.slice();
     slidePuzzleCells(state);
+    slidePuzzleCells(state, true);
     expect(state.tiles).toEqual(snapshot);
   });
 });
