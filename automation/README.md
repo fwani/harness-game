@@ -9,7 +9,7 @@ CI 통과를 강제한다.
 
 ```
 launchd (로컬 macOS, 컴퓨터가 켜져 있을 때)
- ├─ com.fwani.harness-game.planner → planner.sh → 백로그<3이면 planner-prompt.md로 이슈 생성
+ ├─ com.fwani.harness-game.planner → planner.sh → 백로그<TARGET(기본 5)이면 planner-prompt.md로 이슈 생성
  └─ com.fwani.harness-game.dev     → dev.sh     → ready-for-dev 있으면 dev-prompt.md로 구현→PR→머지
 ```
 
@@ -25,7 +25,7 @@ launchd (로컬 macOS, 컴퓨터가 켜져 있을 때)
 
 ## 동작 규칙 (요약)
 
-- **폭주 방지**: 기획은 open `ready-for-dev`가 `TARGET`(기본 3) 미만일 때만 부족분 보충.
+- **폭주 방지**: 기획은 open `ready-for-dev`가 `TARGET`(기본 5) 미만일 때만 부족분 보충 (dev 워커 2개가 늘 서로 다른 이슈를 잡도록 백로그를 넉넉히 유지).
 - **비용 절감**: 두 스크립트 모두 gh로 일거리 유무를 먼저 확인하고, 있을 때만 claude 호출.
 - **격리**: 봇은 전용 클론(`~/Library/Application Support/harness-game-autodev/repo-{dev,planner}`)에서 작업 — 사용자 작업 디렉터리를 건드리지 않는다.
 - **시간대별 간격**: 09~18시 3분, 그 외 10분 (스크립트 내 시간 게이트 + plist `StartInterval=180`).
