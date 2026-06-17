@@ -40,9 +40,9 @@ function Hand({
 
 export function Sutda() {
   const [round, setRound] = useState<SutdaRoundResult | null>(null);
-  // 카드 게임 5종이 공유하는 "card" 통산 전적을 화면에 표시한다.
+  // 섯다 통산 전적을 화면에 표시한다(게임별 고유 키 "sutda").
   const records = useSyncExternalStore(subscribe, listRecords);
-  const streak = selfStreakSummary(records, "card");
+  const streak = selfStreakSummary(records, "sutda");
 
   return (
     <section className="game">
@@ -55,7 +55,7 @@ export function Sutda() {
         onClick={() => {
           const result = playSutdaRound(rng);
           setRound(result);
-          recordGame("card", SELF_PLAYER, "CPU", result.result);
+          recordGame("sutda", SELF_PLAYER, "CPU", result.result);
         }}
       >
         {round ? "다시 딜링" : "딜링"}
@@ -70,7 +70,7 @@ export function Sutda() {
           <p className="outcome">{sutdaOutcomeLabel(round.result)}</p>
         </div>
       )}
-      <StreakPanel title="카드 게임 통산 전적 (나)" summary={streak} />
+      <StreakPanel title="섯다 통산 전적 (나)" summary={streak} />
     </section>
   );
 }

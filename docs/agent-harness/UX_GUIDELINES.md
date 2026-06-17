@@ -53,12 +53,12 @@
 | 가위바위보 (`Rps.tsx`) | 손 선택 → CPU와 1판 | ✅ vs CPU | 결과를 전적에 저장. 화면 내 현재 연승·통산·최장 연속 표시(`streakView`) |
 | 홀짝 (`OddEven.tsx`) | 홀/짝 추측 → 추첨 | ✅ vs 난수 | 결과를 전적에 저장. 화면 내 현재 연승·통산·최장 연속 표시(`streakView`) |
 | 카드 딜 (`Deal.tsx`) | 인원·장수 입력 → 딜 | ✅ 딜만 | 게임이 아닌 유틸. 입력 검증 에러를 플레이어용 한국어 사유로 표시(`dealView.validateDealInput`) |
-| 하이카드 (`HighCard.tsx`) | 카드 뽑기 → CPU와 비교 | ✅ vs CPU | `playHighCard` 연동, 결과를 전적에 저장. 화면 내 카드 게임 통산 전적·연승 표시(`StreakPanel`, `card` 공유) |
+| 하이카드 (`HighCard.tsx`) | 카드 뽑기 → CPU와 비교 | ✅ vs CPU | `playHighCard` 연동, 결과를 전적에 저장(`highcard`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
 | 주사위 (`Dice.tsx`) | 모드(합계/족보) 선택 → 굴리기 → CPU와 비교 | ✅ vs CPU | 합계: `playDiceRound`. 족보(야추류): `playDiceCategoryRound`(5개 굴림, 족보 이름 표시). 주사위 면+숫자·승패 표시, 전적 저장(`dice`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
-| 바카라 (`Baccarat.tsx`) | 딜링 → 뱅커와 1판 | ✅ vs 뱅커 | `playBaccaratRound` 연동(punto banco 타블로), 손패·끗수·승패 표시, 전적 저장. 화면 내 카드 게임 통산 전적·연승 표시(`StreakPanel`, `card` 공유) |
-| 블랙잭 (`Blackjack.tsx`) | 딜링 → 딜러와 1판 자동 진행 | ✅ vs 딜러 | `playBlackjackRound` 연동. 양측 손패·합계(버스트/블랙잭 라벨)·승패 표시, 전적 저장. 화면 내 카드 게임 통산 전적·연승 표시(`StreakPanel`, `card` 공유) |
-| 섯다 (`Sutda.tsx`) | 딜링 → CPU와 2장 1판 | ✅ vs CPU | `playSutdaRound` 연동. 양측 2장(월 표기)·등급(땡/특수패/끗)·승패 표시, 전적 저장. 화면 내 카드 게임 통산 전적·연승 표시(`StreakPanel`, `card` 공유) |
-| 포커 (`Poker.tsx`) | 딜링 → CPU와 5장 쇼다운 | ✅ vs CPU | `playPokerShowdown` 연동. 양측 5장(무늬+숫자)·족보 이름·승패(동률 무승부) 표시, 전적 저장. 화면 내 카드 게임 통산 전적·연승 표시(`StreakPanel`, `card` 공유) |
+| 바카라 (`Baccarat.tsx`) | 딜링 → 뱅커와 1판 | ✅ vs 뱅커 | `playBaccaratRound` 연동(punto banco 타블로), 손패·끗수·승패 표시, 전적 저장(`baccarat`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
+| 블랙잭 (`Blackjack.tsx`) | 딜링 → 딜러와 1판 자동 진행 | ✅ vs 딜러 | `playBlackjackRound` 연동. 양측 손패·합계(버스트/블랙잭 라벨)·승패 표시, 전적 저장(`blackjack`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
+| 섯다 (`Sutda.tsx`) | 딜링 → CPU와 2장 1판 | ✅ vs CPU | `playSutdaRound` 연동. 양측 2장(월 표기)·등급(땡/특수패/끗)·승패 표시, 전적 저장(`sutda`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
+| 포커 (`Poker.tsx`) | 딜링 → CPU와 5장 쇼다운 | ✅ vs CPU | `playPokerShowdown` 연동. 양측 5장(무늬+숫자)·족보 이름·승패(동률 무승부) 표시, 전적 저장(`poker`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
 | 오목 (`Gomoku.tsx`) | 2인 로컬 / vs CPU 착수 | ✅ vs CPU | 모드 토글(2인 로컬/vs CPU). vs CPU는 `chooseCpuGomokuMove`(`gomokuCpuView`)로 백을 자동 착수. 턴/승자·무승부 표시·리셋·전적 저장 |
 | 바둑 (`Go.tsx`) | 2인 로컬 / vs CPU 착수+따냄+패스 | ✅ vs CPU·계가·승자까지 | 모드 토글(2인 로컬/vs CPU). vs CPU는 `chooseCpuGoMove`(`goCpuView`)로 백을 자동 착수(둘 곳 없으면 자동 패스 안내). `playGo`+`scoreArea` 연동, 패스→2패스 종료→계가, 전적 저장. 무효수 사유는 `goView` 한국어 매핑 |
 | 오델로 (`Reversi.tsx`) | 2인 로컬 / vs CPU 합법 수 착수 | ✅ vs CPU·자동 패스·계가·승자까지 | `playReversi`+`reversiCpuView`(`chooseRandomReversiMove`) 연동. 모드 토글·합법 수만 활성·자동 패스 안내·디스크 점수·전적 저장 |
@@ -87,7 +87,7 @@
 - ✅ ~~누적 점수/세션(화면 내)~~: 가위바위보·홀짝에 더해 단판 vs CPU 화면
   (하이카드·바카라·블랙잭·섯다·포커·주사위·윷놀이)에도 현재 연승/통산/최장 연속을
   표시(`streakView.selfStreakSummary`/`SELF_PLAYER` + `StreakPanel` 재사용,
-  카드 5종은 `card` id로 한 패널 공유) — 완료.
+  카드 5종은 각자 고유 `GameId`로 기록·집계되어 게임별 패널을 따로 가진다) — 완료.
 - **접근성/반응형 점검**: 보드 셀 키보드 내비게이션, 모바일 레이아웃, 명도 대비.
 
 ## 참고
