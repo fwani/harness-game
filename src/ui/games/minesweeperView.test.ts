@@ -1,11 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { createMinefield, revealCell } from "../../domain/minesweeper";
-import { cellView, countHidden, describeMinesweeperStatus } from "./minesweeperView";
+import {
+  cellView,
+  countHidden,
+  countSafeHidden,
+  describeMinesweeperStatus,
+} from "./minesweeperView";
 
 describe("cellView", () => {
   it("미공개 칸은 내용 없이 hidden으로 표시한다", () => {
     const board = createMinefield(2, 2, []);
-    const v = cellView(board[0]![0]!, false, 0, 0);
+    const v = cellView(board[0]![0]!, "none", 0, 0);
     expect(v.kind).toBe("hidden");
     expect(v.content).toBe("");
     expect(v.revealed).toBe(false);
@@ -15,29 +20,38 @@ describe("cellView", () => {
   it("공개된 인접 0 칸은 빈 칸(empty)으로, 숫자 칸은 숫자로 표시한다", () => {
     // 한 칸에만 지뢰 → (0,0)은 인접 1(number), 멀리 떨어진 (2,2)는 인접 0(empty).
     const board = revealCell(createMinefield(3, 3, [[1, 1]]), 0, 0);
-    const numberCell = cellView(board[0]![0]!, false, 0, 0);
+    const numberCell = cellView(board[0]![0]!, "none", 0, 0);
     expect(numberCell.kind).toBe("number");
     expect(numberCell.content).toBe("1");
     expect(numberCell.revealed).toBe(true);
 
     const emptyBoard = revealCell(createMinefield(3, 3, [[0, 0]]), 2, 2);
-    const emptyCell = cellView(emptyBoard[2]![2]!, false, 2, 2);
+    const emptyCell = cellView(emptyBoard[2]![2]!, "none", 2, 2);
     expect(emptyCell.kind).toBe("empty");
     expect(emptyCell.content).toBe("");
   });
 
-  it("revealAll이면 미공개 지뢰도 💣로 노출한다", () => {
+  it("패배(exploded) 시 미공개 지뢰를 💣로 노출한다", () => {
     const board = createMinefield(2, 2, [[0, 0]]);
-    const hidden = cellView(board[0]![0]!, false, 0, 0);
+    const hidden = cellView(board[0]![0]!, "none", 0, 0);
     expect(hidden.kind).toBe("hidden");
-    const exposed = cellView(board[0]![0]!, true, 0, 0);
+    const exposed = cellView(board[0]![0]!, "exploded", 0, 0);
     expect(exposed.kind).toBe("mine");
     expect(exposed.content).toBe("💣");
   });
 
+  it("승리(flagged) 시 안전하게 피한 미공개 지뢰를 🚩로 표시한다(승/패 마무리 대칭)", () => {
+    const board = createMinefield(2, 2, [[0, 0]]);
+    const flagged = cellView(board[0]![0]!, "flagged", 0, 0);
+    expect(flagged.kind).toBe("mine");
+    expect(flagged.content).toBe("🚩");
+    expect(flagged.revealed).toBe(false);
+    expect(flagged.ariaLabel).toContain("피함");
+  });
+
   it("좌표를 1-기반으로 라벨에 포함한다(행/열)", () => {
     const board = createMinefield(2, 2, []);
-    expect(cellView(board[1]![0]!, false, 1, 0).ariaLabel).toContain("2행 1열");
+    expect(cellView(board[1]![0]!, "none", 1, 0).ariaLabel).toContain("2행 1열");
   });
 });
 
@@ -52,6 +66,21 @@ describe("countHidden", () => {
     const before = countHidden(board);
     const after = countHidden(revealCell(board, 2, 2));
     expect(after).toBeLessThan(before);
+  });
+});
+
+describe("countSafeHidden", () => {
+  it("미공개 지뢰는 세지 않는다(안전한 미공개 칸만 센다)", () => {
+    // 9칸 중 지뢰 1개 → 안전한 미공개 칸 8.
+    expect(countSafeHidden(createMinefield(3, 3, [[0, 0]]))).toBe(8);
+  });
+
+  it("모든 안전한 칸을 열면 0이 된다(승리 상태와 일치)", () => {
+    // (0,0) 지뢰. (2,2)를 열면 연쇄 공개로 모든 안전한 칸이 열린다(3×3, 지뢰 1개는 구석).
+    const cleared = revealCell(createMinefield(3, 3, [[0, 0]]), 2, 2);
+    expect(countSafeHidden(cleared)).toBe(0);
+    // 미공개 지뢰는 그대로 남아 있어도(countHidden=1) 남은 안전 칸은 0이다.
+    expect(countHidden(cleared)).toBe(1);
   });
 });
 
