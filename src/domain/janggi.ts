@@ -371,14 +371,28 @@ export function isLegalMove(
   return canMovePiece(board, piece, from, to);
 }
 
-/** `side` 기물이 from에서 갈 수 있는 모든 합법 to 좌표 목록(순서 무관). */
+/**
+ * `side` 기물이 from에서 갈 수 있는 모든 합법 to 좌표 목록(순서 무관).
+ *
+ * 기하적으로 합법인 수 중, **둔 뒤 자기 장이 잡힐 위치에 놓이는 self-check 수는
+ * 제외**한다(`leavesOwnGeneralInCheck`). 그 결과:
+ * - 장군(check) 상태에서는 장군을 해소하는 수(왕 피신·중간 차단·공격 기물 포획)만 반환되고,
+ * - 어떤 국면에서도 스스로 장을 노출시키는 수는 합법 수에 포함되지 않는다.
+ *
+ * (자기 장이 보드에 없는 합성/종료 국면에서는 self-check 개념이 없으므로 거르지 않는다.)
+ * 보드를 변형하지 않는다.
+ */
 export function legalMovesFrom(board: Board, side: Side, from: Pos): Pos[] {
   const moves: Pos[] = [];
   for (let y = 0; y < board.length; y++) {
     const row = board[y]!;
     for (let x = 0; x < row.length; x++) {
-      if (isLegalMove(board, side, from, { x, y })) {
-        moves.push({ x, y });
+      const to: Pos = { x, y };
+      if (
+        isLegalMove(board, side, from, to) &&
+        !leavesOwnGeneralInCheck(board, side, from, to)
+      ) {
+        moves.push(to);
       }
     }
   }
@@ -450,6 +464,26 @@ export function isInCheck(board: Board, side: Side): boolean {
     }
   }
   return false;
+}
+
+/**
+ * `side` 진영이 from→to(기하적으로 합법인 한 수)를 둔 뒤, 자기 장이 잡힐 위치에
+ * 놓이는지(self-check) 판정한다.
+ * - 자기 장이 보드에 없으면(합성/종료 국면) self-check 개념이 없으므로 false.
+ * - 그 외에는 수를 둔 새 보드에서 `isInCheck(next, side)`로 판정한다.
+ * 보드를 변형하지 않는다(applyMove가 새 보드를 반환한다).
+ */
+function leavesOwnGeneralInCheck(
+  board: Board,
+  side: Side,
+  from: Pos,
+  to: Pos,
+): boolean {
+  if (findGeneral(board, side) === null) {
+    return false;
+  }
+  const next = applyMove(board, side, from, to);
+  return isInCheck(next, side);
 }
 
 /**
