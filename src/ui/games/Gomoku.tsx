@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { startGame, applyMove, type GomokuState } from "../../application/playGomoku";
-import { isBoardFull, type Stone } from "../../domain/gomoku";
+import { startGame, applyMove, isFinished, type GomokuState } from "../../application/playGomoku";
+import { type Stone } from "../../domain/gomoku";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
 import { recordGame, type WinSide } from "../records";
 import { boardGridStyle } from "./boardView";
@@ -15,10 +15,8 @@ const rng = new MathRandomSource();
 
 type Mode = "local" | "cpu";
 
-/** 게임이 끝났는지: 5목 승자가 있거나 빈 칸이 없으면(무승부) 종료. */
-function isOver(state: GomokuState): boolean {
-  return state.winner !== null || isBoardFull(state.board);
-}
+/** 게임이 끝났는지: 5목 승자가 있거나 무승부(보드 가득)면 종료(application 상태로 판정). */
+const isOver = isFinished;
 
 export function Gomoku() {
   const [mode, setMode] = useState<Mode>("local");
@@ -77,7 +75,7 @@ export function Gomoku() {
   const reset = () => setState(startGame(SIZE));
 
   const over = isOver(state);
-  const draw = over && state.winner === null;
+  const draw = state.isDraw;
   const outcome = !over
     ? null
     : draw
