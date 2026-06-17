@@ -26,6 +26,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   game2048: "2048",
   tictactoe: "틱택토",
   minesweeper: "지뢰찾기",
+  dotsandboxes: "도트 앤 박스",
   "rps-match": "다전제(가위바위보)",
 };
 

@@ -20,6 +20,7 @@ import { Yut } from "./games/Yut";
 import { NumberBaseball } from "./games/NumberBaseball";
 import { Game2048 } from "./games/Game2048";
 import { Minesweeper } from "./games/Minesweeper";
+import { DotsAndBoxes } from "./games/DotsAndBoxes";
 import { Ladder } from "./games/Ladder";
 import { SelfPlay } from "./games/SelfPlay";
 import { Tournament } from "./games/Tournament";
@@ -49,6 +50,7 @@ type GameKey =
   | "numberbaseball"
   | "game2048"
   | "minesweeper"
+  | "dotsandboxes"
   | "ladder"
   | "selfplay"
   | "tournament"
@@ -77,6 +79,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "numberbaseball", label: "숫자야구", render: () => <NumberBaseball /> },
   { key: "game2048", label: "2048", render: () => <Game2048 /> },
   { key: "minesweeper", label: "지뢰찾기", render: () => <Minesweeper /> },
+  { key: "dotsandboxes", label: "도트 앤 박스", render: () => <DotsAndBoxes /> },
   { key: "ladder", label: "사다리타기", render: () => <Ladder /> },
   { key: "selfplay", label: "관전", render: () => <SelfPlay /> },
   { key: "tournament", label: "토너먼트", render: () => <Tournament /> },
