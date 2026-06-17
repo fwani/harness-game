@@ -65,7 +65,7 @@
 | 장기 (`Janggi.tsx`) | 2인 로컬 기물 이동 | ✅ 승부까지 | 선택·합법 수·이동·턴·장군 경고·승부·전적 저장 |
 | 윷놀이 (`Yut.tsx`) | 윷 던지기 → CPU 자동 던지기 → 외곽 20칸 완주 경주 | ✅ vs CPU | `playYutTurn` 연동. 도개걸윷모 텍스트 라벨·진행도 막대(traveled/20)·승패 표시, 전적 저장(`yut`) |
 | 녹아웃 (`SingleElimination.tsx`) | 참가자 입력 → 대진(부전승) → 라운드별 승자 선택 → 우승자 | ✅ 우승자까지 | `generateSingleEliminationFirstRound`+`advanceSingleEliminationRound` 연동. 시드 부전승 안내·라운드 라벨(결승/준결승/N강)·우승 표시·리셋 |
-| 전적 (`Records.tsx`) | 플레이어별 승/패/무 + 기록 | ✅ | 공유 저장소 구독, 빈 상태 표시, localStorage 영속(새로고침 후 유지) |
+| 전적 (`Records.tsx`) | 플레이어별 승/패/무 + ELO 레이팅 + 상대 전적 + 기록 | ✅ | 공유 저장소 구독, 빈 상태 표시, localStorage 영속(새로고침 후 유지). 맞붙은 쌍별 상대 전적(`headToHead`) 표 노출 |
 
 ## 알려진 UI/UX 갭 (백로그 후보)
 
@@ -76,6 +76,8 @@
 - ✅ ~~오델로 플레이 UI 연동~~: 2인 로컬 합법 수 착수·자동 패스·디스크 계가·승자·전적 저장(완료).
 - ✅ ~~바둑 종료·계가 UI~~: 패스→2패스 종료→`scoreArea` 집·승자 표시(완료).
 - ✅ ~~기록(record) 노출~~: "전적" 탭 신설 + 전 게임 결과 저장(완료).
+- ✅ ~~상대 전적(head-to-head) 노출~~: 전적 화면에 맞붙은 플레이어 쌍별 승/패/무·총 판수
+  표 추가(`recordsHeadToHeadView` + domain `headToHead` 재사용, 완료).
 - **장기 외통(checkmate) 종료**: 현재 장 포획으로 판정 — `isCheckmate` 정식 종료는 미연동.
 - **멀티플레이**: 제품 설명의 "멀티 진행"이 UI에는 로컬 핫시트/대-CPU만 있고
   원격 멀티가 없다. 범위·방식 정의 필요(별도 이슈).
