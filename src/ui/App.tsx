@@ -5,6 +5,7 @@ import { Deal } from "./games/Deal";
 import { HighCard } from "./games/HighCard";
 import { Baccarat } from "./games/Baccarat";
 import { Blackjack } from "./games/Blackjack";
+import { Sutda } from "./games/Sutda";
 import { Gomoku } from "./games/Gomoku";
 import { Go } from "./games/Go";
 import { Reversi } from "./games/Reversi";
@@ -18,6 +19,7 @@ type GameKey =
   | "highcard"
   | "baccarat"
   | "blackjack"
+  | "sutda"
   | "gomoku"
   | "go"
   | "reversi"
@@ -31,6 +33,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "highcard", label: "하이카드", render: () => <HighCard /> },
   { key: "baccarat", label: "바카라", render: () => <Baccarat /> },
   { key: "blackjack", label: "블랙잭", render: () => <Blackjack /> },
+  { key: "sutda", label: "섯다", render: () => <Sutda /> },
   { key: "gomoku", label: "오목", render: () => <Gomoku /> },
   { key: "go", label: "바둑", render: () => <Go /> },
   { key: "reversi", label: "오델로", render: () => <Reversi /> },
