@@ -210,6 +210,52 @@ header h1 {
   font-size: 0.9rem;
 }
 
+/* --- hangman --- */
+
+/* 마스킹된 정답: 색이 아니라 큰 모노스페이스 텍스트('_'/글자)로 표시(색 비의존). */
+.hangman-word {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-align: center;
+  word-break: break-all;
+  margin: 0.75rem 0;
+}
+
+/* a..z 키패드: 좁은 화면(360px)에서도 줄바꿈되도록 flex-wrap + max-width. */
+.hangman-keypad {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+  max-width: 30rem;
+  margin: 1rem auto;
+}
+
+.hangman-keypad .key {
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 1px solid #334155;
+  background: #0b1220;
+  color: var(--text);
+  border-radius: 0.4rem;
+  cursor: pointer;
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
+.hangman-keypad .key:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hangman-keypad .key:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* --- card deal --- */
 
 .hand {
