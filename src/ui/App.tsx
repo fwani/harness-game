@@ -32,6 +32,7 @@ import { MemoryMatch } from "./games/MemoryMatch";
 import { Hangman } from "./games/Hangman";
 import { Pig } from "./games/Pig";
 import { Bingo } from "./games/Bingo";
+import { Wordle } from "./games/Wordle";
 import { Ladder } from "./games/Ladder";
 import { SelfPlay } from "./games/SelfPlay";
 import { Tournament } from "./games/Tournament";
@@ -73,6 +74,7 @@ type GameKey =
   | "hangman"
   | "pig"
   | "bingo"
+  | "wordle"
   | "ladder"
   | "selfplay"
   | "tournament"
@@ -113,6 +115,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "hangman", label: "행맨", render: () => <Hangman /> },
   { key: "pig", label: "피그", render: () => <Pig /> },
   { key: "bingo", label: "빙고", render: () => <Bingo /> },
+  { key: "wordle", label: "워들", render: () => <Wordle /> },
   { key: "ladder", label: "사다리타기", render: () => <Ladder /> },
   { key: "selfplay", label: "관전", render: () => <SelfPlay /> },
   { key: "tournament", label: "토너먼트", render: () => <Tournament /> },
