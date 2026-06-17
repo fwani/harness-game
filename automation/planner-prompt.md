@@ -6,12 +6,20 @@
 3) **UI/UX 맥락 필독**: `docs/agent-harness/UX_GUIDELINES.md`(원칙·새 게임 화면 체크리스트·현재 UI 상태 매트릭스·"알려진 UI/UX 갭" 목록)와 `docs/games/`(게임별 사양+구현 상태). 이 레포는 게임 시스템이라 도메인 로직만큼 **플레이 경험(UI/UX)도 제품 가치**다. 규칙이 구현돼도 플레이어가 화면에서 못 쓰면 미완성으로 본다.
 4) 기존 이슈 전체 조회(중복 방지): `gh issue list --repo fwani/harness-game --state all --limit 200 --json number,title,state,labels,body`.
 
-## 1. 백로그 여유 확인 (폭주 방지 — 엄수)
-- open이면서 ready-for-dev 라벨인 이슈 수 = N을 센다.
+## 1. QA 발견 트리아지 (새 이슈 생성보다 먼저)
+- QA 봇이 올린, 아직 `ready-for-dev`가 없는 open `qa-finding` 이슈를 조회한다: `gh issue list --repo fwani/harness-game --label qa-finding --state open --json number,title,labels,body`.
+- 각 건을 본문으로 판단해 분류한다:
+  - **자동 승격** (명백·객관적 결함): 크래시/백스크린, 콘솔 에러·예외, 죽은 버튼·플레이 불가, 명백한 오작동·회귀. → `gh issue edit <n> --add-label ready-for-dev` (qa-finding 라벨은 추적용으로 유지). dev 큐로 들어가 자동 수정된다.
+  - **사람 검토 대기** (그대로 둠): 주관적 UX 개선 제안(디자인 취향·"있으면 좋겠다"류), 모호하거나 우선순위 판단이 필요한 것.
+  - **에스컬레이션**: 보안 바닥(데이터 삭제/auth/권한 등)과 얽히면 `--add-label needs-human`.
+- 한 번에 **최대 3건**까지만 승격한다(dev 큐 폭주 방지, 오래된 번호 우선). 나머지는 다음 실행에서.
+
+## 2. 백로그 여유 확인 (폭주 방지 — 엄수)
+- open이면서 ready-for-dev 라벨인 이슈 수 = N을 센다. (§1에서 승격한 qa-finding도 ready-for-dev이므로 N에 포함된다.)
 - 목표 백로그 = 6. 이번에 만들 수 있는 이슈 수 = max(0, 6 - N).
 - 만들 수 있는 수가 0이면 '백로그 충분(N=...)'만 보고하고 이슈를 만들지 않고 종료한다.
 
-## 2. 다음 작업 후보 도출
+## 3. 다음 작업 후보 도출
 - 프로젝트 목적(여러 게임 + 멀티 + 기록 + **플레이 가능한 UI/UX**) 대비 아직 없거나 미완성인 기능을 찾는다.
 - 이미 구현됐거나(예: oddEven, rps) 기존 open/closed 이슈와 주제가 중복되면 제외한다. `UX_GUIDELINES.md`의 갭 목록에서 ✅로 닫힌 항목도 제외한다.
 - 작고 독립적이며 테스트 가능한 단위로 쪼갠다. 레이어 규칙(domain→application→infrastructure, 그 위에 `src/ui` presentation)에 자연스럽게 들어맞아야 한다.
@@ -23,7 +31,7 @@
   4. 기록/멀티 인프라 및 접근성·반응형 개선.
   - 같은 순위면 작은 것부터. 토대 없는 상위기능보다 기초부터.
 
-## 3. 이슈 생성 (max(0,6-N)건만)
+## 4. 이슈 생성 (max(0,6-N)건만)
 각 이슈를 `gh issue create --repo fwani/harness-game --label ready-for-dev` 로 생성한다. 본문에 다음을 포함:
 - ## 목적
 - ## 요구사항 (레이어 규칙 준수 — 어느 레이어에 무엇을, 함수 시그니처 예시)
@@ -31,10 +39,10 @@
 - ## 비고 (파괴적/auth/권한/데이터삭제 불필요 여부 명시)
 제목은 한 줄 요약, 한국어.
 
-## 4. 보안 바닥 (.agent-harness.yml)
+## 5. 보안 바닥 (.agent-harness.yml)
 - 데이터 삭제/auth/권한 변경/프로덕션/고객대상 API/대규모 비용이 필요한 큰 작업은 이슈로 만들되 ready-for-dev 대신 needs-human 라벨을 붙여 사람이 먼저 보게 한다(자동개발 금지 대상).
 - 민감정보(password/token/secret/session_id 등)를 본문에 넣지 않는다.
 - 모호하면 추측해서 거대 이슈를 만들지 말고 작은 단위로 나눈다.
 
-## 5. 보고
-N(기존 백로그 수), 생성한 이슈 번호·제목 목록, 또는 '백로그 충분으로 생성 없음'을 요약한다.
+## 6. 보고
+승격한 qa-finding 번호, N(기존 백로그 수), 생성한 이슈 번호·제목 목록, 또는 '백로그 충분 + 트리아지 없음으로 변경 없음'을 요약한다.

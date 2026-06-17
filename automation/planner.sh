@@ -23,8 +23,13 @@ echo "$NOW" > "$STAMP"
 
 backlog=$(gh issue list --repo "$REPO" --label ready-for-dev --state open --json number -q 'length' 2>>"$LOG")
 [ -z "$backlog" ] && { echo "$(ts) gh 조회 실패 — skip" >>"$LOG"; exit 0; }
-if [ "$backlog" -ge "$TARGET" ]; then
-  echo "$(ts) 백로그 충분 (open ready-for-dev=$backlog >= $TARGET) — skip" >>"$LOG"
+# 트리아지 대기: ready-for-dev 가 아직 없는 open qa-finding 수
+qafind=$(gh issue list --repo "$REPO" --label qa-finding --state open --json number,labels \
+  --jq '[.[] | select((.labels|map(.name)|index("ready-for-dev"))|not)] | length' 2>>"$LOG")
+[ -z "$qafind" ] && qafind=0
+# 백로그가 차 있어도 트리아지할 qa-finding이 있으면 돌린다.
+if [ "$backlog" -ge "$TARGET" ] && [ "$qafind" -eq 0 ]; then
+  echo "$(ts) 백로그 충분(ready-for-dev=$backlog>=$TARGET) & 트리아지 대기 0 — skip" >>"$LOG"
   exit 0
 fi
 
