@@ -1211,6 +1211,31 @@ button.dots-edge:disabled {
   font-variant-numeric: tabular-nums;
 }
 
+/* --- 묵찌빠 (Mukjjippa) 단계/공격자 상태 표시 --- */
+
+.status {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.75rem;
+  margin: 0.75rem 0 0;
+  max-width: 22rem;
+}
+
+.status dt {
+  color: var(--muted);
+  word-break: keep-all;
+}
+
+.status dd {
+  margin: 0;
+}
+
+.round-label {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  word-break: keep-all;
+}
+
 /* --- 숫자야구 (Number Baseball) --- */
 
 .guess-history {
