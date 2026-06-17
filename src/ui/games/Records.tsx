@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from "react";
 import type { GameId } from "../../domain/gameRecord";
-import { getStandings, listRecords, subscribe } from "../records";
+import { getStandings, listRecords, recordsPersisted, subscribe } from "../records";
 import { toEloLeaderboard } from "./recordsEloView";
+import { recordsPersistenceHint } from "./recordsHintView";
 import { toHeadToHeadList } from "./recordsHeadToHeadView";
 
 const GAME_LABEL: Record<GameId, string> = {
@@ -32,9 +33,7 @@ export function Records() {
   return (
     <section className="game">
       <h2>전적</h2>
-      <p className="hint">
-        이번 세션에 저장된 대국 기록과 플레이어별 누적 전적입니다(새로고침 시 초기화).
-      </p>
+      <p className="hint">{recordsPersistenceHint(recordsPersisted)}</p>
 
       {standings.length === 0 ? (
         <p className="hint">아직 기록이 없습니다. 게임을 한 판 끝내면 여기에 쌓입니다.</p>
