@@ -50,8 +50,8 @@
 
 | 게임 | 화면 | 플레이 가능성 | UX 메모 |
 | --- | --- | --- | --- |
-| 가위바위보 (`Rps.tsx`) | 손 선택 → CPU와 1판 | ✅ vs CPU | 결과를 전적에 저장. 화면 내 연승 표시는 없음 |
-| 홀짝 (`OddEven.tsx`) | 홀/짝 추측 → 추첨 | ✅ vs 난수 | 결과를 전적에 저장. 화면 내 연승 표시는 없음 |
+| 가위바위보 (`Rps.tsx`) | 손 선택 → CPU와 1판 | ✅ vs CPU | 결과를 전적에 저장. 화면 내 현재 연승·통산·최장 연속 표시(`streakView`) |
+| 홀짝 (`OddEven.tsx`) | 홀/짝 추측 → 추첨 | ✅ vs 난수 | 결과를 전적에 저장. 화면 내 현재 연승·통산·최장 연속 표시(`streakView`) |
 | 카드 딜 (`Deal.tsx`) | 인원·장수 입력 → 딜 | ✅ 딜만 | 게임이 아닌 유틸. 입력 검증 에러를 플레이어용 한국어 사유로 표시(`dealView.validateDealInput`) |
 | 하이카드 (`HighCard.tsx`) | 카드 뽑기 → CPU와 비교 | ✅ vs CPU | `playHighCard` 연동, 결과를 전적에 저장 |
 | 주사위 (`Dice.tsx`) | 개수 선택 → 굴리기 → CPU와 합 비교 | ✅ vs CPU | `playDiceRound` 연동. 주사위 면+숫자·합계·승패 표시, 전적 저장(`dice`) |
@@ -64,6 +64,7 @@
 | 오델로 (`Reversi.tsx`) | 2인 로컬 합법 수 착수 | ✅ 자동 패스·계가·승자까지 | `playReversi` 연동. 합법 수만 활성·자동 패스 안내·디스크 점수·전적 저장 |
 | 장기 (`Janggi.tsx`) | 2인 로컬 기물 이동 | ✅ 승부까지 | 선택·합법 수·이동·턴·장군 경고·승부·전적 저장 |
 | 윷놀이 (`Yut.tsx`) | 윷 던지기 → CPU 자동 던지기 → 외곽 20칸 완주 경주 | ✅ vs CPU | `playYutTurn` 연동. 도개걸윷모 텍스트 라벨·진행도 막대(traveled/20)·승패 표시, 전적 저장(`yut`) |
+| 녹아웃 (`SingleElimination.tsx`) | 참가자 입력 → 대진(부전승) → 라운드별 승자 선택 → 우승자 | ✅ 우승자까지 | `generateSingleEliminationFirstRound`+`advanceSingleEliminationRound` 연동. 시드 부전승 안내·라운드 라벨(결승/준결승/N강)·우승 표시·리셋 |
 | 전적 (`Records.tsx`) | 플레이어별 승/패/무 + ELO 레이팅 + 상대 전적 + 기록 | ✅ | 공유 저장소 구독, 빈 상태 표시, localStorage 영속(새로고침 후 유지). 맞붙은 쌍별 상대 전적(`headToHead`) 표 노출 |
 
 ## 알려진 UI/UX 갭 (백로그 후보)
@@ -82,7 +83,8 @@
   원격 멀티가 없다. 범위·방식 정의 필요(별도 이슈).
 - ✅ ~~기록 영속성(localStorage)~~: `LocalStorageGameRecordRepository`로 브라우저
   localStorage에 영속화 — 새로고침/재방문 후에도 전적 유지(미가용 시 인메모리 폴백). 서버 영속화는 범위 밖(별도 이슈).
-- **누적 점수/세션(화면 내)**: 가위바위보·홀짝 화면 자체의 연승·통산 점수 표시.
+- ✅ ~~누적 점수/세션(화면 내)~~: 가위바위보·홀짝 화면에 현재 연승/통산/최장 연속을
+  표시(`streakView.summarizeStreakForGame` 재사용, `playerStreak`/`summarize` 호출) — 완료.
 - **접근성/반응형 점검**: 보드 셀 키보드 내비게이션, 모바일 레이아웃, 명도 대비.
 
 ## 참고

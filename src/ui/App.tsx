@@ -15,6 +15,7 @@ import { Reversi } from "./games/Reversi";
 import { Janggi } from "./games/Janggi";
 import { Yut } from "./games/Yut";
 import { Tournament } from "./games/Tournament";
+import { SingleElimination } from "./games/SingleElimination";
 import { Records } from "./games/Records";
 import { ErrorBoundary } from "./ErrorBoundary";
 
@@ -35,6 +36,7 @@ type GameKey =
   | "janggi"
   | "yut"
   | "tournament"
+  | "knockout"
   | "records";
 
 const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
@@ -54,6 +56,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "janggi", label: "장기", render: () => <Janggi /> },
   { key: "yut", label: "윷놀이", render: () => <Yut /> },
   { key: "tournament", label: "토너먼트", render: () => <Tournament /> },
+  { key: "knockout", label: "녹아웃", render: () => <SingleElimination /> },
   { key: "records", label: "전적", render: () => <Records /> },
 ];
 

@@ -485,3 +485,34 @@ header h1 {
 .table-scroll {
   overflow-x: auto;
 }
+
+/* 화면 내 통산 전적·연승 표시(가위바위보·홀짝 등). */
+.streak {
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #334155;
+  border-radius: 0.6rem;
+  background: #0b1220;
+}
+
+.streak h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.streak dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+}
+
+.streak dt {
+  color: var(--muted);
+}
+
+.streak dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
