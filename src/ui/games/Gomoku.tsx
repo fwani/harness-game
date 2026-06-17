@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { startGame, applyMove, type GomokuState } from "../../application/playGomoku";
 import { recordGame } from "../records";
+import { boardGridStyle } from "./boardView";
 
 const SIZE = 15;
 
@@ -30,7 +31,7 @@ export function Gomoku() {
       </p>
       <div
         className="board"
-        style={{ gridTemplateColumns: `repeat(${SIZE}, 1fr)` }}
+        style={boardGridStyle(SIZE)}
       >
         {state.board.map((row, y) =>
           row.map((cell, x) => (
