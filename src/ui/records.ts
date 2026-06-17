@@ -26,6 +26,16 @@ function createRepository(): GameRecordRepository {
 }
 
 const repo: GameRecordRepository = createRepository();
+
+/**
+ * 전적이 실제로 영속 저장되는지 여부.
+ * localStorage 어댑터를 쓰면 true(새로고침·재방문 후에도 유지),
+ * SSR/비공개 모드 등 인메모리 폴백이면 false(세션 한정).
+ * 안내 문구를 실제 동작에 맞게 표시하기 위해 노출한다.
+ */
+export const recordsPersisted: boolean =
+  repo instanceof LocalStorageGameRecordRepository;
+
 const listeners = new Set<() => void>();
 
 // useSyncExternalStore는 스냅샷 게터의 반환값을 Object.is로 비교하므로,
