@@ -358,12 +358,33 @@ header h1 {
   border: 1.5px solid currentColor;
 }
 
+/* 진영을 색뿐 아니라 '모양'으로도 구분한다(색각 접근성, #209). */
 .piece.cho {
   color: #15803d;
+  border-radius: 50%; /* 초: 원형 */
 }
 
 .piece.han {
   color: #b91c1c;
+  border-radius: 15%; /* 한: 각진(둥근 사각) */
+  border-style: double;
+  border-width: 3px;
+}
+
+/* 범례용 작은 표식(보드 기물과 동일한 모양 단서를 인라인으로 보여준다). */
+.janggi-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.piece.legend-mark {
+  display: inline-flex;
+  width: 1.1rem;
+  height: 1.1rem;
+  font-size: 0.7rem;
+  vertical-align: middle;
 }
 
 /* --- yut (윷놀이) --- */
