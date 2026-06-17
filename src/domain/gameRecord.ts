@@ -25,6 +25,7 @@ export type GameId =
   | "gostop"
   | "numberBaseball"
   | "game2048"
+  | "tictactoe"
   | "minesweeper"
   | "rps-match";
 
