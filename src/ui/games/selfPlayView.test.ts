@@ -12,6 +12,7 @@ import {
   selfPlayGlyphBoard,
   selfPlayJanggiBoard,
   selfPlayMancalaBoard,
+  selfPlayNimBoard,
   type SelfPlayGameKey,
 } from "./selfPlayView";
 
@@ -35,7 +36,7 @@ function resultWith(
 }
 
 describe("SELF_PLAY_GAMES", () => {
-  it("오목·바둑·오델로·장기·커넥트포·틱택토·도트앤박스·체커·만칼라를 노출한다", () => {
+  it("오목·바둑·오델로·장기·커넥트포·틱택토·도트앤박스·체커·만칼라·님을 노출한다", () => {
     expect(SELF_PLAY_GAMES.map((g) => g.key)).toEqual([
       "gomoku",
       "go",
@@ -46,7 +47,15 @@ describe("SELF_PLAY_GAMES", () => {
       "dotsandboxes",
       "checkers",
       "mancala",
+      "nim",
     ]);
+  });
+
+  it("님 메타가 포함된다(.board.nim)", () => {
+    const nim = SELF_PLAY_GAMES.find((g) => g.key === "nim")!;
+    expect(nim).toBeDefined();
+    expect(nim.label).toBe("님");
+    expect(nim.boardClass).toBe("nim");
   });
 
   it("장기 메타는 9×10 보드 클래스(.board.janggi)를 쓴다", () => {
@@ -103,6 +112,7 @@ describe("runSelfPlay", () => {
     "dotsandboxes",
     "checkers",
     "mancala",
+    "nim",
   ];
 
   for (const game of games) {
@@ -155,6 +165,23 @@ describe("runSelfPlay", () => {
   it("만칼라: 동일 rng면 동일 종국 결과를 낸다(유한 게임, 수 제한 불필요)", () => {
     const a = runSelfPlay("mancala", seededRng(12345));
     const b = runSelfPlay("mancala", seededRng(12345));
+    expect(a.status.over).toBe(true);
+    expect(a.moveCount).toBe(b.moveCount);
+    expect(a.status).toEqual(b.status);
+  });
+
+  it("님: 종료까지 진행되고 승자가 존재한다(무승부 없음·유한 게임)", () => {
+    const result = runSelfPlay("nim", seededRng(12345));
+    expect(result.status.over).toBe(true);
+    expect(result.status.draw).toBe(false);
+    // 표준 플레이 님은 마지막 돌을 가져간 쪽이 항상 승자(무승부 없음).
+    expect(result.status.winner).not.toBeNull();
+    expect(result.moveCount).toBeGreaterThan(0);
+  });
+
+  it("님: 동일 rng면 동일 종국 결과를 낸다(수 제한 불필요)", () => {
+    const a = runSelfPlay("nim", seededRng(777));
+    const b = runSelfPlay("nim", seededRng(777));
     expect(a.status.over).toBe(true);
     expect(a.moveCount).toBe(b.moveCount);
     expect(a.status).toEqual(b.status);
@@ -284,6 +311,19 @@ describe("describeSelfPlayResult", () => {
     expect(draw.outcome).toBe("무승부 🤝");
   });
 
+  it("님 승자는 1P(선)/2P(후)로 매핑한다(흑/백이 아님·무승부 없음)", () => {
+    const p1 = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p1", draw: false }, 7),
+      "nim",
+    );
+    const p2 = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p2", draw: false }, 8),
+      "nim",
+    );
+    expect(p1.outcome).toBe("1P(선) 승리 🎉");
+    expect(p2.outcome).toBe("2P(후) 승리 🎉");
+  });
+
   it("기존 3종 라벨 회귀 없음(흑/백 유지)", () => {
     for (const game of ["gomoku", "go", "reversi"] as SelfPlayGameKey[]) {
       expect(
@@ -338,6 +378,13 @@ describe("runAndDescribeSelfPlay", () => {
     expect(run.unfinished).toBe(false);
     expect(run.result).not.toBeNull();
     expect(run.outcome).toMatch(/(1P|2P) 승리|무승부/);
+  });
+
+  it("님: 정상 종국이면 1P(선)/2P(후) 승자 문구를 반환한다(무승부 없음)", () => {
+    const run = runAndDescribeSelfPlay("nim", seededRng(12345));
+    expect(run.unfinished).toBe(false);
+    expect(run.result).not.toBeNull();
+    expect(run.outcome).toMatch(/(1P\(선\)|2P\(후\)) 승리/);
   });
 });
 
@@ -472,5 +519,21 @@ describe("selfPlayMancalaBoard", () => {
     expect(board.pitsPerSide).toBe(0);
     expect(board.pits).toEqual({ 1: [], 2: [] });
     expect(board.stores).toEqual({ 1: 0, 2: 0 });
+  });
+});
+
+describe("selfPlayNimBoard", () => {
+  it("실제 님 자동 대국 결과에서 최종 더미(돌 수 배열)를 추출한다(종국=모두 0)", () => {
+    const piles = selfPlayNimBoard(runSelfPlay("nim", seededRng(12345)));
+    // 기본 배치 [3,5,7] = 더미 3개.
+    expect(piles.length).toBe(3);
+    // 표준 플레이 종국 상태는 모든 더미가 비었다(0).
+    expect(piles.every((s) => s === 0)).toBe(true);
+  });
+
+  it("piles가 없거나 형태가 다르면 빈 배열을 반환한다", () => {
+    expect(
+      selfPlayNimBoard(resultWith({ over: true, winner: "p1", draw: false }, 0)),
+    ).toEqual([]);
   });
 });

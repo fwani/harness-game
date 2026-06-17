@@ -26,6 +26,10 @@ import {
   createMancalaEngine,
   type MancalaEngineState,
 } from "../../application/mancalaEngine";
+import {
+  createNimEngine,
+  type NimEngineState,
+} from "../../application/nimEngine";
 import { chooseRandomGomokuMove } from "../../application/gomokuAi";
 import { chooseRandomGoMove } from "../../application/goAi";
 import { chooseRandomReversiMove } from "../../application/reversiAi";
@@ -35,6 +39,7 @@ import { chooseRandomTicTacToeMove } from "../../application/playTicTacToe";
 import { chooseRandomDotsEdge } from "../../application/playDotsAndBoxes";
 import { chooseRandomCheckersMove } from "../../application/playCheckers";
 import { chooseRandomMancalaMove } from "../../application/playMancala";
+import { chooseRandomNimMove } from "../../application/playNim";
 import type { JanggiState } from "../../application/playJanggi";
 import { legalGoMoves } from "../../domain/goMoves";
 import type { Board as JanggiBoard } from "../../domain/janggi";
@@ -52,7 +57,8 @@ export type SelfPlayGameKey =
   | "tictactoe"
   | "dotsandboxes"
   | "checkers"
-  | "mancala";
+  | "mancala"
+  | "nim";
 
 /**
  * 장기 무작위 자기대국 한 판의 수 상한. 무작위 장기는 외통/장 포획/빅장으로 보통 수백 수
@@ -98,6 +104,10 @@ export const SELF_PLAY_GAMES: readonly SelfPlayGameMeta[] = [
   // 만칼라는 구덩이·곳간 그리드(흑/백 돌 보드가 아님)라 최종 보드는 mancalaView 헬퍼로 렌더한다.
   // size는 한쪽 구덩이 수(표준 6), boardClass는 .board.mancala 재사용.
   { key: "mancala", label: "만칼라", size: 6, boardClass: "mancala" },
+  // 님은 2D 격자 보드가 아니라 더미(piles) 게임이라 최종 보드는 selfPlayNimBoard로 뽑은
+  // 더미 상태를 색 비의존 글리프로 렌더한다(흑/백 디스크 보드 미사용). size는 기본 더미 개수(3),
+  // boardClass는 .board.nim 재사용.
+  { key: "nim", label: "님", size: 3, boardClass: "nim" },
 ];
 
 /** 보드 한 칸의 상태(모든 지원 게임 공통: 흑/백 돌 또는 빈 칸). */
@@ -218,6 +228,18 @@ export function runSelfPlay(
         },
         { maxMoves },
       );
+    case "nim":
+      // 매 수 더미의 돌이 단조 감소하는 유한 게임 — 수 제한(maxMoves) 불필요(커넥트포/만칼라와 동일).
+      // 합법 수가 없으면(모든 더미 0=종료) 게임이 이미 종국이라 콜백이 불리지 않는다
+      // (null은 무효 수 {pile:-1,count:-1}로 넘겨 엔진 isLegal이 방어).
+      return playEngineGame(
+        createNimEngine(),
+        (state) => {
+          const s = state as NimEngineState;
+          return chooseRandomNimMove(s.piles, rng) ?? { pile: -1, count: -1 };
+        },
+        { maxMoves },
+      );
     default:
       throw new Error(`runSelfPlay: 지원하지 않는 게임입니다: ${String(game)}`);
   }
@@ -249,6 +271,10 @@ function sideLabelFor(game: SelfPlayGameKey, side: Side): string {
   if (game === "mancala") {
     // 만칼라는 선(1)=p1, 후(2)=p2. 색이 아니라 P1/P2 진영 라벨로 구분(색 비의존).
     return side === "p1" ? "1P" : "2P";
+  }
+  if (game === "nim") {
+    // 님은 흑/백 돌이 아니라 선(1)=p1, 후(2)=p2 진영으로 구분(색 비의존).
+    return side === "p1" ? "1P(선)" : "2P(후)";
   }
   return side === "p1" ? "흑(선)" : "백(후)";
 }
@@ -405,6 +431,22 @@ export function selfPlayMancalaBoard(
     pits: { 1: [], 2: [] },
     stores: { 1: 0, 2: 0 },
   };
+}
+
+/**
+ * 님 결과의 최종 더미 상태(더미별 남은 돌 수)를 안전하게 추출한다(렌더 요약용).
+ * 흑/백 디스크 2차원 보드(SelfPlayCell[][])가 아니라 NimEngineState.piles(number[])를 그대로
+ * 노출하므로, 컴포넌트는 더미별 글리프(예: ●●●)로 색 비의존 렌더한다(도트앤박스/만칼라가 전용
+ * 렌더 헬퍼를 둔 것과 동일한 방식). 표준 플레이 종국 상태는 모든 더미가 0이다.
+ * 비정상 결과(piles 누락/형태 불일치)면 빈 배열을 반환해 throw 없이 안전하게 처리한다.
+ */
+export function selfPlayNimBoard(
+  result: EngineGameResult<unknown>,
+): ReadonlyArray<number> {
+  const piles = (result.finalState as { piles?: unknown }).piles;
+  return Array.isArray(piles) && piles.every((s) => typeof s === "number")
+    ? (piles as number[])
+    : [];
 }
 
 /** 최종 보드 한 칸의 색 비의존 렌더 정보(장기 제외 모든 게임 공통). */
