@@ -336,6 +336,28 @@ header h1 {
   background: #dcb35c;
 }
 
+/* --- tic-tac-toe (틱택토) --- */
+
+.board.tictactoe {
+  background: #1e293b;
+  border-color: #0f172a;
+}
+
+/* X/O 기호를 칸 크기에 맞게 크게 표시(색만이 아니라 기호로 구분). */
+.ttt-mark {
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ttt-mark.mark-X {
+  color: #60a5fa;
+}
+
+.ttt-mark.mark-O {
+  color: #f87171;
+}
+
 /* --- reversi (오델로) --- */
 
 .board.reversi {
