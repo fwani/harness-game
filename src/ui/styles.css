@@ -288,6 +288,15 @@ header h1 {
   font-size: 1.5rem;
 }
 
+/* 진행도 막대: 좁은 화면에서 카드/뷰포트를 넘치지 않도록 카드 폭에 맞춘다.
+   (progress는 기본 고유 너비가 있어 너비를 지정하지 않으면 카드를 가로로 뚫고 나간다.) */
+.pig-scoreboard progress {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.35rem;
+}
+
 /* CPU 진행 로그: 굴림/버스트/멈춤을 순서대로(번호 매김) 텍스트로 표시(색 비의존). */
 .pig-cpu-log {
   margin: 1rem 0;
