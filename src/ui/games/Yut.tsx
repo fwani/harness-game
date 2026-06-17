@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
-import { recordGame, type WinSide } from "../records";
+import { listRecords, recordGame, subscribe, type WinSide } from "../records";
 import {
   playYutRound,
   throwsLabel,
@@ -8,6 +8,8 @@ import {
   YUT_FINISH,
   type YutRoundResult,
 } from "./yutView";
+import { selfStreakSummary, SELF_PLAYER } from "./streakView";
+import { StreakPanel } from "./StreakPanel";
 
 const rng = new MathRandomSource();
 
@@ -30,6 +32,9 @@ export function Yut() {
   const [cpuTraveled, setCpuTraveled] = useState(0);
   const [last, setLast] = useState<YutRoundResult | null>(null);
   const [winner, setWinner] = useState<WinSide | null>(null);
+  // 윷놀이 통산 전적("yut")을 화면에 표시한다.
+  const records = useSyncExternalStore(subscribe, listRecords);
+  const streak = selfStreakSummary(records, "yut");
 
   const over = winner !== null;
 
@@ -41,7 +46,7 @@ export function Yut() {
     setLast(result);
     if (result.winner !== null) {
       setWinner(result.winner);
-      recordGame("yut", "나", "CPU", result.winner);
+      recordGame("yut", SELF_PLAYER, "CPU", result.winner);
     }
   };
 
@@ -95,6 +100,7 @@ export function Yut() {
           {over && <p className="outcome">{yutOutcomeLabel(winner)}</p>}
         </div>
       )}
+      <StreakPanel title="윷놀이 통산 전적 (나)" summary={streak} />
     </section>
   );
 }

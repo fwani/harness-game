@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { sumDice } from "../../domain/dice";
 import { playDiceRound, type DiceRoundResult } from "../../application/playDiceRound";
 import {
@@ -6,8 +6,10 @@ import {
   type DiceCategoryRoundResult,
 } from "../../application/playDiceCategoryRound";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
-import { recordGame } from "../records";
+import { listRecords, recordGame, subscribe } from "../records";
 import { dieFace, diceOutcomeLabel, formatDiceCategory } from "./diceView";
+import { selfStreakSummary, SELF_PLAYER } from "./streakView";
+import { StreakPanel } from "./StreakPanel";
 import type { DiceRollRank } from "../../domain/diceCategory";
 
 const rng = new MathRandomSource();
@@ -45,6 +47,9 @@ export function Dice() {
   const [diceCount, setDiceCount] = useState<number>(2);
   const [round, setRound] = useState<DiceRoundResult | null>(null);
   const [categoryRound, setCategoryRound] = useState<DiceCategoryRoundResult | null>(null);
+  // 주사위 통산 전적("dice")을 화면에 표시한다(합계·족보 모드 공유).
+  const records = useSyncExternalStore(subscribe, listRecords);
+  const streak = selfStreakSummary(records, "dice");
 
   const switchMode = (next: Mode) => {
     if (next === mode) return;
@@ -58,13 +63,13 @@ export function Dice() {
     // result는 이미 "a"|"b"|"draw"(WinSide)이므로 그대로 전적에 전달한다.
     const result = playDiceRound(count, rng);
     setRound(result);
-    recordGame("dice", "나", "CPU", result.result);
+    recordGame("dice", SELF_PLAYER, "CPU", result.result);
   };
 
   const rollCategory = () => {
     const result = playDiceCategoryRound(rng, CATEGORY_DICE_COUNT);
     setCategoryRound(result);
-    recordGame("dice", "나", "CPU", result.result);
+    recordGame("dice", SELF_PLAYER, "CPU", result.result);
   };
 
   return (
@@ -141,6 +146,7 @@ export function Dice() {
           )}
         </>
       )}
+      <StreakPanel title="주사위 통산 전적 (나)" summary={streak} />
     </section>
   );
 }
