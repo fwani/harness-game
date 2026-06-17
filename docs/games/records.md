@@ -18,7 +18,7 @@
 - `summarize`: 여러 판을 플레이어별 `{wins, losses, draws}`로 집계. 등장 순서 보존(결정적).
 - `summarizeByGame`: 게임(`GameId`)별로 묶어 각 게임의 `PlayerStats[]`를 집계. 기록 있는 게임만,
   게임/플레이어 모두 처음 등장 순서 보존(결정적, 입력 불변).
-- **`GameId` = `"rps" | "oddEven" | "gomoku" | "card" | "go" | "janggi" | "reversi" | "dice"`** (전 게임 커버).
+- **`GameId`** = `"rps" | "oddEven" | "gomoku" | "go" | "janggi" | "highcard" | "blackjack" | "baccarat" | "sutda" | "poker" | "reversi" | "dice" | "yut" | "gostop" | "rps-match"` (전 게임 커버). 카드 게임 5종(하이카드/블랙잭/바카라/섯다/포커)은 각자 고유 키로 기록한다. `"card"`는 과거 5종이 공유하던 레거시 키로, 이미 영속된 기록을 읽기 위해서만 유지한다(신규 기록은 사용하지 않음).
 
 ## 3. 구현 상태
 

@@ -136,17 +136,29 @@ describe("selfStreakSummary / SELF_PLAYER", () => {
     expect(s.bestLabel).toBe("최장 연승 0 · 최장 연패 0");
   });
 
-  it("카드 5종이 공유하는 'card' 집계는 여러 카드 게임 결과를 한 패널로 합산한다", () => {
-    // 하이카드·바카라·블랙잭·섯다·포커가 모두 game id "card"로 기록되는 상황.
+  it("카드 5종은 각자 고유 game id로 기록되어 게임별로 따로 집계된다", () => {
+    // #246 회귀 수정: 예전에는 모두 "card"로 합쳐졌으나 이제 게임별 고유 키를 쓴다.
     const records = [
-      rec("card", SELF_PLAYER, "win"), // 하이카드
-      rec("card", SELF_PLAYER, "loss"), // 바카라
-      rec("card", SELF_PLAYER, "win"), // 블랙잭
-      rec("card", SELF_PLAYER, "draw"), // 섯다
-      rec("card", SELF_PLAYER, "win"), // 포커
+      rec("highcard", SELF_PLAYER, "win"),
+      rec("baccarat", SELF_PLAYER, "loss"),
+      rec("blackjack", SELF_PLAYER, "win"),
+      rec("sutda", SELF_PLAYER, "draw"),
+      rec("poker", SELF_PLAYER, "win"),
     ];
-    const s = selfStreakSummary(records, "card");
-    expect(s.totalLabel).toBe("3승 1패 1무");
-    expect(s.currentLabel).toBe("1승 연속");
+    // 각 게임 패널은 자기 게임 결과 1판만 본다(서로 합쳐지지 않음).
+    expect(selfStreakSummary(records, "highcard").totalLabel).toBe("1승 0패 0무");
+    expect(selfStreakSummary(records, "baccarat").totalLabel).toBe("0승 1패 0무");
+    expect(selfStreakSummary(records, "blackjack").totalLabel).toBe("1승 0패 0무");
+    expect(selfStreakSummary(records, "sutda").totalLabel).toBe("0승 0패 1무");
+    expect(selfStreakSummary(records, "poker").totalLabel).toBe("1승 0패 0무");
+  });
+
+  it("레거시 'card' 기록은 별도 버킷으로 남아 신규 게임별 집계와 섞이지 않는다", () => {
+    const records = [
+      rec("card", SELF_PLAYER, "win"), // 이전 버전에서 저장된 기록
+      rec("highcard", SELF_PLAYER, "loss"), // 신규 하이카드 기록
+    ];
+    expect(selfStreakSummary(records, "card").totalLabel).toBe("1승 0패 0무");
+    expect(selfStreakSummary(records, "highcard").totalLabel).toBe("0승 1패 0무");
   });
 });

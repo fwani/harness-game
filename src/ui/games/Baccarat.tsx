@@ -43,9 +43,9 @@ function Hand({ label, hand, score }: { label: string; hand: Card[]; score: numb
 
 export function Baccarat() {
   const [round, setRound] = useState<BaccaratRoundResult | null>(null);
-  // 카드 게임 5종이 공유하는 "card" 통산 전적을 화면에 표시한다.
+  // 바카라 통산 전적을 화면에 표시한다(게임별 고유 키 "baccarat").
   const records = useSyncExternalStore(subscribe, listRecords);
-  const streak = selfStreakSummary(records, "card");
+  const streak = selfStreakSummary(records, "baccarat");
 
   return (
     <section className="game">
@@ -58,7 +58,7 @@ export function Baccarat() {
         onClick={() => {
           const result = playBaccaratRound(rng);
           setRound(result);
-          recordGame("card", SELF_PLAYER, "CPU", baccaratWinSide(result.outcome));
+          recordGame("baccarat", SELF_PLAYER, "CPU", baccaratWinSide(result.outcome));
         }}
       >
         {round ? "다시 딜링" : "딜링"}
@@ -73,7 +73,7 @@ export function Baccarat() {
           <p className="outcome">{baccaratOutcomeLabel(round.outcome)}</p>
         </div>
       )}
-      <StreakPanel title="카드 게임 통산 전적 (나)" summary={streak} />
+      <StreakPanel title="바카라 통산 전적 (나)" summary={streak} />
     </section>
   );
 }
