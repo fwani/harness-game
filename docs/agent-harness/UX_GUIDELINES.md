@@ -52,7 +52,7 @@
 | --- | --- | --- | --- |
 | 가위바위보 (`Rps.tsx`) | 손 선택 → CPU와 1판 | ✅ vs CPU | 결과를 전적에 저장. 화면 내 연승 표시는 없음 |
 | 홀짝 (`OddEven.tsx`) | 홀/짝 추측 → 추첨 | ✅ vs 난수 | 결과를 전적에 저장. 화면 내 연승 표시는 없음 |
-| 카드 딜 (`Deal.tsx`) | 인원·장수 입력 → 딜 | ✅ 딜만 | 게임이 아닌 유틸. 입력 검증 에러 표시 있음 |
+| 카드 딜 (`Deal.tsx`) | 인원·장수 입력 → 딜 | ✅ 딜만 | 게임이 아닌 유틸. 입력 검증 에러를 플레이어용 한국어 사유로 표시(`dealView.validateDealInput`) |
 | 하이카드 (`HighCard.tsx`) | 카드 뽑기 → CPU와 비교 | ✅ vs CPU | `playHighCard` 연동, 결과를 전적에 저장 |
 | 주사위 (`Dice.tsx`) | 개수 선택 → 굴리기 → CPU와 합 비교 | ✅ vs CPU | `playDiceRound` 연동. 주사위 면+숫자·합계·승패 표시, 전적 저장(`dice`) |
 | 바카라 (`Baccarat.tsx`) | 딜링 → 뱅커와 1판 | ✅ vs 뱅커 | `playBaccaratRound` 연동(punto banco 타블로), 손패·끗수·승패 표시, 전적 저장 |
