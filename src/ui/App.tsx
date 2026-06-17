@@ -24,6 +24,7 @@ import { Game2048 } from "./games/Game2048";
 import { Minesweeper } from "./games/Minesweeper";
 import { DotsAndBoxes } from "./games/DotsAndBoxes";
 import { Mancala } from "./games/Mancala";
+import { Nim } from "./games/Nim";
 import { MemoryMatch } from "./games/MemoryMatch";
 import { Ladder } from "./games/Ladder";
 import { SelfPlay } from "./games/SelfPlay";
@@ -58,6 +59,7 @@ type GameKey =
   | "minesweeper"
   | "dotsandboxes"
   | "mancala"
+  | "nim"
   | "memory"
   | "ladder"
   | "selfplay"
@@ -91,6 +93,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "minesweeper", label: "지뢰찾기", render: () => <Minesweeper /> },
   { key: "dotsandboxes", label: "도트 앤 박스", render: () => <DotsAndBoxes /> },
   { key: "mancala", label: "만칼라", render: () => <Mancala /> },
+  { key: "nim", label: "님", render: () => <Nim /> },
   { key: "memory", label: "메모리", render: () => <MemoryMatch /> },
   { key: "ladder", label: "사다리타기", render: () => <Ladder /> },
   { key: "selfplay", label: "관전", render: () => <SelfPlay /> },

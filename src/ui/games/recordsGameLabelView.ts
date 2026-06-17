@@ -31,6 +31,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   memory: "메모리",
   mancala: "만칼라",
   checkers: "체커",
+  nim: "님",
   "rps-match": "다전제(가위바위보)",
 };
 
