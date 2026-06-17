@@ -7,6 +7,7 @@ import {
   runAndDescribeSelfPlay,
   describeSelfPlayResult,
   selfPlayBoard,
+  selfPlayGlyphBoard,
   selfPlayJanggiBoard,
   type SelfPlayGameKey,
 } from "./selfPlayView";
@@ -31,12 +32,14 @@ function resultWith(
 }
 
 describe("SELF_PLAY_GAMES", () => {
-  it("오목·바둑·오델로·장기를 노출한다", () => {
+  it("오목·바둑·오델로·장기·커넥트포·틱택토를 노출한다", () => {
     expect(SELF_PLAY_GAMES.map((g) => g.key)).toEqual([
       "gomoku",
       "go",
       "reversi",
       "janggi",
+      "connectfour",
+      "tictactoe",
     ]);
   });
 
@@ -46,10 +49,31 @@ describe("SELF_PLAY_GAMES", () => {
     expect(janggi.size).toBe(9);
     expect(janggi.boardClass).toBe("janggi");
   });
+
+  it("커넥트포 메타는 7열·.board.connectfour를 쓴다", () => {
+    const cf = SELF_PLAY_GAMES.find((g) => g.key === "connectfour")!;
+    expect(cf.label).toBe("커넥트포");
+    expect(cf.size).toBe(7);
+    expect(cf.boardClass).toBe("connectfour");
+  });
+
+  it("틱택토 메타는 3열·.board.tictactoe를 쓴다", () => {
+    const ttt = SELF_PLAY_GAMES.find((g) => g.key === "tictactoe")!;
+    expect(ttt.label).toBe("틱택토");
+    expect(ttt.size).toBe(3);
+    expect(ttt.boardClass).toBe("tictactoe");
+  });
 });
 
 describe("runSelfPlay", () => {
-  const games: SelfPlayGameKey[] = ["gomoku", "go", "reversi", "janggi"];
+  const games: SelfPlayGameKey[] = [
+    "gomoku",
+    "go",
+    "reversi",
+    "janggi",
+    "connectfour",
+    "tictactoe",
+  ];
 
   for (const game of games) {
     it(`${game}: 종료 상태(over)와 moveCount>0을 반환한다`, () => {
@@ -124,6 +148,37 @@ describe("describeSelfPlayResult", () => {
     expect(han.outcome).toBe("한(후) 승리 🎉");
   });
 
+  it("커넥트포 승자는 1P(●)/2P(○)로 매핑한다", () => {
+    const p1 = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p1", draw: false }, 7),
+      "connectfour",
+    );
+    const p2 = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p2", draw: false }, 8),
+      "connectfour",
+    );
+    expect(p1.outcome).toBe("1P(●) 승리 🎉");
+    expect(p2.outcome).toBe("2P(○) 승리 🎉");
+  });
+
+  it("틱택토 승자는 X(선)/O(후)로 매핑하고 무승부도 구분한다", () => {
+    const x = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p1", draw: false }, 5),
+      "tictactoe",
+    );
+    const o = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p2", draw: false }, 6),
+      "tictactoe",
+    );
+    const draw = describeSelfPlayResult(
+      resultWith({ over: true, winner: null, draw: true }, 9),
+      "tictactoe",
+    );
+    expect(x.outcome).toBe("X(선) 승리 🎉");
+    expect(o.outcome).toBe("O(후) 승리 🎉");
+    expect(draw.outcome).toBe("무승부 🤝");
+  });
+
   it("기존 3종 라벨 회귀 없음(흑/백 유지)", () => {
     for (const game of ["gomoku", "go", "reversi"] as SelfPlayGameKey[]) {
       expect(
@@ -169,6 +224,53 @@ describe("selfPlayBoard", () => {
   it("board가 없으면 빈 배열을 반환한다", () => {
     const board = selfPlayBoard(
       resultWith({ over: true, winner: null, draw: true }, 0),
+    );
+    expect(board).toEqual([]);
+  });
+});
+
+describe("selfPlayGlyphBoard", () => {
+  it("오델로(흑/백 돌)를 ●/○ 글리프로 매핑한다(색 비의존 클래스)", () => {
+    const board = selfPlayGlyphBoard(runSelfPlay("reversi", seededRng(3)), "reversi");
+    expect(board.length).toBe(8);
+    const cells = board.flat().filter((c) => c !== null);
+    expect(cells.length).toBeGreaterThan(0);
+    for (const c of cells) {
+      expect(["●", "○"]).toContain(c!.glyph);
+      expect(c!.className).toMatch(/^stone (black|white)$/);
+    }
+  });
+
+  it("커넥트포 보드(1/2)를 ●/○·.disc.p1/p2로 매핑한다", () => {
+    const board = selfPlayGlyphBoard(
+      runSelfPlay("connectfour", seededRng(42)),
+      "connectfour",
+    );
+    expect(board.length).toBe(6);
+    expect(board[0]!.length).toBe(7);
+    for (const c of board.flat().filter((c) => c !== null)) {
+      expect(["●", "○"]).toContain(c!.glyph);
+      expect(c!.className).toMatch(/^disc p[12]$/);
+    }
+  });
+
+  it("틱택토 보드(X/O)를 X/O·.ttt-mark로 매핑한다", () => {
+    const board = selfPlayGlyphBoard(
+      runSelfPlay("tictactoe", seededRng(123)),
+      "tictactoe",
+    );
+    expect(board.length).toBe(3);
+    expect(board[0]!.length).toBe(3);
+    for (const c of board.flat().filter((c) => c !== null)) {
+      expect(["X", "O"]).toContain(c!.glyph);
+      expect(c!.className).toMatch(/^ttt-mark mark-[XO]$/);
+    }
+  });
+
+  it("board가 없으면 빈 배열을 반환한다", () => {
+    const board = selfPlayGlyphBoard(
+      resultWith({ over: true, winner: null, draw: true }, 0),
+      "connectfour",
     );
     expect(board).toEqual([]);
   });
