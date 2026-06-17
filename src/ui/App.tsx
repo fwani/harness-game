@@ -15,6 +15,7 @@ import { Go } from "./games/Go";
 import { Reversi } from "./games/Reversi";
 import { Janggi } from "./games/Janggi";
 import { Yut } from "./games/Yut";
+import { Ladder } from "./games/Ladder";
 import { SelfPlay } from "./games/SelfPlay";
 import { Tournament } from "./games/Tournament";
 import { SingleElimination } from "./games/SingleElimination";
@@ -38,6 +39,7 @@ type GameKey =
   | "reversi"
   | "janggi"
   | "yut"
+  | "ladder"
   | "selfplay"
   | "tournament"
   | "knockout"
@@ -60,6 +62,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "reversi", label: "오델로", render: () => <Reversi /> },
   { key: "janggi", label: "장기", render: () => <Janggi /> },
   { key: "yut", label: "윷놀이", render: () => <Yut /> },
+  { key: "ladder", label: "사다리타기", render: () => <Ladder /> },
   { key: "selfplay", label: "관전", render: () => <SelfPlay /> },
   { key: "tournament", label: "토너먼트", render: () => <Tournament /> },
   { key: "knockout", label: "녹아웃", render: () => <SingleElimination /> },
