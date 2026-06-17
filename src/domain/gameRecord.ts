@@ -29,6 +29,7 @@ export type GameId =
   | "minesweeper"
   | "dotsandboxes"
   | "memory"
+  | "checkers"
   | "rps-match";
 
 /** 한 판에서 한 플레이어의 결과. */
