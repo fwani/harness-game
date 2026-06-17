@@ -6,7 +6,7 @@
 
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 REPO="fwani/harness-game"
-TARGET=5
+TARGET=6
 BASE="$HOME/Library/Application Support/harness-game-autodev"
 WORKDIR="$BASE/repo-planner"
 LOG="$BASE/planner.log"
