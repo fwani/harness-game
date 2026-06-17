@@ -38,6 +38,7 @@ export type GameId =
   | "hanoi"
   | "slidepuzzle"
   | "pegsolitaire"
+  | "sokoban"
   | "hangman"
   | "pig"
   | "bingo"
