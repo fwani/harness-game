@@ -39,6 +39,7 @@ export type GameId =
   | "hangman"
   | "pig"
   | "bingo"
+  | "snakesandladders"
   | "wordle"
   | "rps-match";
 
