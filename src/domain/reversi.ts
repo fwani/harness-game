@@ -112,3 +112,23 @@ export function flipsForMove(
 export function isLegalReversiMove(board: Board, x: number, y: number, stone: Stone): boolean {
   return flipsForMove(board, x, y, stone).length > 0;
 }
+
+/**
+ * (x,y)에 stone을 둔 결과 보드를 반환한다(순수, 불변).
+ * 해당 칸에 stone을 놓고, flipsForMove로 계산된 상대 디스크를 모두 stone 색으로 뒤집은
+ * "새" 보드를 만든다. 입력 board는 변형하지 않는다.
+ * - 합법 수가 아니면(뒤집힘 0개) throw.
+ * - 좌표가 보드 범위를 벗어나거나 비정수면 flipsForMove와 동일 계약으로 throw.
+ */
+export function applyReversiMove(board: Board, x: number, y: number, stone: Stone): Board {
+  const flips = flipsForMove(board, x, y, stone);
+  if (flips.length === 0) {
+    throw new Error("applyReversiMove: illegal move (no discs flipped)");
+  }
+  const next: Board = board.map((row) => row.slice());
+  next[y]![x] = stone;
+  for (const [fx, fy] of flips) {
+    next[fy]![fx] = stone;
+  }
+  return next;
+}

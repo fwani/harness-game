@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  applyReversiMove,
   createReversiBoard,
   flipsForMove,
   isLegalReversiMove,
@@ -142,6 +143,60 @@ describe("reversi isLegalReversiMove", () => {
     const board = createReversiBoard();
     expect(() => isLegalReversiMove(board, -1, 0, "white")).toThrow();
     expect(() => isLegalReversiMove(board, 0, 2.2, "white")).toThrow();
+  });
+});
+
+describe("reversi applyReversiMove", () => {
+  it("places the stone and flips captured discs on the standard opening", () => {
+    const board = createReversiBoard();
+    // 흑이 (3,2)에 두면 사이의 (3,3) white가 뒤집힌다.
+    const next = applyReversiMove(board, 3, 2, "black");
+    expect(next[2]![3]).toBe("black"); // 놓은 자리
+    expect(next[3]![3]).toBe("black"); // 뒤집힌 자리
+    // 디스크 총수는 +1 (놓은 1개만 새로 추가; 뒤집힘은 색 전환이라 총수를 늘리지 않음).
+    const before = board.flat().filter((cell) => cell !== null).length;
+    const after = next.flat().filter((cell) => cell !== null).length;
+    expect(after).toBe(before + 1);
+    // 흑 디스크는 +2 (놓은 1 + 뒤집힌 1).
+    const blackBefore = board.flat().filter((cell) => cell === "black").length;
+    const blackAfter = next.flat().filter((cell) => cell === "black").length;
+    expect(blackAfter).toBe(blackBefore + 2);
+  });
+
+  it("returns a new board and does not mutate the input", () => {
+    const board = createReversiBoard();
+    const snapshot = JSON.stringify(board);
+    const next = applyReversiMove(board, 3, 2, "black");
+    expect(next).not.toBe(board);
+    expect(JSON.stringify(board)).toBe(snapshot);
+  });
+
+  it("flips multiple discs across a run", () => {
+    // y=3 행: x=1 black, x=2..4 white. black이 (5,3)에 두면 (2,3)(3,3)(4,3) 모두 흑이 된다.
+    const board = emptyBoard();
+    board[3]![1] = "black";
+    board[3]![2] = "white";
+    board[3]![3] = "white";
+    board[3]![4] = "white";
+    const next = applyReversiMove(board, 5, 3, "black");
+    expect(next[3]![2]).toBe("black");
+    expect(next[3]![3]).toBe("black");
+    expect(next[3]![4]).toBe("black");
+    expect(next[3]![5]).toBe("black");
+  });
+
+  it("throws on an illegal move (no flips)", () => {
+    const board = createReversiBoard();
+    expect(() => applyReversiMove(board, 0, 0, "black")).toThrow();
+    // 이미 점유된 칸.
+    expect(() => applyReversiMove(board, 3, 3, "black")).toThrow();
+  });
+
+  it("throws on out-of-bounds or non-integer coordinates (consistent contract)", () => {
+    const board = createReversiBoard();
+    expect(() => applyReversiMove(board, -1, 0, "black")).toThrow();
+    expect(() => applyReversiMove(board, 8, 0, "black")).toThrow();
+    expect(() => applyReversiMove(board, 1.5, 0, "black")).toThrow();
   });
 });
 
