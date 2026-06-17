@@ -125,6 +125,10 @@
   퍼즐을 `PegSolitaire.tsx`로 연결 — 표준 33칸 십자 보드·출발 못→합법 착지 2단계 클릭·합법 착지/뛸 못
   강조·불법 수 사유(`.error`)·남은 못 수·종료 시 클리어/완벽 클리어/실패 판정·새 게임·전적 저장
   (`pegsolitaire`)까지(완료, `pegSolitaireView` + `pegSolitaireView.test`).
+- **플러드 잇(Flood-It) UI 연동(application 무작위 보드 + 화면)**: 도메인(`floodIt`)만 존재 —
+  application 무작위·풀이 가능 시작 보드 생성(`createScrambledFloodIt`, `RandomSource` 주입,
+  `createScrambledLightsOut` 패턴 참고) + 화면(`FloodIt.tsx`, 색 비의존 라벨/기호 렌더·턴 수 표시·
+  클리어 판정·새 게임·전적 저장)이 후속 짝 이슈로 필요. 사양: [`docs/games/flood-it.md`](../games/flood-it.md).
 - **접근성/반응형 점검**: 보드 셀 키보드 내비게이션, 모바일 레이아웃, 명도 대비.
 
 ## 참고
