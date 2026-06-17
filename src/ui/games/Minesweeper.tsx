@@ -12,8 +12,9 @@ import { StreakPanel } from "./StreakPanel";
 import { boardGridStyle } from "./boardView";
 import {
   cellView,
-  countHidden,
+  countSafeHidden,
   describeMinesweeperStatus,
+  type MineReveal,
   type MinesweeperStatusKind,
 } from "./minesweeperView";
 
@@ -41,7 +42,9 @@ export function Minesweeper() {
   const streak = selfStreakSummary(records, "minesweeper");
 
   const finished = status === "win" || status === "loss";
-  const revealAll = status === "loss"; // 패배 시 모든 지뢰를 공개해 보여준다.
+  // 종료 시 지뢰 노출: 패배=💣(전부 공개), 승리=🚩(안전하게 피한 지뢰 표시).
+  // 승/패 마무리 피드백을 대칭으로 맞춘다.
+  const mineReveal: MineReveal = status === "loss" ? "exploded" : status === "win" ? "flagged" : "none";
   const info = describeMinesweeperStatus(status);
 
   const finish = (result: MinesweeperTurnResult) => {
@@ -72,7 +75,9 @@ export function Minesweeper() {
     setStatus("playing");
   };
 
-  const hidden = countHidden(board);
+  // "남은 칸"은 아직 열지 않은 "안전한"(지뢰 아닌) 칸 수다. 모두 열면 0이 되어 승리와 일치한다
+  // (미공개 지뢰를 포함하던 기존 countHidden은 승리 시 항상 지뢰 수만큼 남아 메시지와 모순됐다).
+  const safeHidden = countSafeHidden(board);
 
   return (
     <section className="game">
@@ -84,7 +89,7 @@ export function Minesweeper() {
 
       <div className="controls">
         <span className="hint">
-          지뢰 <strong>{MINES}</strong>개 · 남은 칸 <strong>{hidden}</strong>
+          지뢰 <strong>{MINES}</strong>개 · 남은 안전 칸 <strong>{safeHidden}</strong>
         </span>
         <button type="button" className="primary" onClick={newGame}>
           새 게임
@@ -105,7 +110,7 @@ export function Minesweeper() {
       >
         {board.map((rowCells, r) =>
           rowCells.map((cell, c) => {
-            const view = cellView(cell, revealAll, r, c);
+            const view = cellView(cell, mineReveal, r, c);
             return (
               <button
                 key={`${r},${c}`}
