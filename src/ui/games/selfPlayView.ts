@@ -30,6 +30,7 @@ import {
   createNimEngine,
   type NimEngineState,
 } from "../../application/nimEngine";
+import { createChessEngine } from "../../application/chessEngine";
 import { chooseRandomGomokuMove } from "../../application/gomokuAi";
 import { chooseRandomGoMove } from "../../application/goAi";
 import { chooseRandomReversiMove } from "../../application/reversiAi";
@@ -40,7 +41,9 @@ import { chooseRandomDotsEdge } from "../../application/playDotsAndBoxes";
 import { chooseRandomCheckersMove } from "../../application/playCheckers";
 import { chooseRandomMancalaMove } from "../../application/playMancala";
 import { chooseRandomNimMove } from "../../application/playNim";
+import { chooseRandomChessMove } from "../../application/chessAi";
 import type { JanggiState } from "../../application/playJanggi";
+import type { ChessGameState } from "../../application/playChess";
 import { legalGoMoves } from "../../domain/goMoves";
 import type { Board as JanggiBoard } from "../../domain/janggi";
 import type { DotsBoard, DotsEdge } from "../../domain/dotsAndBoxes";
@@ -58,7 +61,8 @@ export type SelfPlayGameKey =
   | "dotsandboxes"
   | "checkers"
   | "mancala"
-  | "nim";
+  | "nim"
+  | "chess";
 
 /**
  * 장기 무작위 자기대국 한 판의 수 상한. 무작위 장기는 외통/장 포획/빅장으로 보통 수백 수
@@ -74,6 +78,14 @@ const JANGGI_MAX_MOVES = 1000;
  * "무종국(수 제한 도달)"으로 우아하게 처리한다(runAndDescribeSelfPlay 경로 재사용).
  */
 const CHECKERS_MAX_MOVES = 1000;
+
+/**
+ * 체스 무작위 자기대국 한 판의 수 상한. playChess는 외통/스테일메이트만 종료로 보고
+ * 50수·3회 반복·기물 부족 무승부는 모델링하지 않으므로, 무작위 양쪽 킹이 외통을 만들지
+ * 못하면 종국 없이 길어질 수 있다. 장기/체커와 동일하게 합리적 상한을 둔다. 초과 시
+ * playEngineGame이 throw 하며, 화면은 이를 "무종국(수 제한 도달)"으로 우아하게 처리한다.
+ */
+const CHESS_MAX_MOVES = 1000;
 
 export interface SelfPlayGameMeta {
   key: SelfPlayGameKey;
@@ -108,6 +120,9 @@ export const SELF_PLAY_GAMES: readonly SelfPlayGameMeta[] = [
   // 더미 상태를 색 비의존 글리프로 렌더한다(흑/백 디스크 보드 미사용). size는 기본 더미 개수(3),
   // boardClass는 .board.nim 재사용.
   { key: "nim", label: "님", size: 3, boardClass: "nim" },
+  // 체스는 8×8 보드를 chessView의 chessSquareView(백=외곽선/흑=채움 자형 + 좌표/기물명
+  // aria-label)로 색 비의존 렌더한다. size는 한 변(8), boardClass는 .board.chess 재사용.
+  { key: "chess", label: "체스", size: 8, boardClass: "chess" },
 ];
 
 /** 보드 한 칸의 상태(모든 지원 게임 공통: 흑/백 돌 또는 빈 칸). */
@@ -240,6 +255,16 @@ export function runSelfPlay(
         },
         { maxMoves },
       );
+    case "chess":
+      // 무작위 체스는 양쪽 킹이 외통을 만들지 못하면(playChess는 50수/반복/기물부족 무승부
+      // 미모델링) 무한 진행할 수 있으므로 장기/체커처럼 CHESS_MAX_MOVES 상한을 둔다(초과 시
+      // playEngineGame throw → 화면에서 무종국 처리). 합법 수가 없으면 도메인이 이미 종국
+      // (외통/스테일메이트)이라 콜백이 불리지 않으므로 chooseRandomChessMove의 빈 수 throw도 닿지 않는다.
+      return playEngineGame(
+        createChessEngine(),
+        (state) => chooseRandomChessMove(state as ChessGameState, rng),
+        { maxMoves: maxMoves ?? CHESS_MAX_MOVES },
+      );
     default:
       throw new Error(`runSelfPlay: 지원하지 않는 게임입니다: ${String(game)}`);
   }
@@ -275,6 +300,10 @@ function sideLabelFor(game: SelfPlayGameKey, side: Side): string {
   if (game === "nim") {
     // 님은 흑/백 돌이 아니라 선(1)=p1, 후(2)=p2 진영으로 구분(색 비의존).
     return side === "p1" ? "1P(선)" : "2P(후)";
+  }
+  if (game === "chess") {
+    // 체스는 백(white)이 선(先)=p1, 흑(black)=후=p2. chessView 표기와 일치(자형으로 색 비의존 구분).
+    return side === "p1" ? "백(선)" : "흑(후)";
   }
   return side === "p1" ? "흑(선)" : "백(후)";
 }
@@ -447,6 +476,29 @@ export function selfPlayNimBoard(
   return Array.isArray(piles) && piles.every((s) => typeof s === "number")
     ? (piles as number[])
     : [];
+}
+
+/**
+ * 체스 결과의 최종 상태(ChessGameState)를 안전하게 추출한다(렌더 요약용).
+ * 흑/백 디스크 모델(SelfPlayCell)이 아니라 체스 보드/차례/종료를 담은 상태를 그대로 노출하므로,
+ * 컴포넌트는 chessView의 chessSquareView(글리프 자형·좌표/기물명 aria-label)로 색 비의존 렌더한다
+ * (장기가 janggiView를 재사용하는 방식과 동일). 비정상 결과(board 누락)면 빈 보드 상태를 반환해
+ * throw 없이 안전하게 처리한다.
+ */
+export function selfPlayChessState(
+  result: EngineGameResult<unknown>,
+): ChessGameState {
+  const state = result.finalState as Partial<ChessGameState>;
+  if (Array.isArray(state.board)) {
+    return state as ChessGameState;
+  }
+  return {
+    board: [],
+    next: "white",
+    finished: true,
+    winner: null,
+    endReason: null,
+  };
 }
 
 /** 최종 보드 한 칸의 색 비의존 렌더 정보(장기 제외 모든 게임 공통). */
