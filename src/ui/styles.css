@@ -510,6 +510,102 @@ header h1 {
   background: #fecaca;
 }
 
+/* --- 도트 앤 박스(Dots and Boxes) --- */
+
+/* 점·변·박스가 교차 배치되는 격자. 트랙 크기는 인라인(dotsGridTemplate)으로 지정하므로
+   여기서는 내용 폭에 맞춰 줄어들게만 한다(좁은 화면은 가로 스크롤 허용). */
+.board.dotsandboxes {
+  display: grid;
+  gap: 0;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  background: #f8fafc;
+  border-color: #94a3b8;
+  padding: 6px;
+}
+
+/* 점: 작은 원(장식, 비인터랙티브). */
+.dots-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin: auto;
+  border-radius: 50%;
+  background: #334155;
+}
+
+/* 변(수평/수직): 트랙을 채우고, 미사용 변은 버튼·그어진 변은 채워진 막대. */
+.dots-edge {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* 미사용 변 버튼: 평소엔 옅은 점선, 호버/포커스 시 또렷하게(색뿐 아니라 굵기로 단서). */
+button.dots-edge {
+  cursor: pointer;
+}
+
+button.dots-edge.hedge {
+  border-top: 4px dashed #cbd5e1;
+  border-bottom: 4px dashed transparent;
+}
+
+button.dots-edge.vedge {
+  border-left: 4px dashed #cbd5e1;
+  border-right: 4px dashed transparent;
+}
+
+button.dots-edge:not(:disabled):hover,
+button.dots-edge:not(:disabled):focus-visible {
+  border-color: #f59e0b;
+}
+
+button.dots-edge:disabled {
+  cursor: default;
+}
+
+/* 그어진 변: 진한 실선 막대. */
+.dots-edge.drawn.hedge {
+  align-self: center;
+  height: 5px;
+  background: #1f2937;
+  border-radius: 2px;
+}
+
+.dots-edge.drawn.vedge {
+  justify-self: center;
+  width: 5px;
+  background: #1f2937;
+  border-radius: 2px;
+}
+
+/* 박스: 소유자를 색뿐 아니라 레이블(P1/P2)로도 구분. */
+.dots-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.dots-box.owner-p1 {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.dots-box.owner-p2 {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 /* --- 2048 --- */
 
 /* 좁은 화면(360px)에서도 깨지지 않도록 폭에 맞춰 줄어들고, 넓은 화면에선 max-width로 캡한다. */
