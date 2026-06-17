@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import type { GameId } from "../../domain/gameRecord";
 import { getStandings, listRecords, subscribe } from "../records";
 import { toEloLeaderboard } from "./recordsEloView";
+import { toHeadToHeadList } from "./recordsHeadToHeadView";
 
 const GAME_LABEL: Record<GameId, string> = {
   rps: "가위바위보",
@@ -23,6 +24,8 @@ export function Records() {
   const records = useSyncExternalStore(subscribe, listRecords);
   // 누적 기록으로 ELO 레이팅 리더보드를 계산한다(domain/computeEloRatings 재사용, 표시용 변환).
   const leaderboard = toEloLeaderboard(records);
+  // 맞붙은 플레이어 쌍별 상대 전적(domain/headToHead 재사용, 표시용 변환).
+  const headToHead = toHeadToHeadList(records);
 
   return (
     <section className="game">
@@ -82,6 +85,44 @@ export function Records() {
               ))}
             </tbody>
           </table>
+        </>
+      )}
+
+      {standings.length > 0 && (
+        <>
+          <h3>상대 전적</h3>
+          <p className="hint">
+            정확히 두 사람이 직접 맞붙은 판만 모은 상대 전적입니다(판수 많은 순). 승 열은
+            "맞대결"에 표기된 앞 사람·뒤 사람 기준입니다.
+          </p>
+          {headToHead.length === 0 ? (
+            <p className="hint">아직 두 사람이 직접 맞붙은 기록이 없습니다.</p>
+          ) : (
+            <table className="standings">
+              <thead>
+                <tr>
+                  <th>맞대결</th>
+                  <th>앞 사람 승</th>
+                  <th>뒤 사람 승</th>
+                  <th>무</th>
+                  <th>총 판수</th>
+                </tr>
+              </thead>
+              <tbody>
+                {headToHead.map((row) => (
+                  <tr key={`${row.playerA} vs ${row.playerB}`}>
+                    <td>
+                      {row.playerA} vs {row.playerB}
+                    </td>
+                    <td>{row.winsA}</td>
+                    <td>{row.winsB}</td>
+                    <td>{row.draws}</td>
+                    <td>{row.games}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </>
       )}
 
