@@ -27,6 +27,7 @@ import { Mancala } from "./games/Mancala";
 import { Nim } from "./games/Nim";
 import { Battleship } from "./games/Battleship";
 import { Hanoi } from "./games/Hanoi";
+import { SlidePuzzle } from "./games/SlidePuzzle";
 import { MemoryMatch } from "./games/MemoryMatch";
 import { Ladder } from "./games/Ladder";
 import { SelfPlay } from "./games/SelfPlay";
@@ -64,6 +65,7 @@ type GameKey =
   | "nim"
   | "battleship"
   | "hanoi"
+  | "slidepuzzle"
   | "memory"
   | "ladder"
   | "selfplay"
@@ -100,6 +102,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "nim", label: "님", render: () => <Nim /> },
   { key: "battleship", label: "배틀십", render: () => <Battleship /> },
   { key: "hanoi", label: "하노이탑", render: () => <Hanoi /> },
+  { key: "slidepuzzle", label: "슬라이드 퍼즐", render: () => <SlidePuzzle /> },
   { key: "memory", label: "메모리", render: () => <MemoryMatch /> },
   { key: "ladder", label: "사다리타기", render: () => <Ladder /> },
   { key: "selfplay", label: "관전", render: () => <SelfPlay /> },
