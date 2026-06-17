@@ -35,6 +35,10 @@ describe("recordsGameLabelView", () => {
     expect(gameLabel("card")).not.toBe(gameLabel("highcard"));
   });
 
+  it("2048 GameId가 라벨로 매핑된다", () => {
+    expect(gameLabel("game2048")).toBe("2048");
+  });
+
   it("모든 라벨은 공백이 아닌 문자열이다", () => {
     for (const label of Object.values(GAME_LABEL)) {
       expect(label.trim().length).toBeGreaterThan(0);
