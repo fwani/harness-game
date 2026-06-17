@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { getStandings, listRecords, recordsPersisted, subscribe } from "../records";
 import { toEloLeaderboard } from "./recordsEloView";
+import { toWinRankingRows } from "./recordsRankingView";
 import { recordsPersistenceHint } from "./recordsHintView";
 import { toHeadToHeadList } from "./recordsHeadToHeadView";
 import { buildRecordsByGameRows } from "./recordsByGameView";
@@ -14,6 +15,8 @@ export function Records() {
   const records = useSyncExternalStore(subscribe, listRecords);
   // 누적 기록으로 ELO 레이팅 리더보드를 계산한다(domain/computeEloRatings 재사용, 표시용 변환).
   const leaderboard = toEloLeaderboard(records);
+  // 누적 전적을 승수·승률 기준 순위표로 변환한다(domain/rankPlayers 재사용, 표시용 변환).
+  const winRanking = toWinRankingRows(standings);
   // 맞붙은 플레이어 쌍별 상대 전적(domain/headToHead 재사용, 표시용 변환).
   const headToHead = toHeadToHeadList(records);
   // 게임별(per-game) 전적(domain/summarizeByGame 재사용, 표시용 변환).
@@ -75,6 +78,44 @@ export function Records() {
               ))}
             </tbody>
           </table>
+        </>
+      )}
+
+      {winRanking.length > 0 && (
+        <>
+          <h3>승수 순위</h3>
+          <p className="hint">
+            누적 승수·승률 기준 순위입니다(승 → 승률 → 패 순). 동점은 같은 순위를 공유합니다
+            (예: 1, 2, 2, 4).
+          </p>
+          <div className="table-scroll">
+            <table className="standings">
+              <thead>
+                <tr>
+                  <th>순위</th>
+                  <th>플레이어</th>
+                  <th>승</th>
+                  <th>패</th>
+                  <th>무</th>
+                  <th>경기수</th>
+                  <th>승률</th>
+                </tr>
+              </thead>
+              <tbody>
+                {winRanking.map((row) => (
+                  <tr key={row.player}>
+                    <td>{row.rank}</td>
+                    <td>{row.player}</td>
+                    <td>{row.wins}</td>
+                    <td>{row.losses}</td>
+                    <td>{row.draws}</td>
+                    <td>{row.gamesPlayed}</td>
+                    <td>{(row.winRate * 100).toFixed(1)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
 
