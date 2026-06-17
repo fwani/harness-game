@@ -39,6 +39,7 @@ export type GameId =
   | "hangman"
   | "pig"
   | "bingo"
+  | "snakesandladders"
   | "rps-match";
 
 /** 한 판에서 한 플레이어의 결과. */
