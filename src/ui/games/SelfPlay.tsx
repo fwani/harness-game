@@ -11,6 +11,11 @@ import {
 } from "./dotsAndBoxesView";
 import { checkersCellView } from "./checkersView";
 import {
+  nimPileLabel,
+  nimStonesSymbol,
+  nimPileAriaLabel,
+} from "./nimView";
+import {
   mancalaScoreLabel,
   mancalaPitAriaLabel,
   mancalaStoreAriaLabel,
@@ -24,6 +29,7 @@ import {
   selfPlayGlyphBoard,
   selfPlayJanggiBoard,
   selfPlayMancalaBoard,
+  selfPlayNimBoard,
   type SelfPlayGameKey,
   type SelfPlayRun,
 } from "./selfPlayView";
@@ -59,7 +65,8 @@ export function SelfPlay() {
     game !== "janggi" &&
     game !== "dotsandboxes" &&
     game !== "checkers" &&
-    game !== "mancala"
+    game !== "mancala" &&
+    game !== "nim"
       ? selfPlayGlyphBoard(run.result, game)
       : [];
   const janggiBoard =
@@ -76,6 +83,8 @@ export function SelfPlay() {
     run?.result && game === "mancala"
       ? selfPlayMancalaBoard(run.result)
       : null;
+  const nimPiles =
+    run?.result && game === "nim" ? selfPlayNimBoard(run.result) : null;
 
   return (
     <section className="game">
@@ -297,10 +306,36 @@ export function SelfPlay() {
             </>
           )}
 
+          {game === "nim" && nimPiles && (
+            <div
+              className="board nim"
+              role="img"
+              aria-label={`${meta.label} 최종 더미`}
+            >
+              {nimPiles.map((stones, pile) => (
+                <div key={pile} className="nim-pile">
+                  <div className="nim-pile-head">
+                    <span className="nim-pile-label">{nimPileLabel(pile)}</span>
+                    <span
+                      className="nim-stones"
+                      aria-label={nimPileAriaLabel(pile, stones)}
+                    >
+                      <span className="nim-stones-symbol" aria-hidden="true">
+                        {nimStonesSymbol(stones)}
+                      </span>
+                      <span className="nim-stones-count">돌 {stones}개</span>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {game !== "janggi" &&
             game !== "dotsandboxes" &&
             game !== "checkers" &&
             game !== "mancala" &&
+            game !== "nim" &&
             run.result && (
             <div
               className={`board ${meta.boardClass}`.trim()}
