@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { formatGoStopFinalScore, describeGoStopOutcome } from "./goStopView";
+import {
+  formatGoStopFinalScore,
+  describeGoStopOutcome,
+  describeHwatuCard,
+  buildGoStopScoreBreakdown,
+} from "./goStopView";
 import type { GoStopFinalScore } from "../../domain/goStopBak";
 import type { GoStopShowdownResult } from "../../application/settleGoStopShowdown";
 
@@ -45,6 +50,91 @@ describe("formatGoStopFinalScore", () => {
       finalScore({ flags: { gwangbak: true, pibak: true } }),
     );
     expect(d.flagLabels).toEqual(["광박", "피박"]);
+  });
+});
+
+describe("describeHwatuCard", () => {
+  it("광 카드를 '월 + 광'으로 표시한다", () => {
+    const d = describeHwatuCard({ month: 1, index: 0 });
+    expect(d.category).toBe("광");
+    expect(d.month).toBe(1);
+    expect(d.label).toBe("1월 광");
+  });
+
+  it("열끗/띠/피 분류를 각각 텍스트로 병기한다", () => {
+    expect(describeHwatuCard({ month: 2, index: 0 }).label).toBe("2월 열끗");
+    expect(describeHwatuCard({ month: 1, index: 1 }).label).toBe("1월 띠");
+    expect(describeHwatuCard({ month: 1, index: 2 }).label).toBe("1월 피");
+  });
+
+  it("유효하지 않은 카드는 throw한다", () => {
+    expect(() => describeHwatuCard({ month: 13, index: 0 })).toThrow();
+  });
+});
+
+describe("buildGoStopScoreBreakdown", () => {
+  it("카드 0점·5고를 분해해 고 배수(×8)를 드러낸다 (QA #269 재현)", () => {
+    // 피 2장(<10) → 카드 점수 0. 5고 → 보너스 +5, 배수 ×8. 박 없음.
+    const captured = [
+      { month: 1, index: 2 },
+      { month: 1, index: 3 },
+    ];
+    const finalScore: GoStopFinalScore = {
+      base: 40,
+      multiplier: 1,
+      flags: { gwangbak: false, pibak: false },
+      total: 40,
+    };
+    const b = buildGoStopScoreBreakdown(captured, 5, finalScore);
+    expect(b.gwang).toBe(0);
+    expect(b.yeol).toBe(0);
+    expect(b.tti).toBe(0);
+    expect(b.pi).toBe(0);
+    expect(b.cardTotal).toBe(0);
+    expect(b.goBonus).toBe(5);
+    expect(b.goMultiplier).toBe(8);
+    expect(b.bakMultiplier).toBe(1);
+    expect(b.flagLabels).toEqual([]);
+    expect(b.total).toBe(40);
+    // 불변식: (cardTotal + goBonus) × goMultiplier × bakMultiplier === total
+    expect((b.cardTotal + b.goBonus) * b.goMultiplier * b.bakMultiplier).toBe(b.total);
+  });
+
+  it("0~2고는 고 배수 ×1이고 고 보너스만 가산한다", () => {
+    const captured = [{ month: 1, index: 2 }];
+    const finalScore: GoStopFinalScore = {
+      base: 0,
+      multiplier: 1,
+      flags: { gwangbak: false, pibak: false },
+      total: 0,
+    };
+    const b = buildGoStopScoreBreakdown(captured, 0, finalScore);
+    expect(b.goBonus).toBe(0);
+    expect(b.goMultiplier).toBe(1);
+  });
+
+  it("카드 점수·박 배수·박 라벨을 함께 분해한다", () => {
+    // 광 3장(비광 제외) → 광 3점. 3고 → 보너스 +3, 배수 ×2. 광박 → 박 배수 ×2.
+    const captured = [
+      { month: 1, index: 0 },
+      { month: 3, index: 0 },
+      { month: 8, index: 0 },
+    ];
+    const finalScore: GoStopFinalScore = {
+      base: 12,
+      multiplier: 2,
+      flags: { gwangbak: true, pibak: false },
+      total: 24,
+    };
+    const b = buildGoStopScoreBreakdown(captured, 3, finalScore);
+    expect(b.gwang).toBe(3);
+    expect(b.cardTotal).toBe(3);
+    expect(b.goBonus).toBe(3);
+    expect(b.goMultiplier).toBe(2);
+    expect(b.bakMultiplier).toBe(2);
+    expect(b.flagLabels).toEqual(["광박"]);
+    expect(b.total).toBe(24);
+    expect((b.cardTotal + b.goBonus) * b.goMultiplier * b.bakMultiplier).toBe(b.total);
   });
 });
 
