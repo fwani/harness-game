@@ -79,6 +79,36 @@ export function createGameRecord(game: GameId, outcomes: PlayerOutcome[]): GameR
   };
 }
 
+/** 한 게임(GameId)에 한정한 플레이어별 누적 전적. */
+export interface GameStats {
+  game: GameId;
+  /** 해당 게임만의 플레이어별 누적(기존 summarize 결과 형태). */
+  stats: PlayerStats[];
+}
+
+/**
+ * 게임(GameId)별로 묶어 각 게임의 PlayerStats[]를 돌려준다(불변).
+ * - 기록이 있는 게임만 포함한다(판수 0인 게임은 제외).
+ * - 게임 순서: 입력 records에서 처음 등장한 순서를 따른다(결정적).
+ * - 각 게임 내 stats는 기존 summarize와 동일 규칙(플레이어 첫 등장 순서)을 따른다.
+ * - 입력을 변형하지 않는다.
+ */
+export function summarizeByGame(records: GameRecord[]): GameStats[] {
+  const byGame = new Map<GameId, GameRecord[]>();
+  for (const record of records) {
+    let group = byGame.get(record.game);
+    if (group === undefined) {
+      group = [];
+      byGame.set(record.game, group);
+    }
+    group.push(record);
+  }
+  return [...byGame.entries()].map(([game, group]) => ({
+    game,
+    stats: summarize(group),
+  }));
+}
+
 /**
  * 여러 판 기록을 플레이어별 wins/losses/draws로 집계한다(불변).
  * 반환 순서는 플레이어가 처음 등장한 순서를 따른다(결정적).
