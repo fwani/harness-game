@@ -14,21 +14,33 @@ export interface CellView {
   ariaLabel: string;
   /** 색이 아니라 종류로 구분하기 위한 분류(스타일 클래스/판정용). */
   kind: CellKind;
-  /** 공개된 칸인지(클릭 불가·비활성 판단용). 패배 시 모든 지뢰 노출에는 영향받지 않는다. */
+  /** 공개된 칸인지(클릭 불가·비활성 판단용). 종료 시 지뢰 노출에는 영향받지 않는다. */
   revealed: boolean;
 }
 
 /**
+ * 종료 시 미공개 지뢰를 어떻게 노출할지.
+ * - "none": 진행 중 — 미공개 지뢰를 노출하지 않는다.
+ * - "exploded": 패배 — 모든 지뢰를 💣로 노출(밟은 지뢰 + 나머지).
+ * - "flagged": 승리 — 안전하게 피한 지뢰를 🚩로 노출해 마무리 피드백을 준다.
+ *   (승/패 마무리 표현을 대칭으로 맞춘다.)
+ */
+export type MineReveal = "none" | "exploded" | "flagged";
+
+/**
  * 한 칸의 표시 정보를 만든다(순수·결정적, 입력 불변).
- * - revealAll(패배 시 true)이면 미공개 지뢰도 노출한다.
+ * - reveal이 "none"이 아니면 미공개 지뢰도 노출한다(패배=💣, 승리=🚩).
  * - 미공개 칸: 내용 없음("미공개 칸").
  * - 공개 지뢰: 💣. 인접 0: 빈 칸. 인접>0: 숫자.
- * 색만이 아니라 기호(💣)·숫자·라벨로 구분한다.
+ * 색만이 아니라 기호(💣/🚩)·숫자·라벨로 구분한다.
  */
-export function cellView(cell: Cell, revealAll: boolean, row: number, col: number): CellView {
+export function cellView(cell: Cell, reveal: MineReveal, row: number, col: number): CellView {
   const where = `${row + 1}행 ${col + 1}열`;
-  if (revealAll && cell.mine) {
-    return { content: "💣", ariaLabel: `${where} 지뢰`, kind: "mine", revealed: cell.revealed };
+  if (reveal !== "none" && cell.mine && !cell.revealed) {
+    // 미공개 지뢰: 승리 시엔 안전하게 피한 표시(🚩), 패배 시엔 노출(💣).
+    return reveal === "flagged"
+      ? { content: "🚩", ariaLabel: `${where} 지뢰(안전하게 피함)`, kind: "mine", revealed: false }
+      : { content: "💣", ariaLabel: `${where} 지뢰`, kind: "mine", revealed: false };
   }
   if (!cell.revealed) {
     return { content: "", ariaLabel: `${where} 미공개 칸`, kind: "hidden", revealed: false };
@@ -53,6 +65,23 @@ export function countHidden(board: Board): number {
   for (const row of board) {
     for (const cell of row) {
       if (!cell.revealed) {
+        count += 1;
+      }
+    }
+  }
+  return count;
+}
+
+/**
+ * 아직 열지 않은 "안전한"(지뢰 아닌) 칸의 수를 센다(순수·결정적, 입력 불변).
+ * 모든 안전한 칸을 열면 0이 되어 승리 상태와 일치한다(미공개 지뢰는 세지 않음).
+ * 카운터 표시에 사용해 "승리했는데 남은 칸 10" 같은 모순을 없앤다.
+ */
+export function countSafeHidden(board: Board): number {
+  let count = 0;
+  for (const row of board) {
+    for (const cell of row) {
+      if (!cell.revealed && !cell.mine) {
         count += 1;
       }
     }
