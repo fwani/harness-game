@@ -20,6 +20,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   // 레거시 공유 키로 저장된 과거 기록(여러 카드 게임이 섞여 있음)을 구분해 표시한다.
   card: "카드(이전 기록)",
   reversi: "오델로",
+  chess: "체스",
   dice: "주사위",
   yut: "윷놀이",
   gostop: "고스톱",

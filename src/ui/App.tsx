@@ -17,6 +17,7 @@ import { Reversi } from "./games/Reversi";
 import { ConnectFour } from "./games/ConnectFour";
 import { Janggi } from "./games/Janggi";
 import { Checkers } from "./games/Checkers";
+import { Chess } from "./games/Chess";
 import { TicTacToe } from "./games/TicTacToe";
 import { Yut } from "./games/Yut";
 import { NumberBaseball } from "./games/NumberBaseball";
@@ -61,6 +62,7 @@ type GameKey =
   | "connectfour"
   | "janggi"
   | "checkers"
+  | "chess"
   | "tictactoe"
   | "yut"
   | "numberbaseball"
@@ -104,6 +106,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "connectfour", label: "커넥트포", render: () => <ConnectFour /> },
   { key: "janggi", label: "장기", render: () => <Janggi /> },
   { key: "checkers", label: "체커", render: () => <Checkers /> },
+  { key: "chess", label: "체스", render: () => <Chess /> },
   { key: "tictactoe", label: "틱택토", render: () => <TicTacToe /> },
   { key: "yut", label: "윷놀이", render: () => <Yut /> },
   { key: "numberbaseball", label: "숫자야구", render: () => <NumberBaseball /> },
