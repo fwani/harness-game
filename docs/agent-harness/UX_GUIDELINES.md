@@ -67,6 +67,7 @@
 | 숫자야구 (`NumberBaseball.tsx`) | 비밀 수 생성 → 추측 입력 → S/B/아웃 피드백·히스토리 → 정답 종료 | ✅ vs 출제(난수) | `generateSecretBaseballNumber`(`MathRandomSource` 주입)+`playBaseballGuess` 연동. 시도 횟수·추측 히스토리(`describeBaseballResult`: `nS mB`/아웃/정답!)·정답 시 비밀 수 공개, 잘못된 입력은 `numberBaseballView.parseGuessInput`이 한국어 사유(`.error`)로 안내. 새 게임 리셋, 전적 저장(`numberBaseball`, win="a"). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
 | 관전 (`SelfPlay.tsx`) | 보드 게임 선택 → CPU vs CPU 한 판 자동 진행 → 결과 | ✅ 종료·승자/무승부까지 | `playEngineGame`+엔진 어댑터(`createGomokuEngine`/`createGoEngine`/`createReversiEngine`/`createJanggiEngine`)+`chooseRandom*Move`를 `selfPlayView`로 묶어 호출. 오목/바둑/오델로/장기 지원, 승자(게임별 side 라벨: 흑/백 또는 초/한)·무승부·수순 길이·최종 보드 요약 표시, 다시 돌리기 회복 경로. 장기는 `janggiView` 기물 자형/도형/접근성 라벨로 색 비의존 렌더하고 수 제한(무작위 무한 진행) 도달 시 "무종국(수 제한 도달)"으로 우아하게 안내 |
 | 녹아웃 (`SingleElimination.tsx`) | 참가자 입력 → 대진(부전승) → 라운드별 승자 선택 → 우승자 | ✅ 우승자까지 | `generateSingleEliminationFirstRound`+`advanceSingleEliminationRound` 연동. 시드 부전승 안내·라운드 라벨(결승/준결승/N강)·우승 표시·리셋 |
+| 사다리타기 (`Ladder.tsx`) | 참가자/결과 입력 → 무작위 사다리 생성 → 참가자 선택 시 경로 강조·도착 표시 | ✅ 1:1 배정까지 | `playLadder`(application, `MathRandomSource` 주입)로 한 판 진행, `tracePathColumns`(→domain `resolveLadder`)로 선택 참가자 경로 추적. SVG 사다리 렌더(가로 스크롤)·전체 배정 표·입력 검증 사유(`ladderView.validateLadderInput`)·새 게임. 승/패 개념 없는 배정 게임이라 전적 저장은 범위 밖 |
 | 전적 (`Records.tsx`) | 플레이어별 승/패/무 + ELO 레이팅 + 상대 전적 + 기록 | ✅ | 공유 저장소 구독, 빈 상태 표시, localStorage 영속(새로고침 후 유지). 맞붙은 쌍별 상대 전적(`headToHead`) 표 노출 |
 
 ## 알려진 UI/UX 갭 (백로그 후보)
