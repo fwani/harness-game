@@ -6,6 +6,7 @@
 /** 기록 대상 게임 종류. */
 export type GameId =
   | "rps"
+  | "mukjjippa"
   | "oddEven"
   | "gomoku"
   | "go"
