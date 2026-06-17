@@ -1426,3 +1426,92 @@ button.dots-edge:disabled {
   background: rgba(56, 189, 248, 0.18);
   font-weight: 600;
 }
+
+/* --- 하노이탑(Tower of Hanoi) --- */
+
+/* 3기둥 가로 배치. 좁은 화면에서도 줄지 않게 최소 폭을 두고 가로 스크롤 허용. */
+.hanoi {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  margin-top: 8px;
+}
+
+/* 기둥은 클릭 가능한 <button>. 디스크를 아래에서 쌓아 올리도록 끝을 아래로 정렬. */
+.hanoi-peg {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  min-height: 220px;
+  padding: 8px 6px;
+  border: 2px solid #475569;
+  border-radius: 8px;
+  /* 기둥 막대를 가운데 세로선으로 표현(색 비의존 보조; 실제 구분은 기둥 라벨). */
+  background:
+    linear-gradient(#94a3b8, #94a3b8) center / 6px 100% no-repeat,
+    #f8fafc;
+  cursor: pointer;
+}
+
+.hanoi-peg:not(:disabled):hover,
+.hanoi-peg:not(:disabled):focus-visible {
+  outline: 2px solid #f59e0b;
+}
+
+/* 선택된 출발 기둥 강조(색뿐 아니라 굵은 테두리·점선으로 구분). */
+.hanoi-peg.selected {
+  border-color: #1d4ed8;
+  border-style: dashed;
+  border-width: 3px;
+}
+
+/* 목표 기둥 표시(맨 오른쪽). */
+.hanoi-peg.target {
+  background:
+    linear-gradient(#94a3b8, #94a3b8) center / 6px 100% no-repeat,
+    #ecfeff;
+}
+
+.hanoi-peg:disabled {
+  cursor: default;
+}
+
+.hanoi-disks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+/* 디스크: 색이 아니라 폭(크기 비례)+숫자 라벨로 구분. 최소 폭으로 작은 디스크도 보이게. */
+.hanoi-disk {
+  min-width: 28px;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 맨 위(집을 수 있는) 디스크 강조(색 비의존: 굵은 테두리). */
+.hanoi-disk.top {
+  border-color: #f59e0b;
+  border-width: 2px;
+}
+
+.hanoi-peg-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
