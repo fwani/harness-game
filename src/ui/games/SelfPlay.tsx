@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
-import type { EngineGameResult } from "../../application/playEngineGame";
 import { boardGridStyle } from "./boardView";
+import { pieceGlyph, pieceAriaLabel } from "./janggiView";
 import {
   SELF_PLAY_GAMES,
-  runSelfPlay,
-  describeSelfPlayResult,
+  runAndDescribeSelfPlay,
   selfPlayBoard,
+  selfPlayJanggiBoard,
   type SelfPlayGameKey,
+  type SelfPlayRun,
 } from "./selfPlayView";
 
 /** 자동 대국 난수 어댑터(다른 게임 화면과 동일하게 infrastructure 어댑터 주입). */
@@ -17,29 +18,24 @@ const STONE = { black: "●", white: "○" } as const;
 
 export function SelfPlay() {
   const [game, setGame] = useState<SelfPlayGameKey>("gomoku");
-  const [result, setResult] = useState<EngineGameResult<unknown> | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [run, setRun] = useState<SelfPlayRun | null>(null);
 
   const meta = SELF_PLAY_GAMES.find((g) => g.key === game)!;
 
-  const run = () => {
-    try {
-      setResult(runSelfPlay(game, rng));
-      setError(null);
-    } catch {
-      setResult(null);
-      setError("자동 대국을 끝까지 진행하지 못했습니다. 다시 시도해 주세요.");
-    }
+  const start = () => {
+    setRun(runAndDescribeSelfPlay(game, rng));
   };
 
   const select = (key: SelfPlayGameKey) => {
     setGame(key);
-    setResult(null);
-    setError(null);
+    setRun(null);
   };
 
-  const summary = result ? describeSelfPlayResult(result) : null;
-  const board = result ? selfPlayBoard(result) : [];
+  // 최종 보드는 정상 종국일 때만 그린다(무종국이면 result=null).
+  const discBoard =
+    run?.result && game !== "janggi" ? selfPlayBoard(run.result) : [];
+  const janggiBoard =
+    run?.result && game === "janggi" ? selfPlayJanggiBoard(run.result) : [];
 
   return (
     <section className="game">
@@ -60,40 +56,61 @@ export function SelfPlay() {
         ))}
       </div>
       <div className="controls">
-        <button className="primary" onClick={run}>
-          {result || error ? "다시 돌리기" : "자동 대국 시작"}
+        <button className="primary" onClick={start}>
+          {run ? "다시 돌리기" : "자동 대국 시작"}
         </button>
       </div>
 
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
-
-      {summary && (
+      {run && (
         <>
-          <p className="outcome">
-            {meta.label} · 종료 · <strong>{summary.outcome}</strong> · {summary.moves}
+          <p className="outcome" role="status">
+            {meta.label} · {run.unfinished ? "중단" : "종료"} ·{" "}
+            <strong>{run.outcome}</strong> · {run.moves}
           </p>
-          <div
-            className={`board ${meta.boardClass}`.trim()}
-            style={boardGridStyle(meta.size)}
-            role="img"
-            aria-label={`${meta.label} 최종 보드`}
-          >
-            {board.map((row, y) =>
-              row.map((cell, x) => (
-                <div
-                  key={`${x},${y}`}
-                  className="cell"
-                  aria-hidden="true"
-                >
-                  {cell && <span className={`stone ${cell}`}>{STONE[cell]}</span>}
-                </div>
-              )),
-            )}
-          </div>
+
+          {game === "janggi" && run.result && (
+            <div
+              className="board janggi"
+              style={boardGridStyle(meta.size)}
+              role="img"
+              aria-label={`${meta.label} 최종 보드`}
+            >
+              {janggiBoard.map((row, y) =>
+                row.map((piece, x) => (
+                  <div key={`${x},${y}`} className="cell janggi-cell">
+                    {piece && (
+                      <span
+                        className={`piece ${piece.side}`}
+                        aria-label={pieceAriaLabel(piece.type, piece.side)}
+                        title={pieceAriaLabel(piece.type, piece.side)}
+                      >
+                        {pieceGlyph(piece.type, piece.side)}
+                      </span>
+                    )}
+                  </div>
+                )),
+              )}
+            </div>
+          )}
+
+          {game !== "janggi" && run.result && (
+            <div
+              className={`board ${meta.boardClass}`.trim()}
+              style={boardGridStyle(meta.size)}
+              role="img"
+              aria-label={`${meta.label} 최종 보드`}
+            >
+              {discBoard.map((row, y) =>
+                row.map((cell, x) => (
+                  <div key={`${x},${y}`} className="cell" aria-hidden="true">
+                    {cell && (
+                      <span className={`stone ${cell}`}>{STONE[cell]}</span>
+                    )}
+                  </div>
+                )),
+              )}
+            </div>
+          )}
         </>
       )}
     </section>
