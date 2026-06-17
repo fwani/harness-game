@@ -37,6 +37,7 @@ export type GameId =
   | "battleship"
   | "hanoi"
   | "slidepuzzle"
+  | "lightsout"
   | "hangman"
   | "pig"
   | "bingo"
