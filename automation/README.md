@@ -32,7 +32,7 @@ launchd (로컬 macOS, 컴퓨터가 켜져 있을 때)
 - **폭주 방지**: 기획은 open `ready-for-dev`가 `TARGET`(기본 6) 미만일 때만 부족분 보충 (dev 워커 2개가 늘 서로 다른 이슈를 잡도록 백로그를 넉넉히 유지).
 - **비용 절감**: 두 스크립트 모두 gh로 일거리 유무를 먼저 확인하고, 있을 때만 claude 호출.
 - **격리**: 봇은 전용 클론(`~/Library/Application Support/harness-game-autodev/repo-{dev,planner}`)에서 작업 — 사용자 작업 디렉터리를 건드리지 않는다.
-- **시간대별 간격**: planner/dev/dev2/dev3는 09~18시 3분·그 외 10분(plist `StartInterval=180`). QA는 09~18시 1분·그 외 10분(`StartInterval=60`) — 단 QA 1회 실행이 1분보다 길어 work-hours에는 사실상 연속 실행된다. 각 스크립트 내 시간 게이트로 제어.
+- **시간대별 간격**: planner/dev/dev2/dev3는 09~18시 3분·그 외 10분(plist `StartInterval=180`). QA는 09~18시 5분·그 외 10분(`StartInterval=300`). 각 스크립트 내 시간 게이트로 제어.
 - **QA**: 한 실행에 게임 1개를 회전(`.qa.rotation`)하며 플레이테스트. 발견은 `qa-finding` 라벨로 등록. 중복·폭주 방지 게이트 내장.
 - **QA→dev 트리아지**: planner가 매 실행 §1에서 open `qa-finding`을 검토해, **명백한 결함**(크래시·콘솔에러·플레이불가)은 `ready-for-dev`로 자동 승격(최대 3건/회)해 dev가 고치게 한다. 주관적 UX 제안은 사람 검토로 남긴다. 그래서 planner는 백로그가 차 있어도 미승격 qa-finding이 있으면 실행된다.
 - **보안 바닥**: 파괴적 명령/auth/권한/데이터 삭제는 `needs-human` 라벨로 에스컬레이션(자동 처리 금지).
@@ -86,12 +86,32 @@ done
 > in-progress-ai claim + 번호별 스태거 + actionable≥N 게이트로 중복을 막지만, 거의 동시에
 > 목록을 조회하는 극히 짧은 창에선 같은 이슈를 집을 수 있다(드묾).
 
+## 로그 구조
+
+각 봇은 두 종류의 로그를 남긴다(`~/Library/Application Support/harness-game-autodev/`):
+
+- **`<봇>.log`** — 사람용 **단계별 타임라인**. 한 줄/단계, `시각 [봇] 메시지` 형식.
+  - `======== RUN 시작/종료 ========` 구분선, `1) … 2) … 3) … 4) …` 단계, 마지막에 claude 보고 요약 8줄(`│` 들여쓰기).
+  - 일이 없을 땐 `· skip — …` 한 줄만. (간격 게이트에 걸린 깨움은 아무것도 안 남김)
+- **`<봇>.detail.log`** — npm/git/claude **원시 출력**. 디버그용이며 **실행마다 새로 덮어써** 최신 1회분만 보관.
+
+예시(`dev.log`):
+```
+2026-06-17 14:00:00 [dev] ======== RUN 시작 ========
+2026-06-17 14:00:00 [dev] 1) 처리 대상 확인: actionable=4 (MIN=1)
+2026-06-17 14:00:02 [dev] 2) main 최신화 (fetch origin)
+2026-06-17 14:00:03 [dev] 3) claude 개발 위임 → 구현·검증·PR·머지 (상세: dev.detail.log)
+2026-06-17 14:03:10 [dev] 4) claude 종료 (exit 0) — 보고 요약:
+2026-06-17 14:03:10 [dev]   │ 처리한 이슈 #201 → PR #205 머지 완료 …
+2026-06-17 14:03:10 [dev] ======== RUN 종료 (exit 0) ========
+```
+
 ## 운영
 
 ```sh
 BASE="$HOME/Library/Application Support/harness-game-autodev"
-tail -f "$BASE/dev.log"        # 개발 로그
-tail -f "$BASE/planner.log"    # 기획 로그
+tail -f "$BASE/dev.log" "$BASE/dev-2.log" "$BASE/dev-3.log" "$BASE/planner.log" "$BASE/qa.log"  # 타임라인
+tail -f "$BASE/dev.detail.log"     # 특정 봇 최신 실행 원시 출력(디버그)
 launchctl kickstart -k gui/$(id -u)/com.fwani.harness-game.planner   # 지금 1회
 launchctl bootout   gui/$(id -u) ~/Library/LaunchAgents/com.fwani.harness-game.dev.plist   # 끄기
 ```
