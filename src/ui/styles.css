@@ -970,6 +970,49 @@ button.dots-edge:disabled {
   border: 2px dashed #16a34a;
 }
 
+/* --- 슬라이드 퍼즐(15-퍼즐) --- */
+
+.board.slidepuzzle {
+  background: #1e293b;
+  border-color: #0f172a;
+  gap: 6px;
+  padding: 6px;
+}
+
+/* 타일: 숫자 텍스트로 구분(색 비의존). 빈 칸은 가라앉은 모양으로 명확히 구분. */
+.sp-cell {
+  border-radius: 6px;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.sp-tile {
+  background: #475569;
+  color: #f8fafc;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.22),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* 밀 수 있는(빈 칸과 인접) 타일: 강조 테두리로 색 외 단서를 함께 준다. */
+.sp-tile.sp-movable {
+  border: 2px solid #f59e0b;
+}
+
+.sp-tile.sp-movable:not(:disabled):hover,
+.sp-tile.sp-movable:not(:disabled):focus-visible {
+  background: #64748b;
+}
+
+.sp-tile:disabled {
+  opacity: 0.85;
+}
+
+/* 빈 칸: 눌린(움푹한) 모양으로 타일과 입체로도 구분. */
+.sp-blank {
+  background: #0f172a;
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.6);
+}
+
 /* --- 2048 --- */
 
 /* 좁은 화면(360px)에서도 깨지지 않도록 폭에 맞춰 줄어들고, 넓은 화면에선 max-width로 캡한다. */
