@@ -1,9 +1,16 @@
 // Application layer: orchestrates a single baccarat round (player vs banker). Depends on domain only.
 import { createDeck, type Card } from "../domain/card";
-import { evaluateBaccaratHand } from "../domain/baccarat";
+import {
+  evaluateBaccaratHand,
+  settleBaccaratBet,
+  type BaccaratBetSide,
+  type BaccaratOutcome,
+  type BaccaratSettlement,
+} from "../domain/baccarat";
 import { shuffle, type RandomSource } from "./dealCards";
 
-export type BaccaratOutcome = "player" | "banker" | "tie";
+// 한 판 승자 타입은 도메인(baccarat.ts)이 단일 소스다. 기존 import 경로 호환을 위해 재노출한다.
+export type { BaccaratOutcome };
 
 export interface BaccaratRoundResult {
   /** 플레이어 최종 손패(2장 또는 3장) */
@@ -113,4 +120,23 @@ export function playBaccaratRound(rng: RandomSource): BaccaratRoundResult {
   }
 
   return { playerHand, bankerHand, playerScore, bankerScore, outcome };
+}
+
+export interface BaccaratWagerResult {
+  /** 한 판 타블로 진행 결과(끗수·손패·승자). */
+  result: BaccaratRoundResult;
+  /** 베팅 측·베팅액 기준 표준 배당 정산(순손익·push). */
+  settlement: BaccaratSettlement;
+}
+
+/**
+ * 이미 진행된 한 판 결과(result)에 베팅 측·베팅액 정산을 결합하는 순수 헬퍼(불변).
+ * RNG는 playBaccaratRound에서만 쓰고, 정산은 결정적이다. domain의 settleBaccaratBet에 위임한다.
+ */
+export function resolveBaccaratWager(
+  side: BaccaratBetSide,
+  bet: number,
+  result: BaccaratRoundResult,
+): BaccaratWagerResult {
+  return { result, settlement: settleBaccaratBet(side, bet, result.outcome) };
 }

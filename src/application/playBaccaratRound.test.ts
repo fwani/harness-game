@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createDeck, type Card, type Rank, type Suit } from "../domain/card";
 import type { RandomSource } from "./dealCards";
-import { playBaccaratRound } from "./playBaccaratRound";
+import { playBaccaratRound, resolveBaccaratWager, type BaccaratRoundResult } from "./playBaccaratRound";
 
 // createDeck() 순서: spades A,2,...,K, hearts ..., diamonds, clubs (52장).
 // playBaccaratRound는 shuffle된 덱에서 player=idx0,2 / banker=idx1,3, draw=idx4.. 로 진행한다.
@@ -234,5 +234,30 @@ describe("playBaccaratRound", () => {
       expect(r.bankerHand.length).toBeLessThanOrEqual(3);
       expect(["player", "banker", "tie"]).toContain(r.outcome);
     }
+  });
+});
+
+describe("resolveBaccaratWager", () => {
+  const result = (outcome: BaccaratRoundResult["outcome"]): BaccaratRoundResult => ({
+    playerHand: [card("spades", "9"), card("hearts", "5")],
+    bankerHand: [card("clubs", "2"), card("diamonds", "3")],
+    playerScore: 4,
+    bankerScore: 5,
+    outcome,
+  });
+
+  it("결과와 정산을 함께 반환한다(banker 적중: 5% 커미션)", () => {
+    const wager = resolveBaccaratWager("banker", 100, result("banker"));
+    expect(wager.result.outcome).toBe("banker");
+    expect(wager.settlement).toEqual({ net: 95, push: false });
+  });
+
+  it("tie 결과에서 player 베팅은 push로 정산한다", () => {
+    const wager = resolveBaccaratWager("player", 100, result("tie"));
+    expect(wager.settlement).toEqual({ net: 0, push: true });
+  });
+
+  it("잘못된 베팅액(0)이면 정산에서 throw", () => {
+    expect(() => resolveBaccaratWager("player", 0, result("player"))).toThrow();
   });
 });
