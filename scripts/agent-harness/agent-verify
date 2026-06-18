@@ -23,8 +23,9 @@ run_step() {
   fi
 }
 
-run_step "lint"      "npm run lint"
-run_step "typecheck" "npm run typecheck"
+run_step "lint"        "npm run lint"
+run_step "lint:design" "npm run lint:design"
+run_step "typecheck"   "npm run typecheck"
 run_step "test"      "npm test"
 run_step "build"     "npm run build"
 
