@@ -261,6 +261,42 @@ describe("함선 수동 배치 헬퍼", () => {
       ]);
       expect(bad.valid).toBe(false);
     });
+
+    // 회귀(#586): 가로(↔)·오른쪽 경계 초과 미리보기는 반드시 "클릭한 행"에서 시작하고
+    // 클릭 칸을 포함해야 한다. 과거 QA에서 미리보기가 한 행 위(B행)로 어긋나 보인다는
+    // 신고가 있어, 클릭 행 고정과 클릭 칸 포함을 직접 잠근다.
+    it("가로 경계 초과 미리보기는 클릭한 행에서 시작하고 클릭 칸을 포함한다(#586)", () => {
+      // 빈 보드(10x10)에서 전함(길이4)·가로·C8(row2,col7) 클릭 → 오른쪽 경계 초과.
+      const bad = placementPreview([], 0, 4, 2, 7, "h", 10);
+      expect(bad.valid).toBe(false);
+      // 모든 미리보기 칸은 클릭한 행(row=2)에 있어야 한다(윗 행 row=1 금지).
+      expect(bad.cells.every(([r]) => r === 2)).toBe(true);
+      // 클릭 칸 C8(2,7)이 첫 칸으로 포함된다.
+      expect(bad.cells[0]).toEqual([2, 7]);
+      // 점유 예정 칸은 C8·C9·C10·C11(C11은 경계 밖). 보드에 렌더되는 칸(col<10)은 C8·C9·C10.
+      expect(bad.cells).toEqual([
+        [2, 7],
+        [2, 8],
+        [2, 9],
+        [2, 10],
+      ]);
+      const renderedLabels = bad.cells
+        .filter(([r, c]) => r < 10 && c < 10)
+        .map(([r, c]) => coordLabel(r, c));
+      expect(renderedLabels).toEqual(["C8", "C9", "C10"]);
+    });
+
+    it("세로 경계 초과 미리보기는 클릭한 열을 유지한다(대조군, #586)", () => {
+      // H1(row7,col0)·세로(↕)·길이4 → 아래로 H1,I1,J1,K1; K행(row10)은 경계 밖.
+      const bad = placementPreview([], 0, 4, 7, 0, "v", 10);
+      expect(bad.valid).toBe(false);
+      expect(bad.cells.every(([, c]) => c === 0)).toBe(true);
+      expect(bad.cells[0]).toEqual([7, 0]);
+      const renderedLabels = bad.cells
+        .filter(([r, c]) => r < 10 && c < 10)
+        .map(([r, c]) => coordLabel(r, c));
+      expect(renderedLabels).toEqual(["H1", "I1", "J1"]);
+    });
   });
 
   describe("placementStatusLabel", () => {
