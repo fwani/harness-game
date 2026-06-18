@@ -14,6 +14,7 @@ import {
 import type { Ship } from "../../domain/battleship";
 import {
   battleshipMatchSeatView,
+  battleshipMultiRecordAction,
   battleshipRoomPhase,
   battleshipSetupSeatView,
   opponentTurnLabel,
@@ -218,5 +219,62 @@ describe("opponentTurnLabel", () => {
   it("내 차례면 사격 안내, 상대 차례면 대기 문구", () => {
     expect(opponentTurnLabel(true)).toContain("내 차례");
     expect(opponentTurnLabel(false)).toContain("상대 차례");
+  });
+});
+
+describe("battleshipMultiRecordAction", () => {
+  it("승자 좌석을 절대 win으로 매핑한다(p1→a / p2→b)", () => {
+    expect(battleshipMultiRecordAction(OVER_P1_WINS, false)).toEqual({
+      kind: "record",
+      win: "a",
+    });
+    expect(battleshipMultiRecordAction(OVER_P2_WINS, false)).toEqual({
+      kind: "record",
+      win: "b",
+    });
+  });
+
+  it("이미 기록했으면 중복 기록하지 않는다(none)", () => {
+    expect(battleshipMultiRecordAction(OVER_P1_WINS, true)).toEqual({ kind: "none" });
+    expect(battleshipMultiRecordAction(OVER_P2_WINS, true)).toEqual({ kind: "none" });
+  });
+
+  it("진행 중/배치 단계면 가드를 리셋한다(재대국 후 다음 매치도 기록되도록)", () => {
+    expect(battleshipMultiRecordAction(NOT_OVER, false)).toEqual({ kind: "reset" });
+    expect(battleshipMultiRecordAction(NOT_OVER, true)).toEqual({ kind: "reset" });
+    expect(battleshipMultiRecordAction(null, true)).toEqual({ kind: "reset" });
+  });
+
+  it("over인데 승자가 없으면 기록하지 않는다(배틀십은 무승부 없음 — 방어적)", () => {
+    const overNoWinner: GameStatus = { over: true, winner: null, draw: false };
+    expect(battleshipMultiRecordAction(overNoWinner, false)).toEqual({ kind: "none" });
+  });
+
+  // 컴포넌트 가드(recordedRef) 배선을 그대로 흉내내 "두 좌석이 같은 over를 구독해도 1회"·재대국 1회를 검증한다.
+  it("두 좌석이 같은 over 상태를 구독해도 매치당 정확히 1회만 기록한다", () => {
+    let recorded = false;
+    const records: Array<"a" | "b"> = [];
+    // 한 좌석 변화마다 useEffect가 도는 것을 모사한다(action 적용 = 컴포넌트 핸들러).
+    const apply = (status: GameStatus | null) => {
+      const action = battleshipMultiRecordAction(status, recorded);
+      if (action.kind === "reset") recorded = false;
+      else if (action.kind === "record") {
+        recorded = true;
+        records.push(action.win);
+      }
+    };
+
+    // 매치 1: 진행 → p1 종료가 두 좌석으로 두 번 반영됨.
+    apply(NOT_OVER);
+    apply(OVER_P1_WINS);
+    apply(OVER_P1_WINS);
+    expect(records).toEqual(["a"]); // 1회만
+
+    // 재대국 → 배치(null)로 리셋 → 매치 2 진행 → p2 종료가 두 번 반영됨.
+    apply(null);
+    apply(NOT_OVER);
+    apply(OVER_P2_WINS);
+    apply(OVER_P2_WINS);
+    expect(records).toEqual(["a", "b"]); // 다음 매치도 1회만
   });
 });

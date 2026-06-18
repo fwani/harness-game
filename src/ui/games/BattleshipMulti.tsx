@@ -27,6 +27,7 @@ import {
 } from "./battleshipView";
 import {
   battleshipMatchSeatView,
+  battleshipMultiRecordAction,
   battleshipRoomPhase,
   battleshipSetupSeatView,
   type BattleshipSeatInput,
@@ -36,9 +37,18 @@ import {
   type InMemoryRoomHub,
   type RoomClient,
 } from "./battleshipRoomClient";
+import { recordGame } from "../records";
+import { SELF_PLAYER } from "./streakView";
 
 const BOARD_SIZE = DEFAULT_BATTLESHIP_SIZE;
 const FLEET = STANDARD_FLEET;
+
+/**
+ * 멀티 전적 저장 시 상대(p2) 좌석에 쓰는 안정적 표시 이름.
+ * p1은 싱글과 동일 유저 개념을 유지하려고 SELF_PLAYER("나")를 쓰고(전적이 싱글과 통합되어 보인다),
+ * p2는 로컬 2석 시뮬의 상대 좌석을 가리키는 고정 라벨이다(저장 키 안정값 — #535 표시 이름 매핑 관례).
+ */
+const OPPONENT_PLAYER = "상대(P2)";
 
 /** 좌석별 연결 식별자(불투명·민감정보 아님 — 로컬 2석 시뮬용 고정 라벨). */
 const CONN_ID: Record<Side, string> = { p1: "seat-p1", p2: "seat-p2" };
@@ -97,6 +107,8 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
   });
   const [activeSeat, setActiveSeat] = useState<Side>("p1");
   const unsubsRef = useRef<Array<() => void>>([]);
+  // 이번 매치 결과를 이미 기록했는지(중복 방지 가드). 재대국·미종료 단계에서 자동 리셋된다.
+  const recordedRef = useRef(false);
 
   // 구독 해지(언마운트/방 나가기) — 누수 방지.
   useEffect(() => {
@@ -105,6 +117,27 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
       unsubsRef.current = [];
     };
   }, []);
+
+  // 매치 종료를 권위 있는 서버 status(좌석 무관 절대 승자)로 감지해 전적을 정확히 1회 기록한다.
+  // 인메모리 허브에서는 두 좌석이 같은 over 상태를 모두 구독하므로 recordedRef 가드가 필수다
+  // (싱글 Battleship.tsx의 recorded.current 패턴). p1=SELF_PLAYER로 싱글/멀티 전적을 통합한다.
+  useEffect(() => {
+    const p1Payload = seats.p1.payload;
+    const p2Payload = seats.p2.payload;
+    const matchStatus =
+      p1Payload?.stage === "match"
+        ? p1Payload.status
+        : p2Payload?.stage === "match"
+          ? p2Payload.status
+          : null;
+    const action = battleshipMultiRecordAction(matchStatus, recordedRef.current);
+    if (action.kind === "reset") {
+      recordedRef.current = false;
+    } else if (action.kind === "record") {
+      recordedRef.current = true;
+      recordGame("battleship", SELF_PLAYER, OPPONENT_PLAYER, action.win);
+    }
+  }, [seats]);
 
   const applyMessage = (side: Side, m: ServerMessage) => {
     if (m.type === "roomState") {
@@ -144,7 +177,8 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
     if (m.type === "error") {
       setSeats((s) => ({ ...s, [side]: { ...s[side], lastError: m.reason } }));
     }
-    // gameOver는 status(over)로 이미 화면에 반영되므로 별도 처리 없음(로컬 시뮬은 전적 미기록).
+    // gameOver는 status(over)로 이미 화면에 반영되므로 별도 처리 없음.
+    // 전적 기록은 권위 있는 status(over)를 감지하는 위 useEffect가 매치당 1회 담당한다.
   };
 
   const join = () => {
