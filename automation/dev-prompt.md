@@ -4,6 +4,7 @@
 1) `git checkout main && git pull --ff-only` 로 최신화. 작업트리가 더럽거나 충돌하면 임의로 reset하지 말고 그 사실을 보고하고 종료.
 2) `npm ci` (node_modules 없거나 lock 변경 시). agent-harness CLI는 전역 설치돼 있다고 가정하되, `command -v agent-harness`가 없으면 `npm install -g https://github.com/fwani/agent-harness.git`.
 3) AGENTS.md, ARCHITECTURE.md, .agent-harness.yml을 읽어 작업원칙·아키텍처 경계·보안 바닥을 숙지한다.
+4) `docs/games/ROADMAP.md`를 읽어 현재 "한 게임씩 완성" 방향과 현재 대상 게임을 파악한다. 거의 모든 ready-for-dev 이슈는 현재 대상 게임의 DoD 갭이다.
 
 ## 1. 이슈 선택
 `gh issue list --repo fwani/harness-game --label ready-for-dev --state open --json number,title,assignees,labels,body` 로 후보를 조회한다. assignee가 있거나 in-progress-ai 라벨이 붙은 이슈는 제외한다. 처리할 이슈가 없으면 '처리할 이슈 없음'을 보고하고 즉시 종료한다. 후보가 있으면 번호가 가장 작은(오래된) 1건만 고른다.
@@ -17,6 +18,7 @@
 - src/infrastructure: application/domain의 포트를 구현(어댑터). 부수효과는 여기 둔다.
 - src/ui: presentation 레이어(Vite+React). domain/application을 import해 화면을 만든다. UI/UX 관련 이슈면 `docs/agent-harness/UX_GUIDELINES.md`를 먼저 읽고 그 원칙·"새 게임 화면 UI/UX 체크리스트"를 따른다(턴/상태 표시, 승패 표시, 잘못된 입력 피드백, 리셋 경로, 키보드/반응형, 데드코드 금지). 기존 `src/ui/games/*.tsx`·`styles.css` 패턴을 재사용한다.
 - 새/변경 로직에는 반드시 vitest 테스트(*.test.ts)를 추가한다. (UI 컴포넌트는 가능한 범위에서 로직/상태 단위 테스트.)
+- **"[완성] … 완성 확정 및 다음 게임 전진" 이슈**는 코드 변경이 아니라 문서 갱신 작업이다: 먼저 `sh scripts/agent-harness/agent-verify` 통과를 최종 확인하고, `docs/games/ROADMAP.md`에서 해당 게임 상태를 ✅로 바꾸고 "현재 대상 게임" 줄을 다음 번호(상태가 ✅ 아닌 가장 작은 번호)로 갱신하며, `docs/games/<key>.md` 구현 상태 매트릭스를 최신화한다. DoD가 실제로 다 충족됐는지(빠진 게 있으면 머지하지 말고 그 갭을 코멘트로 남기고 종료) 확인한다.
 
 ## 4. 검증 (모두 통과할 때까지 수정 반복)
 - `sh scripts/agent-harness/agent-verify` (lint/typecheck/test/build)

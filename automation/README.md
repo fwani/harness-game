@@ -18,7 +18,7 @@ launchd (로컬 macOS, 컴퓨터가 켜져 있을 때)
 
 | 파일 | 역할 |
 | --- | --- |
-| `planner-prompt.md` | 기획 봇 동작 명세 (제품 방향·이슈 생성 기준·**우선순위**·UI/UX 누락 점검). **현재 새 게임 도메인 추가는 동결**(기존 게임 완성도 향상에 집중) — 방향/우선순위를 바꾸려면 상단 "현재 제품 방향" 블록과 §3을 수정. 위키 리서치를 위해 `planner.sh`가 WebSearch/WebFetch 도구를 허용한다. |
+| `planner-prompt.md` | 기획 봇 동작 명세 (제품 방향·이슈 생성 기준·UI/UX 누락 점검). **현재 방향: 게임을 번호순으로 한 번에 하나씩 완성**(단일 소스 `docs/games/ROADMAP.md`의 현재 대상 게임에 집중) + 새 게임 도메인 동결. 순서/완성 정의를 바꾸려면 `docs/games/ROADMAP.md`를, 봇 동작을 바꾸려면 상단 "현재 제품 방향" 블록과 §3을 수정. 위키 리서치를 위해 `planner.sh`가 WebSearch/WebFetch 도구를 허용한다. |
 | `dev-prompt.md` | 개발 봇 동작 명세 (레이어 규칙·검증·PR·자동 머지·보안 바닥). |
 | `qa-prompt.md` | QA/플레이테스트 봇 명세. **Playwright MCP로 AI가 게임을 직접 플레이**하며 런타임 문제·UX 갭을 찾아 `qa-finding` 이슈로 등록(코드 수정 X). |
 | `planner.sh` / `dev.sh` / `qa.sh` | launchd가 호출하는 실행 스크립트. 싼 게이트 후 로컬 `claude -p` 호출. 프롬프트는 **origin/main의 위 .md에서 읽는다**(버전관리 단일 소스). `qa.sh`는 vite 개발 서버를 띄우고 claude에 Playwright MCP를 붙인다. |
@@ -29,11 +29,12 @@ launchd (로컬 macOS, 컴퓨터가 켜져 있을 때)
 
 ## 동작 규칙 (요약)
 
-- **폭주 방지**: 기획은 open `ready-for-dev`가 `TARGET`(기본 6) 미만일 때만 부족분 보충 (dev 워커 2개가 늘 서로 다른 이슈를 잡도록 백로그를 넉넉히 유지).
+- **한 게임씩 완성**: planner·dev·qa 모두 `docs/games/ROADMAP.md`의 **현재 대상 게임 1개**(상태가 ✅ 아닌 가장 작은 번호)에 수렴한다. 그 게임의 DoD(싱글+멀티+전적+문서·QA)가 다 충족되면 dev가 ROADMAP 상태를 ✅로 바꾸고 다음 번호로 전진한다.
+- **폭주 방지**: 기획은 open `ready-for-dev`가 `TARGET`(기본 4, 한 게임 집중으로 축소) 미만일 때만 부족분 보충.
 - **비용 절감**: 두 스크립트 모두 gh로 일거리 유무를 먼저 확인하고, 있을 때만 claude 호출.
 - **격리**: 봇은 전용 클론(`~/Library/Application Support/harness-game-autodev/repo-{dev,planner}`)에서 작업 — 사용자 작업 디렉터리를 건드리지 않는다.
 - **시간대별 간격**: planner/dev/dev2/dev3는 09~18시 3분·그 외 10분(plist `StartInterval=180`). QA는 09~18시 5분·그 외 10분(`StartInterval=300`). 각 스크립트 내 시간 게이트로 제어.
-- **QA**: 한 실행에 게임 1개를 회전(`.qa.rotation`)하며 플레이테스트. 발견은 `qa-finding` 라벨로 등록. 중복·폭주 방지 게이트 내장.
+- **QA**: 한 실행에 **현재 대상 게임 1개**(ROADMAP)를 반복 플레이테스트하며 매번 다른 경로로 새 결함을 찾는다(예전 `.qa.rotation` 회전 방식은 폐기). 발견은 `qa-finding` 라벨로 등록. 중복·폭주 방지 게이트 내장.
 - **QA→dev 트리아지**: planner가 매 실행 §1에서 open `qa-finding`을 검토해, **명백한 결함**(크래시·콘솔에러·플레이불가)은 `ready-for-dev`로 자동 승격(최대 3건/회)해 dev가 고치게 한다. 주관적 UX 제안은 사람 검토로 남긴다. 그래서 planner는 백로그가 차 있어도 미승격 qa-finding이 있으면 실행된다.
 - **보안 바닥**: 파괴적 명령/auth/권한/데이터 삭제는 `needs-human` 라벨로 에스컬레이션(자동 처리 금지).
 
