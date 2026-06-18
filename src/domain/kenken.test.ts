@@ -298,7 +298,7 @@ describe("kenKenViolations", () => {
 
   it("곱셈(mul) 케이지 산술 불일치를 위반으로 모은다", () => {
     let state = createKenKen(PUZZLE_3);
-    // mul 케이지 (0,2),(1,2),(2,2) target 6. 1·1·1=1 ≠ 6 → 위반(단, 열 중복 위반도 함께 발생).
+    // mul 케이지 (0,2),(1,2),(2,2) target 6.
     state = setKenKenValue(state, { row: 0, col: 2 }, 1);
     state = setKenKenValue(state, { row: 1, col: 2 }, 2);
     state = setKenKenValue(state, { row: 2, col: 2 }, 2);
