@@ -18,6 +18,13 @@ import {
   remainingGuessesLabel,
   validateGuess,
 } from "./mastermindView";
+import {
+  DEFAULT_MASTERMIND_DIFFICULTY_ID,
+  describeMastermindDifficulty,
+  mastermindDifficultyOptions,
+  normalizeMastermindDifficulty,
+  type MastermindDifficulty,
+} from "./mastermindStartOptionsView";
 
 // 무작위 비밀 코드 생성·한 추측 진행은 application(startMastermindGame/playMastermindGuess) +
 // RandomSource 어댑터에 위임한다. 채점·승패 판정 규칙은 domain(mastermind)을 통해서만 호출하고
@@ -32,9 +39,33 @@ function emptyPins(codeLength: number): (Peg | null)[] {
   return Array.from({ length: codeLength }, () => null);
 }
 
+/** 난이도 프리셋을 startMastermindGame이 받는 options로 변환한다. */
+function difficultyToOptions(d: MastermindDifficulty): {
+  codeLength: number;
+  colorCount: number;
+  maxGuesses: number;
+} {
+  return {
+    codeLength: d.codeLength,
+    colorCount: d.colorCount,
+    maxGuesses: d.maxGuesses,
+  };
+}
+
 export function Mastermind() {
+  // 선택된 난이도(기본=보통, 현행 4칸·6색·10시도와 동일). "새 게임" 시에도 유지된다.
+  const [difficultyId, setDifficultyId] = useState<string>(
+    DEFAULT_MASTERMIND_DIFFICULTY_ID,
+  );
+  const difficulty = normalizeMastermindDifficulty(difficultyId);
+
   const [state, setState] = useState<MastermindState>(() =>
-    startMastermindGame(rng),
+    startMastermindGame(
+      rng,
+      difficultyToOptions(
+        normalizeMastermindDifficulty(DEFAULT_MASTERMIND_DIFFICULTY_ID),
+      ),
+    ),
   );
   const [status, setStatus] = useState<MastermindStatus>("playing");
   const [pins, setPins] = useState<(Peg | null)[]>(() =>
@@ -49,12 +80,19 @@ export function Mastermind() {
   const view = describeMastermindStatus(state, status);
   const finished = view.over;
 
-  const startGame = () => {
-    const next = startMastermindGame(rng);
-    setState(next);
+  // 주어진 난이도로 새 게임을 시작한다(미지정 시 현재 선택 난이도 유지).
+  const startGame = (next: MastermindDifficulty = difficulty) => {
+    const nextState = startMastermindGame(rng, difficultyToOptions(next));
+    setState(nextState);
     setStatus("playing");
-    setPins(emptyPins(next.codeLength));
+    setPins(emptyPins(nextState.codeLength));
     setError(null);
+  };
+
+  // 난이도 버튼 선택: 그 난이도를 기억하고 즉시 새 게임을 시작한다(진행 중 보드는 리셋).
+  const selectDifficulty = (next: MastermindDifficulty) => {
+    setDifficultyId(next.id);
+    startGame(next);
   };
 
   // 색 팔레트 클릭: 가장 앞의 빈 칸을 그 색으로 채운다(이미 가득 차 있으면 무시).
@@ -124,11 +162,27 @@ export function Mastermind() {
         구분됩니다.
       </p>
 
+      <div className="controls" role="group" aria-label="난이도 선택">
+        <span className="hint">난이도</span>
+        {mastermindDifficultyOptions().map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            aria-pressed={option.id === difficulty.id}
+            className={option.id === difficulty.id ? "primary" : undefined}
+            onClick={() => selectDifficulty(option)}
+            title={describeMastermindDifficulty(option)}
+          >
+            {option.label} ({describeMastermindDifficulty(option)})
+          </button>
+        ))}
+      </div>
+
       <div className="controls">
         <span className="hint">
           코드 {state.codeLength}칸 · 색 {state.colorCount}가지 · {remainingGuessesLabel(state)}
         </span>
-        <button type="button" className="primary" onClick={startGame}>
+        <button type="button" className="primary" onClick={() => startGame()}>
           새 게임
         </button>
       </div>
