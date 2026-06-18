@@ -3,6 +3,7 @@ import {
   generateMineCoordinates,
   startMinesweeperGame,
   playMinesweeperTurn,
+  toggleMinesweeperFlag,
 } from "./playMinesweeper";
 import { createMinefield, type Board } from "../domain/minesweeper";
 import type { RandomSource } from "./dealCards";
@@ -158,5 +159,35 @@ describe("playMinesweeperTurn", () => {
     const board = createMinefield(3, 3, [[0, 0]]);
     playMinesweeperTurn(board, 2, 2);
     expect(board.every((row) => row.every((cell) => !cell.revealed))).toBe(true);
+  });
+
+  it("깃발 칸은 열기 위임으로도 열리지 않는다(도메인 보호)", () => {
+    const board = createMinefield(2, 2, [[0, 0]]);
+    const flagged = toggleMinesweeperFlag(board, 0, 0).board; // 지뢰 칸에 깃발
+    const result = playMinesweeperTurn(flagged, 0, 0);
+    expect(result.board[0]![0]!.revealed).toBe(false);
+    expect(result.status).toBe("playing");
+  });
+});
+
+describe("toggleMinesweeperFlag", () => {
+  it("미공개 칸의 깃발을 토글하고 보통 playing을 반환한다", () => {
+    const board = createMinefield(3, 3, [[0, 0]]);
+    const result = toggleMinesweeperFlag(board, 1, 1);
+    expect(result.board[1]![1]!.flagged).toBe(true);
+    expect(result.status).toBe("playing");
+  });
+
+  it("깃발은 승패에 영향이 없다(공개 상태 불변)", () => {
+    const board = createMinefield(2, 2, [[0, 0]]);
+    const result = toggleMinesweeperFlag(board, 0, 1);
+    expect(result.status).toBe("playing");
+    expect(revealedCoords(result.board)).toEqual([]); // 아무 칸도 열리지 않음
+  });
+
+  it("입력 보드를 변형하지 않는다(불변)", () => {
+    const board = createMinefield(2, 2, []);
+    toggleMinesweeperFlag(board, 0, 0);
+    expect(board.every((row) => row.every((cell) => !cell.flagged))).toBe(true);
   });
 });

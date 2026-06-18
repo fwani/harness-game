@@ -1,6 +1,13 @@
 // Application layer: 지뢰찾기(Minesweeper) 한 판/한 수 진행. domain(minesweeper)과 RandomSource 포트에만 의존한다.
 // infrastructure(Math.random) 직접 사용 금지 — 무작위는 반드시 RandomSource로 주입한다.
-import { createMinefield, revealCell, isLoss, isWin, type Board } from "../domain/minesweeper";
+import {
+  createMinefield,
+  revealCell,
+  toggleFlag,
+  isLoss,
+  isWin,
+  type Board,
+} from "../domain/minesweeper";
 import type { RandomSource } from "./dealCards";
 
 /**
@@ -82,7 +89,7 @@ export interface MinesweeperTurnResult {
  * - 지뢰 칸이 공개되면 "loss".
  * - 그 외 지뢰 아닌 모든 칸이 공개됐으면 "win".
  * - 둘 다 아니면 "playing".
- * 깃발(flag) 토글은 이 범위 밖이다(도메인 Cell에 flagged 필드 없음 — 후속 짝 이슈).
+ * 깃발이 꽂힌 칸은 도메인 revealCell이 이미 보호하므로(열리지 않음) 그대로 위임한다.
  */
 export function playMinesweeperTurn(
   board: Board,
@@ -90,6 +97,26 @@ export function playMinesweeperTurn(
   col: number,
 ): MinesweeperTurnResult {
   const next = revealCell(board, row, col);
+  if (isLoss(next)) {
+    return { board: next, status: "loss" };
+  }
+  if (isWin(next)) {
+    return { board: next, status: "win" };
+  }
+  return { board: next, status: "playing" };
+}
+
+/**
+ * (row,col) 칸의 깃발을 토글하고(도메인 toggleFlag 위임, 규칙 재구현 금지) 상태를 재판정한다.
+ * - 깃발은 승패에 영향이 없으므로 보통 "playing"을 반환한다(공개 상태 변화 없음).
+ * - 깃발만으로는 지뢰가 공개되거나 안전한 칸이 모두 열리지 않으므로 isLoss/isWin도 그대로 평가한다.
+ */
+export function toggleMinesweeperFlag(
+  board: Board,
+  row: number,
+  col: number,
+): MinesweeperTurnResult {
+  const next = toggleFlag(board, row, col);
   if (isLoss(next)) {
     return { board: next, status: "loss" };
   }
