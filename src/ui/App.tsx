@@ -44,6 +44,7 @@ import { Nonogram } from "./games/Nonogram";
 import { Sudoku } from "./games/Sudoku";
 import { Binairo } from "./games/Binairo";
 import { Futoshiki } from "./games/Futoshiki";
+import { KenKen } from "./games/KenKen";
 import { Ladder } from "./games/Ladder";
 import { SelfPlay } from "./games/SelfPlay";
 import { Tournament } from "./games/Tournament";
@@ -97,6 +98,7 @@ type GameKey =
   | "sudoku"
   | "binairo"
   | "futoshiki"
+  | "kenken"
   | "ladder"
   | "selfplay"
   | "tournament"
@@ -149,6 +151,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "sudoku", label: "스도쿠", render: () => <Sudoku /> },
   { key: "binairo", label: "비나이로", render: () => <Binairo /> },
   { key: "futoshiki", label: "후토시키", render: () => <Futoshiki /> },
+  { key: "kenken", label: "켄켄", render: () => <KenKen /> },
   { key: "ladder", label: "사다리타기", render: () => <Ladder /> },
   { key: "selfplay", label: "관전", render: () => <SelfPlay /> },
   { key: "tournament", label: "토너먼트", render: () => <Tournament /> },
