@@ -19,6 +19,8 @@ import {
   placementPreview,
   placementStatusLabel,
   playBattleshipCpuRound,
+  playCpuTurn,
+  playHumanTurn,
   remainingShips,
   shipName,
   shotSummary,
@@ -160,6 +162,14 @@ describe("battleshipStatusLabel", () => {
     expect(battleshipStatusLabel(null)).toContain("사람 차례");
     expect(battleshipStatusLabel("a")).toContain("사람 승리");
     expect(battleshipStatusLabel("b")).toContain("CPU 승리");
+  });
+
+  it("미종료 + cpuThinking이면 'CPU 차례/생각 중'을 드러낸다", () => {
+    expect(battleshipStatusLabel(null, true)).toContain("CPU 차례");
+    expect(battleshipStatusLabel(null, true)).toContain("생각 중");
+    // 종료 상태에서는 cpuThinking과 무관하게 승자 라벨이 우선한다.
+    expect(battleshipStatusLabel("a", true)).toContain("사람 승리");
+    expect(battleshipStatusLabel("b", true)).toContain("CPU 승리");
   });
 });
 
@@ -378,7 +388,7 @@ describe("difficultyLabel", () => {
 });
 
 describe("fireCellDisabled", () => {
-  it("아직 안 쏜 칸은 진행 중이면 활성(클릭 가능)이다", () => {
+  it("아직 안 쏜 칸은 보드가 잠기지 않았으면 활성(클릭 가능)이다", () => {
     expect(fireCellDisabled(false, false)).toBe(false);
   });
 
@@ -386,8 +396,71 @@ describe("fireCellDisabled", () => {
     expect(fireCellDisabled(false, true)).toBe(true);
   });
 
-  it("게임이 끝나면 모든 칸이 비활성이다", () => {
+  it("보드가 잠기면(게임 종료 또는 CPU 차례) 모든 칸이 비활성이다", () => {
     expect(fireCellDisabled(true, false)).toBe(true);
     expect(fireCellDisabled(true, true)).toBe(true);
+  });
+});
+
+// 사람 사격과 CPU 반격을 따로 진행하는 단계 함수(UI가 CPU 차례를 화면에 드러내려고 분리해 호출).
+describe("playHumanTurn", () => {
+  const ship: Ship = { id: "s", row: 0, col: 0, size: 2, orientation: "h" };
+
+  it("사람 사격 1발만 반영하고 CPU 보드를 갱신한다(입력 보드 불변, 미종료면 outcome=null)", () => {
+    const cpuBoard = createBattleshipBoard(2, [ship]);
+    const r = playHumanTurn(cpuBoard, 0, 0); // 명중(미격침).
+    expect(r.humanShot.hit).toBe(true);
+    expect(r.cpuBoard[0]![0]!.hit).toBe(true);
+    expect(r.outcome).toBeNull();
+    // 입력 보드는 변형되지 않는다.
+    expect(cpuBoard[0]![0]!.hit).toBe(false);
+  });
+
+  it("사람 사격으로 전 함대를 격침하면 outcome=HUMAN(a)", () => {
+    const cpuBoard = fireShot(createBattleshipBoard(2, [ship]), 0, 0); // (0,0) 이미 명중.
+    const r = playHumanTurn(cpuBoard, 0, 1); // 둘째 칸까지 → 전 함대 격침.
+    expect(r.humanShot.fleetDestroyed).toBe(true);
+    expect(r.outcome).toBe("a");
+  });
+
+  it("범위 밖 좌표는 도메인 에러로 전파된다", () => {
+    const cpuBoard = createBattleshipBoard(2, [ship]);
+    expect(() => playHumanTurn(cpuBoard, 5, 5)).toThrow(/잘못된 사격 좌표/);
+  });
+});
+
+describe("playCpuTurn", () => {
+  const ship: Ship = { id: "s", row: 0, col: 0, size: 2, orientation: "h" };
+
+  it("미사격 칸 중 난수가 고른 칸을 한 발 쏘고 사람 보드를 갱신한다(입력 보드 불변)", () => {
+    const humanBoard = createBattleshipBoard(2, [ship]);
+    // 미사격 후보(row-major): (0,0),(0,1),(1,0),(1,1). index 0 → (0,0) 명중.
+    const r = playCpuTurn(humanBoard, seqRandom([0]));
+    expect(r.cpuShot).not.toBeNull();
+    expect(r.cpuShot!.row).toBe(0);
+    expect(r.cpuShot!.col).toBe(0);
+    expect(r.cpuShot!.result.hit).toBe(true);
+    expect(r.outcome).toBeNull();
+    expect(humanBoard[0]![0]!.hit).toBe(false); // 입력 불변.
+  });
+
+  it("CPU 사격으로 사람 함대가 전멸하면 outcome=CPU(b)", () => {
+    // (0,0)을 미리 맞혀 둔 사람 보드 → CPU가 (0,1)을 골라 전 함대 격침.
+    const dented = fireShot(createBattleshipBoard(2, [ship]), 0, 0);
+    // 미사격 후보: (0,1),(1,0),(1,1). index 0 → (0,1).
+    const r = playCpuTurn(dented, seqRandom([0]));
+    expect(r.cpuShot!.row).toBe(0);
+    expect(r.cpuShot!.col).toBe(1);
+    expect(r.cpuShot!.result.fleetDestroyed).toBe(true);
+    expect(r.outcome).toBe("b");
+  });
+
+  it("미사격 칸이 없으면 사격을 생략한다(cpuShot=null, outcome=null, 보드 불변)", () => {
+    // 1×1 보드에 함선 없음 → 유일한 칸을 미리 사격하면 후보 없음.
+    const full = fireShot(createBattleshipBoard(1, []), 0, 0);
+    const r = playCpuTurn(full, seqRandom([0]));
+    expect(r.cpuShot).toBeNull();
+    expect(r.outcome).toBeNull();
+    expect(r.humanBoard).toBe(full);
   });
 });
