@@ -24,7 +24,8 @@ interface MastermindColor {
   hex: string;
 }
 
-// 최대 6색까지 지원하는 팔레트. 기호·문자·색이 모두 서로 달라 색에 의존하지 않고도 구분된다.
+// 최대 8색까지 지원하는 팔레트. 기호·문자·색이 모두 서로 달라 색에 의존하지 않고도 구분된다.
+// (Super/Deluxe 변형의 8색 난이도까지 라벨 A~H로 커버한다.)
 const PALETTE: ReadonlyArray<MastermindColor> = [
   { symbol: "●", text: "A", hex: "#ef4444" },
   { symbol: "■", text: "B", hex: "#3b82f6" },
@@ -32,6 +33,8 @@ const PALETTE: ReadonlyArray<MastermindColor> = [
   { symbol: "◆", text: "D", hex: "#eab308" },
   { symbol: "★", text: "E", hex: "#a855f7" },
   { symbol: "⬢", text: "F", hex: "#f97316" },
+  { symbol: "⬟", text: "G", hex: "#14b8a6" },
+  { symbol: "✚", text: "H", hex: "#ec4899" },
 ];
 
 /** 팔레트가 지원하는 최대 색 개수. */
