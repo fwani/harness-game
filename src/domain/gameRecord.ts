@@ -50,6 +50,7 @@ export type GameId =
   | "nonogram"
   | "sudoku"
   | "binairo"
+  | "futoshiki"
   | "rps-match";
 
 /** 한 판에서 한 플레이어의 결과. */

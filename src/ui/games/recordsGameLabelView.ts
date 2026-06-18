@@ -49,6 +49,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   nonogram: "네모로직",
   sudoku: "스도쿠",
   binairo: "비나이로",
+  futoshiki: "후토시키",
   "rps-match": "다전제(가위바위보)",
 };
 
