@@ -50,6 +50,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   sudoku: "스도쿠",
   binairo: "비나이로",
   futoshiki: "후토시키",
+  hitori: "히토리",
   "rps-match": "다전제(가위바위보)",
 };
 
