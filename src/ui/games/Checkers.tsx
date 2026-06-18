@@ -23,14 +23,20 @@ import {
   movablePieceKeys,
 } from "./checkersView";
 import { chooseCpuCheckersMove } from "./checkersCpuView";
+import {
+  checkersFirstPlayerOptions,
+  checkersHumanColor,
+  normalizeCheckersStartOptions,
+  type CheckersStartOptions,
+} from "./checkersStartOptionsView";
 
 const SIZE = 8;
 
 type Mode = "local" | "cpu";
 
-// vs CPU 모드: 사람은 dark(선공), CPU는 light(후공) — 기존 게임의 "사람=선" 컨벤션과 일치.
-const HUMAN: CheckersColor = "dark";
-const CPU: CheckersColor = "light";
+// 색 기호(색만이 아니라 기호로 구분): 흑=●, 백=○. (안내 문구 구성용.)
+const COLOR_GLYPH: Record<CheckersColor, string> = { dark: "●", light: "○" };
+const COLOR_LABEL: Record<CheckersColor, string> = { dark: "흑", light: "백" };
 
 // UI 난수 어댑터(부수효과는 infrastructure에). 테스트는 헬퍼에 스텁을 주입한다.
 const rng = new MathRandomSource();
@@ -73,28 +79,40 @@ function advance(prev: ViewState, move: CheckersMove): ViewState {
 
 export function Checkers() {
   const [mode, setMode] = useState<Mode>("local");
+  // 폼에서 고르는 시작 옵션(사람 선공 여부). 기본 사람 선공(●·흑).
+  const [options, setOptions] = useState<CheckersStartOptions>(() =>
+    normalizeCheckersStartOptions({}),
+  );
+  // 진행 중인 판이 시작된 시점의 색 설정(폼을 바꿔도 진행 중 판의 라벨/턴 분기가 흔들리지 않게 고정).
+  const [activeHumanFirst, setActiveHumanFirst] = useState(options.humanFirst);
   const [state, setState] = useState<ViewState>(initialState);
   // 종료 전환 시 전적을 1회만 기록하기 위한 가드.
   const recorded = useRef(false);
 
-  // vs CPU 모드에서 CPU(light) 차례면 한 수 자동 진행한다. 멀티 점프 연속이면 toMove가
+  // vs CPU에서 사람이 조작하는 색(현재 판 기준). 선공이면 흑(dark), 후공이면 백(light). CPU는 그 반대.
+  const humanColor = checkersHumanColor(activeHumanFirst);
+  const cpuColor: CheckersColor = humanColor === "dark" ? "light" : "dark";
+
+  // vs CPU 모드에서 CPU 차례면 한 수 자동 진행한다. 멀티 점프 연속이면 toMove가
   // 그대로 CPU라 state 변화로 effect가 재실행되어 같은 기물로 이어서 둔다.
+  // 체커는 흑(dark)이 선착하므로, 사람이 후공(백)이면 초기 보드의 toMove(dark)가 CPU라 이 effect가
+  // 시작 직후 곧바로 CPU 선수를 둔다.
   useEffect(() => {
-    if (mode !== "cpu" || state.over || state.toMove !== CPU) {
+    if (mode !== "cpu" || state.over || state.toMove !== cpuColor) {
       return;
     }
     const timer = setTimeout(() => {
       setState((prev) => {
-        if (prev.over || prev.toMove !== CPU) {
+        if (prev.over || prev.toMove !== cpuColor) {
           return prev;
         }
         const move = chooseCpuCheckersMove(
           prev.board,
-          CPU,
+          cpuColor,
           rng,
           prev.continuingFrom ?? undefined,
         );
-        // toMove===CPU면 둘 곳이 있다(없으면 findCheckersWinner가 이미 승부를 냈다).
+        // toMove===cpuColor면 둘 곳이 있다(없으면 findCheckersWinner가 이미 승부를 냈다).
         // 방어적으로 null이면 그대로 둔다.
         if (move === null) {
           return prev;
@@ -103,21 +121,28 @@ export function Checkers() {
       });
     }, 500);
     return () => clearTimeout(timer);
-  }, [mode, state]);
+  }, [mode, state, cpuColor]);
 
   // 종료되면(사람/CPU 어느 수로든) 결과를 전적에 1회 기록한다.
+  // vs CPU: 항상 사람=a / CPU=b 라벨로 기록한다. checkersWinSide는 dark→a/light→b이므로
+  // 사람이 백(light)이면 승/패 위치를 사람=a 기준으로 뒤집어, 색 선택과 무관하게 집계 의미를 보존한다.
+  // 2인 로컬: 기존 흑=a/백=b 핫시트 기록을 그대로 유지한다.
   useEffect(() => {
     if (!state.over || state.winner === null || recorded.current) {
       return;
     }
     recorded.current = true;
-    const [a, b] =
-      mode === "cpu" ? (["나", "CPU"] as const) : (["흑", "백"] as const);
-    recordGame("checkers", a, b, checkersWinSide(state.winner));
-  }, [state, mode]);
+    if (mode === "cpu") {
+      const raw = checkersWinSide(state.winner); // dark→a, light→b
+      const win = humanColor === "dark" ? raw : raw === "a" ? "b" : "a";
+      recordGame("checkers", "나", "CPU", win);
+    } else {
+      recordGame("checkers", "흑", "백", checkersWinSide(state.winner));
+    }
+  }, [state, mode, humanColor]);
 
-  // vs CPU 모드에선 사람(dark) 차례에만 입력을 허용한다.
-  const humanTurn = mode === "local" || state.toMove === HUMAN;
+  // vs CPU 모드에선 사람 색 차례에만 입력을 허용한다.
+  const humanTurn = mode === "local" || state.toMove === humanColor;
   const active = !state.over && humanTurn;
 
   // 현재 선택 기물에서 둘 수 있는 합법 목적지(없으면 빈 배열).
@@ -159,22 +184,31 @@ export function Checkers() {
     }
   };
 
-  const startGame = () => {
+  // 선택한 옵션으로 새 게임을 시작한다(진행 판의 색 설정 고정 + 보드 초기화).
+  // 사람이 후공(백)이면 초기 toMove(dark)가 CPU라 위 effect가 시작 직후 CPU 선수를 둔다.
+  const startWith = (humanFirst: boolean) => {
+    setActiveHumanFirst(humanFirst);
     recorded.current = false;
     setState(initialState());
   };
+
+  const startGame = () => startWith(options.humanFirst);
 
   const changeMode = (next: Mode) => {
     if (next === mode) {
       return;
     }
-    recorded.current = false;
     setMode(next);
-    setState(initialState());
+    startWith(options.humanFirst);
+  };
+
+  const selectHumanFirst = (humanFirst: boolean) => {
+    setOptions({ humanFirst });
+    startWith(humanFirst);
   };
 
   const forcedJump = active && hasForcedJump(state.board, state.toMove);
-  const cpuThinking = mode === "cpu" && !state.over && state.toMove === CPU;
+  const cpuThinking = mode === "cpu" && !state.over && state.toMove === cpuColor;
   const outcome = checkersOutcomeLabel(state.winner);
 
   return (
@@ -198,20 +232,45 @@ export function Checkers() {
           vs CPU
         </button>
       </div>
+      {mode === "cpu" && (
+        <div className="controls" role="group" aria-label="선공/후공 선택">
+          <span className="hint">내 차례:</span>
+          {checkersFirstPlayerOptions().map((opt) => (
+            <button
+              key={String(opt.value)}
+              type="button"
+              className={options.humanFirst === opt.value ? "primary" : ""}
+              aria-pressed={options.humanFirst === opt.value}
+              onClick={() => selectHumanFirst(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
       <p className="hint">
         어두운 칸에서 대각선으로 한 칸 이동하거나 상대를 뛰어넘어 따냅니다 · 따낼 수 있으면
         반드시 점프(강제) · 끝 줄에 닿으면 왕(♚/♔)으로 승급해 뒤로도 움직입니다.
-        {mode === "cpu" ? " · vs CPU: 내가 흑(●), CPU가 백(○)." : ""}
+        {mode === "cpu"
+          ? ` · vs CPU: 내가 ${COLOR_GLYPH[humanColor]} ${COLOR_LABEL[humanColor]}(${
+              activeHumanFirst ? "선" : "후"
+            }), CPU가 ${COLOR_GLYPH[cpuColor]} ${COLOR_LABEL[cpuColor]}. 흑(●)이 먼저 둡니다.`
+          : ""}
       </p>
       {state.over ? (
         <p className="outcome">
-          종료 · <strong>{mode === "cpu" ? cpuOutcome(state.winner) : outcome}</strong>
+          종료 ·{" "}
+          <strong>{mode === "cpu" ? cpuOutcome(state.winner, humanColor) : outcome}</strong>
         </p>
       ) : (
         <p className="hint" aria-live="polite">
           {cpuThinking
-            ? "CPU(○ 백) 생각 중…"
-            : checkersTurnLabel(state.toMove, mode === "cpu", state.continuingFrom !== null)}
+            ? `CPU(${COLOR_GLYPH[cpuColor]} ${COLOR_LABEL[cpuColor]}) 생각 중…`
+            : checkersTurnLabel(
+                state.toMove,
+                mode === "cpu" ? humanColor : null,
+                state.continuingFrom !== null,
+              )}
           {forcedJump ? " · 점프(따냄) 강제" : ""}
         </p>
       )}
@@ -260,10 +319,10 @@ export function Checkers() {
   );
 }
 
-/** vs CPU 종료 문구: 승자를 "나"/"CPU"로 표기(사람=dark). */
-function cpuOutcome(winner: CheckersColor | null): string {
+/** vs CPU 종료 문구: 승자를 "나"/"CPU"로 표기(사람 색 기준). */
+function cpuOutcome(winner: CheckersColor | null, humanColor: CheckersColor): string {
   if (winner === null) {
     return "";
   }
-  return winner === HUMAN ? "내가 승리! 🎉" : "CPU 승리…";
+  return winner === humanColor ? "내가 승리! 🎉" : "CPU 승리…";
 }
