@@ -37,6 +37,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   battleship: "배틀십",
   hanoi: "하노이탑",
   slidepuzzle: "슬라이드 퍼즐",
+  lightsout: "라이트 아웃",
   pegsolitaire: "페그 솔리테어",
   sokoban: "소코반",
   floodit: "플러드 잇",
@@ -52,6 +53,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   futoshiki: "후토시키",
   hitori: "히토리",
   kenken: "켄켄",
+  skyscrapers: "마천루",
   "rps-match": "다전제(가위바위보)",
 };
 
