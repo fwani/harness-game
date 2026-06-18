@@ -24,9 +24,70 @@ body {
   padding: 2rem 1rem;
 }
 
+.header-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+
 header h1 {
-  margin: 0 0 1rem;
+  margin: 0;
   font-size: 1.6rem;
+}
+
+.guest-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.guest-label {
+  color: var(--muted);
+}
+
+.guest-name {
+  font-weight: 600;
+}
+
+.guest-edit-btn,
+.guest-rename-save,
+.guest-rename-cancel {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #334155;
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.guest-rename-label {
+  color: var(--muted);
+}
+
+.guest-rename-input {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.guest-rename-input[aria-invalid="true"] {
+  border-color: var(--accent);
+}
+
+.guest-rename-error {
+  flex-basis: 100%;
+  margin: 0.25rem 0 0;
+  color: var(--text);
+  font-size: 0.9rem;
 }
 
 .game-search {
