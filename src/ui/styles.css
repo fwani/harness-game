@@ -43,6 +43,29 @@ header h1 {
   font-size: 1rem;
 }
 
+.mode-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.mode-btn {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid #334155;
+  background: var(--panel);
+  color: var(--muted);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.mode-btn.active {
+  border-color: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
+
 .tab-group {
   margin-bottom: 1.25rem;
 }
