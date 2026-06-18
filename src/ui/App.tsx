@@ -27,7 +27,7 @@ import { Minesweeper } from "./games/Minesweeper";
 import { DotsAndBoxes } from "./games/DotsAndBoxes";
 import { Mancala } from "./games/Mancala";
 import { Nim } from "./games/Nim";
-import { Battleship } from "./games/Battleship";
+import { BattleshipGame } from "./games/BattleshipGame";
 import { Hanoi } from "./games/Hanoi";
 import { SlidePuzzle } from "./games/SlidePuzzle";
 import { LightsOut } from "./games/LightsOut";
@@ -94,7 +94,7 @@ const RENDERERS: Record<GameKey, () => JSX.Element> = {
   dotsandboxes: () => <DotsAndBoxes />,
   mancala: () => <Mancala />,
   nim: () => <Nim />,
-  battleship: () => <Battleship />,
+  battleship: () => <BattleshipGame />,
   hanoi: () => <Hanoi />,
   slidepuzzle: () => <SlidePuzzle />,
   lightsout: () => <LightsOut />,
