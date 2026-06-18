@@ -24,12 +24,14 @@ export interface RoomPlayerInfo {
 export type ClientMessage =
   | { type: "joinRoom"; roomCode: string }
   | { type: "makeMove"; gameType: GameId; move: unknown }
+  | { type: "submitFleet"; gameType: GameId; ships: unknown }
   | { type: "leaveRoom" }
   | { type: "requestRematch" };
 
 /** 서버 → 클라이언트 메시지. `type`로 판별한다. */
 export type ServerMessage =
   | { type: "roomState"; roomCode: string; players: RoomPlayerInfo[] }
+  | { type: "setupState"; gameType: GameId; setup: unknown }
   | { type: "gameState"; gameType: GameId; state: unknown; status: GameStatus; turn: Side }
   | { type: "error"; reason: string }
   | { type: "gameOver"; record: GameRecord };
@@ -113,6 +115,9 @@ export function isClientMessage(value: unknown): value is ClientMessage {
       return isNonEmptyString(value.roomCode);
     case "makeMove":
       return isGameId(value.gameType) && "move" in value;
+    case "submitFleet":
+      // ships 페이로드는 함선 배열 형태(개별 함선 규칙 검증은 setup/도메인 책임)만 확인한다.
+      return isGameId(value.gameType) && Array.isArray(value.ships);
     case "leaveRoom":
     case "requestRematch":
       return true;
@@ -137,6 +142,9 @@ export function isServerMessage(value: unknown): value is ServerMessage {
         Array.isArray(value.players) &&
         value.players.every(isRoomPlayerInfo)
       );
+    case "setupState":
+      // setup 페이로드는 직렬화 형식 미확정이라 존재(any)만 확인한다(gameState.state와 동형).
+      return isGameId(value.gameType) && "setup" in value;
     case "gameState":
       return (
         isGameId(value.gameType) &&

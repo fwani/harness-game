@@ -23,12 +23,20 @@ describe("isClientMessage", () => {
     const valid: ClientMessage[] = [
       { type: "joinRoom", roomCode: "ABCD" },
       { type: "makeMove", gameType: "gomoku", move: { x: 1, y: 2 } },
+      { type: "submitFleet", gameType: "battleship", ships: [] },
       { type: "leaveRoom" },
       { type: "requestRematch" },
     ];
     for (const msg of valid) {
       expect(isClientMessage(msg)).toBe(true);
     }
+  });
+
+  it("rejects submitFleet with a missing gameType or non-array ships", () => {
+    expect(isClientMessage({ type: "submitFleet", ships: [] })).toBe(false);
+    expect(isClientMessage({ type: "submitFleet", gameType: "", ships: [] })).toBe(false);
+    expect(isClientMessage({ type: "submitFleet", gameType: "battleship" })).toBe(false);
+    expect(isClientMessage({ type: "submitFleet", gameType: "battleship", ships: 5 })).toBe(false);
   });
 
   it("accepts makeMove with any move payload (serialization out of scope)", () => {
@@ -77,12 +85,19 @@ describe("isServerMessage", () => {
         ],
       },
       { type: "gameState", gameType: "gomoku", state: { board: [] }, status: PLAYING, turn: "p1" },
+      { type: "setupState", gameType: "battleship", setup: { p1Ships: null, p2Ships: [] } },
       { type: "error", reason: "방이 가득 찼습니다" },
       { type: "gameOver", record: RECORD },
     ];
     for (const msg of valid) {
       expect(isServerMessage(msg)).toBe(true);
     }
+  });
+
+  it("accepts setupState with any setup payload but rejects missing gameType/setup", () => {
+    expect(isServerMessage({ type: "setupState", gameType: "battleship", setup: null })).toBe(true);
+    expect(isServerMessage({ type: "setupState", gameType: "battleship" })).toBe(false);
+    expect(isServerMessage({ type: "setupState", gameType: "", setup: {} })).toBe(false);
   });
 
   it("accepts roomState with an empty players list", () => {

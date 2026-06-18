@@ -1,10 +1,14 @@
 import { describe, it, expect } from "vitest";
 import type { GameEngine, Side, GameStatus } from "../../application/gameEngine";
 import type { ClientMessage } from "../../application/protocol";
+import type { Ship } from "../../domain/battleship";
+import { resolveSetupFor, type SetupController } from "../../application/setupController";
+import { createBattleshipEngine } from "../../application/battleshipEngine";
 import {
   createRoom,
   reduceRoom,
   type ResolveEngine,
+  type RoomDeps,
   type RoomState,
   type Outbound,
 } from "./room";
@@ -63,9 +67,16 @@ function seatedRoom(): RoomState {
 }
 
 describe("createRoom", () => {
-  it("좌석/관전자/매치가 비어있는 방을 만든다", () => {
+  it("좌석/관전자/setup/매치가 비어있는 방을 만든다", () => {
     const room = createRoom("ABCD", GAME);
-    expect(room).toEqual({ code: "ABCD", gameType: GAME, seats: [], spectators: [], match: null });
+    expect(room).toEqual({
+      code: "ABCD",
+      gameType: GAME,
+      seats: [],
+      spectators: [],
+      setup: null,
+      match: null,
+    });
   });
 });
 
@@ -252,5 +263,203 @@ describe("불변성/결정성", () => {
     const b = reduceRoom(room, "c1", move(0), { resolveEngine: resolveOk });
     expect(a.outbound).toEqual(b.outbound);
     expect(a.room.match?.state).toEqual(b.room.match?.state);
+  });
+});
+
+// ── battleship 비공개 배치(setup) 단계 연동 (#598) ──────────────────────────
+// setup 어댑터(resolveSetupFor)를 주입하면 2인 착석 즉시 매치가 아니라 비공개 배치 단계를 먼저 거친다.
+const BS = "battleship" as const;
+const bsJoin: ClientMessage = { type: "joinRoom", roomCode: "BSHP" };
+const submit = (ships: unknown): ClientMessage => ({ type: "submitFleet", gameType: BS, ships });
+
+const bsDeps: RoomDeps = {
+  resolveEngine: (g) =>
+    g === BS ? (createBattleshipEngine() as GameEngine<unknown, unknown>) : undefined,
+  resolveSetup: resolveSetupFor,
+};
+
+/** 겹치지 않는 표준 함대([5,4,3,3,2])를 각기 다른 행에 가로로 배치한다(10×10에서 유효). */
+function validFleet(): Ship[] {
+  return [
+    { id: "a", row: 0, col: 0, size: 5, orientation: "h" },
+    { id: "b", row: 1, col: 0, size: 4, orientation: "h" },
+    { id: "c", row: 2, col: 0, size: 3, orientation: "h" },
+    { id: "d", row: 3, col: 0, size: 3, orientation: "h" },
+    { id: "e", row: 4, col: 0, size: 2, orientation: "h" },
+  ];
+}
+
+/** 두 connId를 착석시킨(=setup 단계에 진입한) battleship 방. */
+function bsSetupRoom(): RoomState {
+  let room = createRoom("BSHP", BS);
+  room = reduceRoom(room, "c1", bsJoin, bsDeps).room;
+  room = reduceRoom(room, "c2", bsJoin, bsDeps).room;
+  return room;
+}
+
+describe("battleship setup 단계 연동", () => {
+  it("① 2인 착석 시 즉시 매치가 아니라 setup을 시작한다(좌석별 setupState 라우팅)", () => {
+    let room = createRoom("BSHP", BS);
+    room = reduceRoom(room, "c1", bsJoin, bsDeps).room;
+    const r = reduceRoom(room, "c2", bsJoin, bsDeps);
+    expect(r.room.match).toBeNull();
+    expect(r.room.setup).not.toBeNull();
+    // 점유는 모두에게(roomState), setup 점유는 착석자별로 따로(setupState×2).
+    expect(outTypes(r.outbound)).toEqual(["roomState", "setupState", "setupState"]);
+    const setupTos = r.outbound.filter((o) => o.message.type === "setupState").map((o) => o.to);
+    expect(setupTos.sort()).toEqual(["c1", "c2"]);
+  });
+
+  it("② 한쪽만 제출하면 매치 시작 없이 대기(가린 setupState 재라우팅)", () => {
+    const room = bsSetupRoom();
+    const r = reduceRoom(room, "c1", submit(validFleet()), bsDeps);
+    expect(r.room.match).toBeNull();
+    expect(r.room.setup).not.toBeNull();
+    expect(outTypes(r.outbound).every((t) => t === "setupState")).toBe(true);
+  });
+
+  it("③ 잘못된 제출(함선 수/길이 multiset 불일치)은 invalid_fleet 거부·불변", () => {
+    const room = bsSetupRoom();
+    const bad = submit([{ id: "x", row: 0, col: 0, size: 5, orientation: "h" }]);
+    const r = reduceRoom(room, "c1", bad, bsDeps);
+    expect(r.room).toBe(room); // 상태 불변
+    expect(r.outbound).toEqual([{ to: "c1", message: { type: "error", reason: "invalid_fleet" } }]);
+  });
+
+  it("③' 겹치는 배치도 invalid_fleet 거부·불변", () => {
+    const room = bsSetupRoom();
+    const overlap = validFleet();
+    overlap[1] = { id: "b", row: 0, col: 0, size: 4, orientation: "h" }; // 함선 a와 겹침
+    const r = reduceRoom(room, "c1", submit(overlap), bsDeps);
+    expect(r.room).toBe(room);
+    expect(r.outbound).toEqual([{ to: "c1", message: { type: "error", reason: "invalid_fleet" } }]);
+  });
+
+  it("③'' 형식이 깨진 제출(함선이 아님)도 invalid_fleet 거부·불변", () => {
+    const room = bsSetupRoom();
+    const r = reduceRoom(room, "c1", submit([1, 2, 3]), bsDeps);
+    expect(r.room).toBe(room);
+    expect(r.outbound).toEqual([{ to: "c1", message: { type: "error", reason: "invalid_fleet" } }]);
+  });
+
+  it("④ 양측 제출 완료 시 startBattleshipMatch로 사격 매치 시작", () => {
+    let room = bsSetupRoom();
+    room = reduceRoom(room, "c1", submit(validFleet()), bsDeps).room;
+    const r = reduceRoom(room, "c2", submit(validFleet()), bsDeps);
+    expect(r.room.setup).toBeNull();
+    expect(r.room.match).not.toBeNull();
+    const gs = r.outbound.find((o) => o.message.type === "gameState")!;
+    expect(gs.to).toBe("all");
+    expect(gs.message).toMatchObject({ type: "gameState", gameType: BS, turn: "p1" });
+    // 사격 매치 상태는 양측 보드를 들고 있다(엔진이 init한 상태).
+    expect(r.room.match!.state).toMatchObject({ next: "p1" });
+  });
+
+  it("⑤ redactSetup: 상대 함대 위치를 노출하지 않는다(제출 여부만)", () => {
+    const room = bsSetupRoom();
+    const r = reduceRoom(room, "c1", submit(validFleet()), bsDeps);
+    // 상대(p2=c2) 시점: p1이 제출했음은 알지만([]) 좌표는 비공개, 자기(p2)는 미제출(null).
+    const toC2 = r.outbound.find((o) => o.to === "c2")!.message as {
+      type: "setupState";
+      setup: { p1Ships: unknown; p2Ships: unknown };
+    };
+    expect(toC2.setup.p1Ships).toEqual([]);
+    expect(toC2.setup.p2Ships).toBeNull();
+    // 본인(p1=c1) 시점: 자기 함대 좌표는 그대로 보인다.
+    const toC1 = r.outbound.find((o) => o.to === "c1")!.message as {
+      type: "setupState";
+      setup: { p1Ships: Ship[] };
+    };
+    expect(toC1.setup.p1Ships).toHaveLength(5);
+  });
+
+  it("⑥ setup 어댑터 없는 게임은 기존처럼 2인 착석 즉시 매치 시작(회귀 없음)", () => {
+    // resolveSetupFor는 battleship 외에는 undefined → tictactoe는 setup 없이 즉시 매치.
+    const deps: RoomDeps = { resolveEngine: resolveOk, resolveSetup: resolveSetupFor };
+    let room = createRoom("ABCD", GAME);
+    room = reduceRoom(room, "c1", join, deps).room;
+    const r = reduceRoom(room, "c2", join, deps);
+    expect(r.room.setup).toBeNull();
+    expect(r.room.match).not.toBeNull();
+    expect(outTypes(r.outbound)).toEqual(["roomState", "gameState"]);
+  });
+
+  it("착석자가 아니면 submitFleet은 not_seated 거부", () => {
+    const room = bsSetupRoom();
+    const r = reduceRoom(room, "ghost", submit(validFleet()), bsDeps);
+    expect(r.outbound).toEqual([{ to: "ghost", message: { type: "error", reason: "not_seated" } }]);
+  });
+
+  it("setup 단계가 아닐 때 submitFleet은 setup_not_active 거부", () => {
+    // 한 명만 착석(아직 setup 시작 전).
+    const room = reduceRoom(createRoom("BSHP", BS), "c1", bsJoin, bsDeps).room;
+    const r = reduceRoom(room, "c1", submit(validFleet()), bsDeps);
+    expect(r.outbound).toEqual([
+      { to: "c1", message: { type: "error", reason: "setup_not_active" } },
+    ]);
+  });
+
+  it("매치 시작 후 submitFleet은 setup_not_active 거부(중복 제출 금지)", () => {
+    let room = bsSetupRoom();
+    room = reduceRoom(room, "c1", submit(validFleet()), bsDeps).room;
+    room = reduceRoom(room, "c2", submit(validFleet()), bsDeps).room;
+    const r = reduceRoom(room, "c1", submit(validFleet()), bsDeps);
+    expect(r.outbound).toEqual([
+      { to: "c1", message: { type: "error", reason: "setup_not_active" } },
+    ]);
+  });
+
+  it("setup 흐름은 입력 room을 변형하지 않는다(불변)", () => {
+    const room = bsSetupRoom();
+    const before = structuredClone(room.setup);
+    reduceRoom(room, "c1", submit(validFleet()), bsDeps);
+    expect(room.setup).toEqual(before);
+  });
+
+  it("setup 진행/매치 진행 중 requestRematch는 match_in_progress 거부", () => {
+    let room = bsSetupRoom();
+    room = reduceRoom(room, "c1", submit(validFleet()), bsDeps).room;
+    room = reduceRoom(room, "c2", submit(validFleet()), bsDeps).room;
+    const r = reduceRoom(room, "c1", { type: "requestRematch" }, bsDeps);
+    expect(r.outbound).toEqual([
+      { to: "c1", message: { type: "error", reason: "match_in_progress" } },
+    ]);
+  });
+});
+
+// setup 어댑터를 가진 게임의 재대국은 (엔진 재init이 아니라) 다시 비공개 배치 단계로 진입한다.
+// 종료까지 가는 battleship 대신, 2수면 끝나는 기존 페이크 엔진 + 1회 제출이면 완료되는 페이크 setup으로
+// 일반(게임 무관) 동작을 검증한다.
+describe("setup 어댑터가 있는 게임의 재대국→setup 재진입", () => {
+  // 양측 한 번씩 제출하면 완료되는 최소 setup 컨트롤러(게임 무관 흐름 검증용).
+  const fakeSetup: SetupController = {
+    create: () => ({ p1: false, p2: false }),
+    submit: (setup, side) => {
+      const s = setup as { p1: boolean; p2: boolean };
+      return { ok: true, state: { ...s, [side]: true } };
+    },
+    isComplete: (setup) => {
+      const s = setup as { p1: boolean; p2: boolean };
+      return s.p1 && s.p2;
+    },
+    startState: () => ({ count: 0, next: "p1" as Side }),
+    redact: (setup) => setup,
+  };
+  const deps: RoomDeps = { resolveEngine: resolveOk, resolveSetup: () => fakeSetup };
+  const fakeSubmit: ClientMessage = { type: "submitFleet", gameType: GAME, ships: [] };
+
+  it("종료된 매치의 requestRematch는 setup을 다시 시작한다", () => {
+    let room = createRoom("ABCD", GAME);
+    room = reduceRoom(room, "c1", join, deps).room;
+    room = reduceRoom(room, "c2", join, deps).room; // setup 시작
+    room = reduceRoom(room, "c1", fakeSubmit, deps).room;
+    room = reduceRoom(room, "c2", fakeSubmit, deps).room; // 매치 시작
+    room = reduceRoom(room, "c1", move(0), deps).room;
+    room = reduceRoom(room, "c2", move(1), deps).room; // count 2 → 종료
+
+    const r = reduceRoom(room, "c1", { type: "requestRematch" }, deps);
+    expect(r.room.match).toBeNull();
+    expect(r.room.setup).toEqual({ p1: false, p2: false });
+    expect(outTypes(r.outbound)).toEqual(["roomState", "setupState", "setupState"]);
   });
 });
