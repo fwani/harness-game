@@ -1,27 +1,19 @@
 // Presentation helpers for the Baccarat (바카라) screen. Pure functions only — keeps the React
 // component thin and lets us unit-test the view logic without a DOM. 판정(끗수/타블로)은
-// domain/application을 재사용하며 여기서 재구현하지 않는다.
+// domain/application을 재사용하며 여기서 재구현하지 않는다. 베팅 측 선택·정산은
+// baccaratStartOptionsView.ts를 참조한다.
 import type { BaccaratOutcome } from "../../application/playBaccaratRound";
-import type { WinSide } from "../records";
 
-/** 바카라 결과를 전적 저장용 승자 측으로 매핑한다: player=a, banker=b, tie=draw. */
-export function baccaratWinSide(outcome: BaccaratOutcome): WinSide {
-  if (outcome === "player") {
-    return "a";
-  }
-  if (outcome === "banker") {
-    return "b";
-  }
-  return "draw";
-}
-
-/** 한 판 결과를 한국어 승패 레이블로(나=player 기준). 색에 의존하지 않도록 텍스트로 표기. */
+/**
+ * 한 판 타블로 결과(끗수 비교)를 중립 텍스트로 표기한다. 베팅 적중 여부와 무관한 '핸드 결과'이며,
+ * 색에 의존하지 않도록 텍스트로만 구분한다. 베팅 기준 승패는 baccaratBetOutcomeLabel을 쓴다.
+ */
 export function baccaratOutcomeLabel(outcome: BaccaratOutcome): string {
   if (outcome === "player") {
-    return "🎉 승리!";
+    return "플레이어 승";
   }
   if (outcome === "banker") {
-    return "😢 패배";
+    return "뱅커 승";
   }
-  return "🤝 무승부";
+  return "타이";
 }
