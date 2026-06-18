@@ -52,6 +52,7 @@ export const GAME_LABEL: Record<GameId, string> = {
   futoshiki: "후토시키",
   hitori: "히토리",
   kenken: "켄켄",
+  skyscrapers: "마천루",
   "rps-match": "다전제(가위바위보)",
 };
 

@@ -46,6 +46,7 @@ import { Binairo } from "./games/Binairo";
 import { Futoshiki } from "./games/Futoshiki";
 import { Hitori } from "./games/Hitori";
 import { KenKen } from "./games/KenKen";
+import { Skyscrapers } from "./games/Skyscrapers";
 import { Ladder } from "./games/Ladder";
 import { SelfPlay } from "./games/SelfPlay";
 import { Tournament } from "./games/Tournament";
@@ -101,6 +102,7 @@ type GameKey =
   | "futoshiki"
   | "hitori"
   | "kenken"
+  | "skyscrapers"
   | "ladder"
   | "selfplay"
   | "tournament"
@@ -155,6 +157,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "futoshiki", label: "후토시키", render: () => <Futoshiki /> },
   { key: "hitori", label: "히토리", render: () => <Hitori /> },
   { key: "kenken", label: "켄켄", render: () => <KenKen /> },
+  { key: "skyscrapers", label: "마천루", render: () => <Skyscrapers /> },
   { key: "ladder", label: "사다리타기", render: () => <Ladder /> },
   { key: "selfplay", label: "관전", render: () => <SelfPlay /> },
   { key: "tournament", label: "토너먼트", render: () => <Tournament /> },
