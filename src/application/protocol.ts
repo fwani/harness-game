@@ -24,6 +24,7 @@ export interface RoomPlayerInfo {
 export type ClientMessage =
   | { type: "joinRoom"; roomCode: string }
   | { type: "makeMove"; gameType: GameId; move: unknown }
+  | { type: "submitSetup"; gameType: GameId; payload: unknown }
   | { type: "leaveRoom" }
   | { type: "requestRematch" };
 
@@ -31,6 +32,7 @@ export type ClientMessage =
 export type ServerMessage =
   | { type: "roomState"; roomCode: string; players: RoomPlayerInfo[] }
   | { type: "gameState"; gameType: GameId; state: unknown; status: GameStatus; turn: Side }
+  | { type: "setupState"; gameType: GameId; setup: unknown }
   | { type: "error"; reason: string }
   | { type: "gameOver"; record: GameRecord };
 
@@ -113,6 +115,9 @@ export function isClientMessage(value: unknown): value is ClientMessage {
       return isNonEmptyString(value.roomCode);
     case "makeMove":
       return isGameId(value.gameType) && "move" in value;
+    case "submitSetup":
+      // payload(배치 등)는 게임별 직렬화 형식이 미확정이라 존재(any)만 확인한다("payload" in 객체).
+      return isGameId(value.gameType) && "payload" in value;
     case "leaveRoom":
     case "requestRematch":
       return true;
@@ -144,6 +149,9 @@ export function isServerMessage(value: unknown): value is ServerMessage {
         isGameStatus(value.status) &&
         isSide(value.turn)
       );
+    case "setupState":
+      // setup(가린 배치 뷰)은 게임별 직렬화 형식이 미확정이라 존재(any)만 확인한다("setup" in 객체).
+      return isGameId(value.gameType) && "setup" in value;
     case "error":
       return isNonEmptyString(value.reason);
     case "gameOver":

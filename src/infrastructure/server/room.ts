@@ -12,6 +12,7 @@
 import type { GameEngine, Side } from "../../application/gameEngine";
 import {
   createMatch,
+  createMatchFromState,
   applyMatchMove,
   currentTurn,
   matchStatus,
@@ -33,9 +34,40 @@ export type ResolveEngine = (
   config?: unknown,
 ) => GameEngine<unknown, unknown> | undefined;
 
-/** reduceRoom이 부수효과 없이 외부 의존을 받는 통로(엔진 해석 주입). */
+/**
+ * 게임별 "사격 이전(pre-match) 비공개 배치(setup)" 어댑터.
+ * room은 특정 게임을 직접 알지 않으므로(게임 무관 유지), setup이 필요한 게임만 이 포트를 제공한다.
+ * 모든 메서드는 순수·결정적이며 입력 상태(불투명 setup)를 변형하지 않는다. setup 상태/제출 payload/가린
+ * 뷰의 구체 형식은 게임별이라 room 입장에선 모두 불투명(`unknown`)이다(makeMove.move와 동형).
+ */
+export interface SetupAdapter {
+  /** 새 setup 상태를 시작한다(양측 미제출). */
+  create(): unknown;
+  /**
+   * 한 side의 제출을 적용한다(입력 setup 불변). 유효하면 ok:true·갱신된 state,
+   * 아니면 ok:false(입력 보존). reason은 진단용 메시지(선택).
+   */
+  submit(
+    setup: unknown,
+    side: Side,
+    payload: unknown,
+  ): { ok: boolean; reason?: string; state: unknown };
+  /** 양측 제출이 끝나 매치를 시작할 수 있는지. */
+  isComplete(setup: unknown): boolean;
+  /** 완료된 setup으로 매치 엔진 어댑터와 초기 엔진 상태를 만든다(엔진/상태 재구현 금지·application 위임). */
+  start(setup: unknown): { engine: GameEngine<unknown, unknown>; state: unknown };
+  /** viewer 시점으로 가린 setup 뷰(상대 배치 위치 누수 금지). */
+  redact(setup: unknown, viewer: Side): unknown;
+}
+
+/** gameType→setup 어댑터 조회. setup 단계가 없는 게임이면 undefined(기존처럼 2석 즉시 매치 시작). */
+export type ResolveSetup = (gameType: GameId) => SetupAdapter | undefined;
+
+/** reduceRoom이 부수효과 없이 외부 의존을 받는 통로(엔진/선택적 setup 해석 주입). */
 export interface RoomDeps {
   resolveEngine: ResolveEngine;
+  /** 선택적: 비공개 배치 setup이 필요한 게임용. 미주입/undefined면 setup 없이 기존 흐름. */
+  resolveSetup?: ResolveSetup;
 }
 
 /** 착석한 플레이어 1명: 연결 식별자 + 표시 정보. */
@@ -46,8 +78,8 @@ export interface RoomSeat {
 }
 
 /**
- * 방 상태(불변). 한 매치 + 착석자(p1/p2) + 관전자 + 진행 중 매치를 묶는다.
- * 두 좌석이 모두 차면 resolveEngine으로 매치를 시작한다.
+ * 방 상태(불변). 한 매치 + 착석자(p1/p2) + 관전자 + 진행 중 매치 + (선택) 사격 이전 setup을 묶는다.
+ * 두 좌석이 모두 차면 setup 어댑터가 있으면 비공개 배치(setup)를 시작하고, 없으면 곧장 매치를 시작한다.
  */
 export interface RoomState {
   /** 방 코드(호출자 주입). */
@@ -57,8 +89,10 @@ export interface RoomState {
   seats: ReadonlyArray<RoomSeat>;
   /** 좌석이 찬 뒤 입장한 connId. */
   spectators: ReadonlyArray<string>;
-  /** 2석이 차면 매치 시작, 그 전엔 null. */
+  /** 2석이 차면 매치 시작, 그 전엔 null. setup 단계 중에도 null(아직 매치 미시작). */
   match: MatchState<unknown, unknown> | null;
+  /** 매치 시작 전 비공개 배치(setup) 상태(게임별 불투명). setup 단계가 아니면 null. */
+  setup: unknown | null;
 }
 
 /**
@@ -76,9 +110,9 @@ export interface ReduceResult {
   outbound: ReadonlyArray<Outbound>;
 }
 
-/** 빈 방을 생성한다(좌석/관전자 없음, 매치 없음). */
+/** 빈 방을 생성한다(좌석/관전자 없음, 매치·setup 없음). */
 export function createRoom(code: string, gameType: GameId): RoomState {
-  return { code, gameType, seats: [], spectators: [], match: null };
+  return { code, gameType, seats: [], spectators: [], match: null, setup: null };
 }
 
 /** side에서 결정적으로 파생한 표시 라벨(개인정보 아님). p1→"Player 1", p2→"Player 2". */
@@ -164,7 +198,41 @@ function startMatch(room: RoomState, deps: RoomDeps): ReduceResult {
   return { room: next, outbound: [roomStateOutbound(next), gameStateOutbound(next, match)] };
 }
 
-/** joinRoom: 빈 좌석이 있으면 착석, 없으면 관전자. 2석이 차면 매치 시작. */
+/**
+ * 진행 중 setup을 좌석별로 가린 뷰로 내보낸다(viewer=좌석 side).
+ * 상대 배치 위치 누수 금지 — 각 연결에 자기 시점 redact 뷰만 보낸다(to="all" 아님).
+ * 관전자는 어느 side도 아니므로 setup 단계에선 setupState를 받지 않는다.
+ */
+function setupOutbounds(room: RoomState, adapter: SetupAdapter): Outbound[] {
+  return room.seats.map((seat) => ({
+    to: seat.connId,
+    message: {
+      type: "setupState",
+      gameType: room.gameType,
+      setup: adapter.redact(room.setup, seat.info.side),
+    },
+  }));
+}
+
+/** 좌석이 둘 다 찬 방에서 비공개 배치(setup) 단계를 시작한다. roomState + 좌석별 가린 setupState를 낸다. */
+function startSetup(room: RoomState, adapter: SetupAdapter): ReduceResult {
+  const next: RoomState = { ...room, setup: adapter.create(), match: null };
+  return { room: next, outbound: [roomStateOutbound(next), ...setupOutbounds(next, adapter)] };
+}
+
+/**
+ * 좌석이 둘 다 찬 방을 진행한다: setup 어댑터가 있으면 비공개 배치 단계를, 없으면 곧장 매치를 시작한다.
+ * 어댑터 유무로만 분기하므로 room은 특정 게임을 알지 않는다(게임 무관 유지·회귀 없음).
+ */
+function startSetupOrMatch(room: RoomState, deps: RoomDeps): ReduceResult {
+  const adapter = deps.resolveSetup?.(room.gameType);
+  if (adapter !== undefined) {
+    return startSetup(room, adapter);
+  }
+  return startMatch(room, deps);
+}
+
+/** joinRoom: 빈 좌석이 있으면 착석, 없으면 관전자. 2석이 차면 setup(있으면) 또는 매치 시작. */
 function handleJoin(room: RoomState, connId: string, deps: RoomDeps): ReduceResult {
   // 이미 방에 있는 연결이면 멱등 처리(중복 착석 금지) — 현재 점유만 다시 알린다.
   const alreadySeated = room.seats.some((s) => s.connId === connId);
@@ -187,7 +255,7 @@ function handleJoin(room: RoomState, connId: string, deps: RoomDeps): ReduceResu
   const seatedRoom: RoomState = { ...room, seats: [...room.seats, seat] };
 
   if (seatedRoom.seats.length === 2) {
-    return startMatch(seatedRoom, deps);
+    return startSetupOrMatch(seatedRoom, deps);
   }
   return { room: seatedRoom, outbound: [roomStateOutbound(seatedRoom)] };
 }
@@ -222,6 +290,53 @@ function handleMove(
   }
 }
 
+/**
+ * submitSetup: 착석자가 자기 비공개 배치를 제출한다(매치 시작 전 setup 단계에서만).
+ * 거부(setup 단계 아님·다른 게임·유효하지 않은 배치)는 그 connId에게만 안정적 code error.
+ * 양측 완료면 setup 어댑터로 사격 매치를 시작(gameState[+gameOver] 브로드캐스트),
+ * 한쪽만이면 좌석별 가린 setupState만 갱신해 보낸다(상대 위치 미노출).
+ */
+function handleSubmitSetup(
+  room: RoomState,
+  connId: string,
+  msg: Extract<ClientMessage, { type: "submitSetup" }>,
+  deps: RoomDeps,
+): ReduceResult {
+  const seat = room.seats.find((s) => s.connId === connId);
+  if (seat === undefined) {
+    return { room, outbound: [errorTo(connId, "not_seated")] };
+  }
+  if (msg.gameType !== room.gameType) {
+    return { room, outbound: [errorTo(connId, "wrong_game")] };
+  }
+  if (room.setup === null) {
+    // setup 단계가 아님(2석 미충족·이미 매치 시작·setup 미사용 게임).
+    return { room, outbound: [errorTo(connId, "setup_not_active")] };
+  }
+  const adapter = deps.resolveSetup?.(room.gameType);
+  if (adapter === undefined) {
+    // setup 상태가 있는데 어댑터가 없으면 진행 불가(정상 흐름에선 도달 불가).
+    return { room, outbound: [errorTo(connId, "unsupported_setup")] };
+  }
+
+  const result = adapter.submit(room.setup, seat.info.side, msg.payload);
+  if (!result.ok) {
+    // 유효하지 않은 제출: 입력 불변, 그 connId에게만 안정적 code error(상세 사유는 게임별이라 노출 안 함).
+    return { room, outbound: [errorTo(connId, "invalid_setup")] };
+  }
+
+  if (adapter.isComplete(result.state)) {
+    // 양측 완료 → setup 어댑터가 만든 엔진/상태로 매치 시작(엔진/상태 재구현 없음·application 위임).
+    const { engine, state } = adapter.start(result.state);
+    const match = createMatchFromState(engine, playersFromSeats(room.seats), state);
+    const next: RoomState = { ...room, setup: null, match };
+    return { room: next, outbound: matchOutbounds(next, match) };
+  }
+  // 한쪽만 제출 완료 → 좌석별 가린 setupState만 갱신해 보낸다(대기).
+  const next: RoomState = { ...room, setup: result.state };
+  return { room: next, outbound: setupOutbounds(next, adapter) };
+}
+
 /** leaveRoom: 좌석/관전자에서 제거하고 갱신된 점유를 브로드캐스트. 진행 중 매치는 중단 상태로 둔다. */
 function handleLeave(room: RoomState, connId: string): ReduceResult {
   const seats = room.seats.filter((s) => s.connId !== connId);
@@ -240,8 +355,17 @@ function handleRematch(room: RoomState, connId: string, deps: RoomDeps): ReduceR
   if (room.seats.length !== 2) {
     return { room, outbound: [errorTo(connId, "not_enough_players")] };
   }
+  if (room.setup !== null) {
+    // setup 단계 진행 중엔 재대국 불가(아직 첫 매치도 시작 전).
+    return { room, outbound: [errorTo(connId, "match_in_progress")] };
+  }
   if (room.match !== null && !matchStatus(room.match).over) {
     return { room, outbound: [errorTo(connId, "match_in_progress")] };
+  }
+  // setup 어댑터가 있는 게임은 재대국도 비공개 배치 단계부터 다시 시작한다(곧장 매치 시작 시 엔진 init이 배치를 요구).
+  const adapter = deps.resolveSetup?.(room.gameType);
+  if (adapter !== undefined) {
+    return startSetup({ ...room, match: null }, adapter);
   }
   // 기존 매치의 엔진을 재사용(없으면 resolveEngine으로 다시 해석).
   const engine = room.match?.engine ?? deps.resolveEngine(room.gameType);
@@ -268,6 +392,8 @@ export function reduceRoom(
       return handleJoin(room, connId, deps);
     case "makeMove":
       return handleMove(room, connId, msg);
+    case "submitSetup":
+      return handleSubmitSetup(room, connId, msg, deps);
     case "leaveRoom":
       return handleLeave(room, connId);
     case "requestRematch":
