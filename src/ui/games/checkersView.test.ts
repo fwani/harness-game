@@ -55,18 +55,23 @@ describe("checkersCellView", () => {
 });
 
 describe("checkersTurnLabel", () => {
-  it("로컬 모드는 색 기호+흑/백 차례", () => {
-    expect(checkersTurnLabel("dark", false, false)).toBe("● 흑 차례");
-    expect(checkersTurnLabel("light", false, false)).toBe("○ 백 차례");
+  it("로컬 모드(humanColor=null)는 색 기호+흑/백 차례", () => {
+    expect(checkersTurnLabel("dark", null, false)).toBe("● 흑 차례");
+    expect(checkersTurnLabel("light", null, false)).toBe("○ 백 차례");
   });
 
-  it("vs CPU 모드는 사람(dark)=내 차례, light=CPU 차례", () => {
-    expect(checkersTurnLabel("dark", true, false)).toBe("● 내 차례");
-    expect(checkersTurnLabel("light", true, false)).toBe("○ CPU 차례");
+  it("vs CPU에서 사람=흑이면 dark=내 차례·light=CPU 차례", () => {
+    expect(checkersTurnLabel("dark", "dark", false)).toBe("● 내 차례");
+    expect(checkersTurnLabel("light", "dark", false)).toBe("○ CPU 차례");
+  });
+
+  it("vs CPU에서 사람=백이면 light=내 차례·dark=CPU 차례", () => {
+    expect(checkersTurnLabel("light", "light", false)).toBe("○ 내 차례");
+    expect(checkersTurnLabel("dark", "light", false)).toBe("● CPU 차례");
   });
 
   it("연속 점프(continues)면 같은 기물 안내를 덧붙인다", () => {
-    expect(checkersTurnLabel("dark", false, true)).toContain("연속 점프");
+    expect(checkersTurnLabel("dark", null, true)).toContain("연속 점프");
   });
 });
 

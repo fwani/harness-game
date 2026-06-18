@@ -40,15 +40,22 @@ export function checkersCellView(cell: CheckersCell): { glyph: string; label: st
 
 /**
  * 현재 차례/모드/연속 점프 상태를 한국어 안내 문자열로 만든다.
- * - vsCpu면 사람=흑(dark)·CPU=백(light) 컨벤션을 반영해 "내 차례"/"CPU 차례"로 표기.
+ * - humanColor가 주어지면(vs CPU) 그 색을 "내 차례", 반대 색을 "CPU 차례"로 표기한다
+ *   (사람이 흑/백 어느 쪽을 골라도 올바르게 가리킨다).
+ * - humanColor가 null이면(2인 로컬) "흑/백 차례"로 표기한다.
  * - continues면 같은 기물로 이어서 점프해야 함을 덧붙인다.
  */
 export function checkersTurnLabel(
   color: CheckersColor,
-  vsCpu: boolean,
+  humanColor: CheckersColor | null,
   continues: boolean,
 ): string {
-  const who = vsCpu ? (color === "dark" ? "내 차례" : "CPU 차례") : `${COLOR_LABEL[color]} 차례`;
+  const who =
+    humanColor === null
+      ? `${COLOR_LABEL[color]} 차례`
+      : color === humanColor
+        ? "내 차례"
+        : "CPU 차례";
   const base = `${COLOR_GLYPH[color]} ${who}`;
   return continues ? `${base} · 연속 점프! 같은 기물로 한 번 더 따냅니다` : base;
 }
