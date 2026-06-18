@@ -19,8 +19,15 @@ import {
   mancalaTurnLabel,
   type MancalaLabeler,
 } from "./mancalaView";
+import {
+  MANCALA_SEEDS_OPTIONS,
+  mancalaFirstPlayerOptions,
+  mancalaHumanPlayer,
+  normalizeMancalaStartOptions,
+  type MancalaStartOptions,
+} from "./mancalaStartOptionsView";
 
-// 표준 Kalah 6·4: 한쪽 구덩이 6개, 각 구덩이 씨앗 4개.
+// 표준 Kalah: 한쪽 구덩이 6개 고정(씨앗 수는 시작 옵션으로 선택).
 const PITS_PER_SIDE = 6;
 
 /** vs CPU 모드의 난수 어댑터(다른 게임 화면과 동일하게 infrastructure 어댑터 주입). */
@@ -28,9 +35,8 @@ const rng = new MathRandomSource();
 
 type Mode = "local" | "cpu";
 
-// vs CPU 모드: 사람은 1(선), CPU는 2(후).
-const HUMAN: MancalaPlayer = 1;
-const CPU: MancalaPlayer = 2;
+/** 상대 진영. */
+const otherPlayer = (p: MancalaPlayer): MancalaPlayer => (p === 1 ? 2 : 1);
 
 /** 화면 상태: 보드 + 현재 차례 + 직전 수의 한 번 더/포획 + 승부 판정(application 결과 보관). */
 interface UiState {
@@ -46,9 +52,9 @@ interface UiState {
   over: boolean;
 }
 
-function freshState(): UiState {
+function freshState(seedsPerPit: number): UiState {
   return {
-    board: createMancalaBoard(PITS_PER_SIDE),
+    board: createMancalaBoard(PITS_PER_SIDE, seedsPerPit),
     current: 1,
     again: false,
     captured: 0,
@@ -76,17 +82,55 @@ function applyTurn(state: UiState, pit: number): UiState {
   };
 }
 
+/** CPU 차례가 이어지는 동안(한 번 더 포함) 무작위로 합법 수를 골라 자동 진행한다. */
+function runCpuTurns(start: UiState, cpu: MancalaPlayer): UiState {
+  let cur = start;
+  while (!cur.over && cur.current === cpu) {
+    const pit = chooseRandomMancalaMove(cur.board, cpu, rng);
+    if (pit === null) {
+      break; // 둘 곳이 없으면 중단(방어적 — over면 루프가 이미 끝났을 것).
+    }
+    cur = applyTurn(cur, pit);
+  }
+  return cur;
+}
+
+/**
+ * 선택한 옵션으로 새 게임 상태를 만든다. vs CPU에서 사람이 후공이면 첫 차례(player 1)가 CPU이므로
+ * 곧바로 한 수(한 번 더 포함) 자동 진행해 화면이 사람 차례로 시작하도록 한다.
+ */
+function startNewGame(opts: MancalaStartOptions, mode: Mode): UiState {
+  const base = freshState(opts.seedsPerPit);
+  if (mode === "cpu") {
+    const cpu = otherPlayer(mancalaHumanPlayer(opts.humanFirst));
+    if (base.current === cpu) {
+      return runCpuTurns(base, cpu);
+    }
+  }
+  return base;
+}
+
 export function Mancala() {
   const [mode, setMode] = useState<Mode>("local");
-  const [state, setState] = useState<UiState>(freshState);
+  // 폼에서 고르는 시작 옵션(씨앗 수·선공). 기본 6/4·사람 선공.
+  const [options, setOptions] = useState<MancalaStartOptions>(() =>
+    normalizeMancalaStartOptions({}),
+  );
+  // 진행 중인 판이 시작된 시점의 선공 설정(폼을 바꿔도 진행 중 판의 라벨이 흔들리지 않게 고정).
+  const [activeHumanFirst, setActiveHumanFirst] = useState(options.humanFirst);
+  const [state, setState] = useState<UiState>(() => startNewGame(options, "local"));
 
   // vs CPU 모드의 통산 전적·연승 표시(저장소 변경에 맞춰 갱신).
   const records = useSyncExternalStore(subscribe, listRecords);
   const streak = selfStreakSummary(records, "mancala");
 
-  // 모드별 플레이어 라벨. vs CPU에서는 사람(1)="나"(SELF_PLAYER)·CPU(2)="CPU".
+  // vs CPU에서 사람/CPU가 잡는 진영(현재 판 기준). 선공이면 사람=1, 후공이면 사람=2.
+  const human = mancalaHumanPlayer(activeHumanFirst);
+  const cpu = otherPlayer(human);
+
+  // 모드별 플레이어 라벨. vs CPU에서는 사람 진영="나"(SELF_PLAYER)·CPU 진영="CPU".
   const label: MancalaLabeler = (p) =>
-    mode === "cpu" ? (p === HUMAN ? SELF_PLAYER : "CPU") : `P${p}`;
+    mode === "cpu" ? (p === human ? SELF_PLAYER : "CPU") : `P${p}`;
 
   // 종료로 막 전환됐을 때 1회 전적을 기록한다(승자 1=a/2=b, 동수 무승부=draw).
   const recordIfFinished = (prev: UiState, next: UiState) => {
@@ -97,36 +141,30 @@ export function Mancala() {
     recordGame("mancala", label(1), label(2), win);
   };
 
-  // CPU 차례가 이어지는 동안(한 번 더 포함) 무작위로 합법 수를 골라 자동 진행한다.
-  const runCpuTurns = (start: UiState): UiState => {
-    let cur = start;
-    while (!cur.over && cur.current === CPU) {
-      const pit = chooseRandomMancalaMove(cur.board, CPU, rng);
-      if (pit === null) {
-        break; // 둘 곳이 없으면 중단(방어적 — over면 루프가 이미 끝났을 것).
-      }
-      cur = applyTurn(cur, pit);
-    }
-    return cur;
-  };
-
   const sow = (player: MancalaPlayer, pit: number) => {
     if (state.over || state.current !== player) {
       return;
     }
-    // vs CPU: 사람(1) 차례에만 입력을 받는다(CPU 차례 입력 차단).
-    if (mode === "cpu" && state.current !== HUMAN) {
+    // vs CPU: 사람 차례에만 입력을 받는다(CPU 차례 입력 차단).
+    if (mode === "cpu" && state.current !== human) {
       return;
     }
 
     let next = applyTurn(state, pit);
     // vs CPU: 사람 수로 턴이 CPU에게 넘어갔다면 CPU가 곧바로 (한 번 더 포함) 자동으로 둔다.
     if (mode === "cpu") {
-      next = runCpuTurns(next);
+      next = runCpuTurns(next, cpu);
     }
 
     setState(next);
     recordIfFinished(state, next);
+  };
+
+  /** 옵션을 적용해 새 게임을 시작한다(진행 판의 선공 고정 포함). */
+  const applyOptions = (next: MancalaStartOptions, nextMode: Mode) => {
+    setOptions(next);
+    setActiveHumanFirst(next.humanFirst);
+    setState(startNewGame(next, nextMode));
   };
 
   const switchMode = (nextMode: Mode) => {
@@ -134,17 +172,25 @@ export function Mancala() {
       return;
     }
     setMode(nextMode);
-    setState(freshState());
+    applyOptions(options, nextMode);
   };
 
-  const reset = () => setState(freshState());
+  const selectSeeds = (value: number) => {
+    applyOptions(normalizeMancalaStartOptions({ ...options, seedsPerPit: value }), mode);
+  };
+
+  const selectHumanFirst = (humanFirst: boolean) => {
+    applyOptions({ ...options, humanFirst }, mode);
+  };
+
+  const reset = () => applyOptions(options, mode);
 
   const over = state.over;
   const outcome = over ? mancalaOutcomeLabel(state.winner, label) : null;
   const capture = mancalaCaptureLabel(state.capturedBy, state.captured, label);
 
   const pitPlayable = (owner: MancalaPlayer, seeds: number): boolean =>
-    !over && seeds > 0 && state.current === owner && !(mode === "cpu" && state.current !== HUMAN);
+    !over && seeds > 0 && state.current === owner && !(mode === "cpu" && state.current !== human);
 
   // 표시 순서: 윗줄은 P2 구덩이를 역순(5..0)으로 둬 P1 구덩이와 포획 맞은편이 세로로 정렬되게 한다.
   const topPits = Array.from({ length: PITS_PER_SIDE }, (_, col) => PITS_PER_SIDE - 1 - col);
@@ -212,6 +258,38 @@ export function Mancala() {
         </button>
       </div>
 
+      <div className="controls" role="group" aria-label="씨앗 수 선택">
+        <span className="hint">구덩이당 씨앗:</span>
+        {MANCALA_SEEDS_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            className={options.seedsPerPit === opt.value ? "primary" : ""}
+            onClick={() => selectSeeds(opt.value)}
+            aria-pressed={options.seedsPerPit === opt.value}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {mode === "cpu" && (
+        <div className="controls" role="group" aria-label="선공 선택">
+          <span className="hint">선공:</span>
+          {mancalaFirstPlayerOptions().map((opt) => (
+            <button
+              key={String(opt.value)}
+              type="button"
+              className={options.humanFirst === opt.value ? "primary" : ""}
+              onClick={() => selectHumanFirst(opt.value)}
+              aria-pressed={options.humanFirst === opt.value}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <p className="hint" aria-live="polite">
         점수 · <strong>{mancalaScoreLabel(state.board, label)}</strong>
       </p>
@@ -223,7 +301,7 @@ export function Mancala() {
       ) : (
         <p className="hint" aria-live="polite">
           {mancalaTurnLabel(state.current, state.again, label)}
-          {mode === "cpu" ? " · 후공(CPU)은 자동으로 둡니다" : ""}
+          {mode === "cpu" ? " · CPU는 자동으로 둡니다" : ""}
         </p>
       )}
 
