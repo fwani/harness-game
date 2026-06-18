@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  STANDARD_FLEET,
   createBattleshipBoard,
   fireShot,
   type Ship,
@@ -12,6 +13,8 @@ import {
   coordLabel,
   difficultyLabel,
   fireCellDisabled,
+  fleetIndexFromShipId,
+  fleetShipNames,
   isCellSunk,
   nextShipSize,
   placeShipAt,
@@ -23,6 +26,7 @@ import {
   playHumanTurn,
   remainingShips,
   shipName,
+  shipNameOnBoard,
   shotSummary,
   toggleOrientation,
 } from "./battleshipView";
@@ -55,6 +59,63 @@ describe("shipName", () => {
     expect(shipName(3)).toBe("순양함");
     expect(shipName(2)).toBe("구축함");
     expect(shipName(1)).toBe("길이 1 함선");
+  });
+});
+
+describe("fleetShipNames", () => {
+  it("표준 함대의 같은 길이 2척(길이3)을 순양함·잠수함으로 구분한다(#596)", () => {
+    expect(fleetShipNames(STANDARD_FLEET)).toEqual([
+      "항공모함",
+      "전함",
+      "순양함",
+      "잠수함",
+      "구축함",
+    ]);
+  });
+
+  it("길이만 같은 임의 함대도 등장 순서로 이름을 배정한다", () => {
+    expect(fleetShipNames([3, 2])).toEqual(["순양함", "구축함"]);
+    // 길이3이 3척이면 풀(2개)을 초과한 셋째는 size 기반 일반명으로 떨어진다.
+    expect(fleetShipNames([3, 3, 3])).toEqual(["순양함", "잠수함", "순양함"]);
+  });
+});
+
+describe("fleetIndexFromShipId", () => {
+  it("`ship-${i}` 규약에서 인덱스를 뽑고, 다른 id면 null", () => {
+    expect(fleetIndexFromShipId("ship-0")).toBe(0);
+    expect(fleetIndexFromShipId("ship-3")).toBe(3);
+    expect(fleetIndexFromShipId("c")).toBeNull();
+    expect(fleetIndexFromShipId("ship-x")).toBeNull();
+  });
+});
+
+describe("shipNameOnBoard", () => {
+  // 표준 함대를 배치 순서 id(`ship-${i}`)로 10×10에 깔아 두 척의 길이3 함선을 구분한다.
+  const fleetShips: Ship[] = STANDARD_FLEET.map((size, i) => ({
+    id: `ship-${i}`,
+    row: i,
+    col: 0,
+    size,
+    orientation: "h",
+  }));
+  const board = createBattleshipBoard(10, fleetShips);
+
+  it("같은 길이 2척을 함대 인덱스로 구분한다: ship-2=순양함, ship-3=잠수함(#596)", () => {
+    expect(shipNameOnBoard(board, "ship-0")).toBe("항공모함");
+    expect(shipNameOnBoard(board, "ship-1")).toBe("전함");
+    expect(shipNameOnBoard(board, "ship-2")).toBe("순양함");
+    expect(shipNameOnBoard(board, "ship-3")).toBe("잠수함");
+    expect(shipNameOnBoard(board, "ship-4")).toBe("구축함");
+  });
+
+  it("규약과 다른 id는 id 문자열 순으로 안정 정렬해 이름을 정한다", () => {
+    const ships: Ship[] = [
+      { id: "d", row: 0, col: 0, size: 2, orientation: "h" },
+      { id: "c", row: 2, col: 0, size: 3, orientation: "h" },
+    ];
+    const b = createBattleshipBoard(3, ships);
+    expect(shipNameOnBoard(b, "c")).toBe("순양함");
+    expect(shipNameOnBoard(b, "d")).toBe("구축함");
   });
 });
 
@@ -154,6 +215,34 @@ describe("shotSummary", () => {
     expect(r2.fleetDestroyed).toBe(false);
     expect(r2.sunkShipId).toBe("d");
     expect(shotSummary("사람", r2, r2.board)).toBe("사람 사격: 구축함 격침! 💥");
+  });
+
+  it("표준 함대의 길이3 두 척을 각각 순양함·잠수함으로 구분해 안내한다(#596)", () => {
+    // 표준 함대(배치 순서 id)를 10×10에 깔고 ship-2(순양함)·ship-3(잠수함)을 차례로 격침.
+    const fleetShips: Ship[] = STANDARD_FLEET.map((size, i) => ({
+      id: `ship-${i}`,
+      row: i,
+      col: 0,
+      size,
+      orientation: "h",
+    }));
+    let board = createBattleshipBoard(10, fleetShips);
+
+    // ship-2(순양함, row 2, 길이3) 격침.
+    let cruiser = playBattleshipShot(board, 2, 0);
+    cruiser = playBattleshipShot(cruiser.board, 2, 1);
+    cruiser = playBattleshipShot(cruiser.board, 2, 2);
+    expect(cruiser.sunkShipId).toBe("ship-2");
+    expect(cruiser.fleetDestroyed).toBe(false);
+    expect(shotSummary("사람", cruiser, cruiser.board)).toBe("사람 사격: 순양함 격침! 💥");
+    board = cruiser.board;
+
+    // ship-3(잠수함, row 3, 길이3) 격침 — 같은 길이지만 "잠수함"으로 다르게 안내돼야 한다.
+    let sub = playBattleshipShot(board, 3, 0);
+    sub = playBattleshipShot(sub.board, 3, 1);
+    sub = playBattleshipShot(sub.board, 3, 2);
+    expect(sub.sunkShipId).toBe("ship-3");
+    expect(shotSummary("사람", sub, sub.board)).toBe("사람 사격: 잠수함 격침! 💥");
   });
 });
 
@@ -307,6 +396,20 @@ describe("함선 수동 배치 헬퍼", () => {
         { id: "ship-1", row: 2, col: 0, size: 2, orientation: "h" },
       ];
       expect(placementStatusLabel(ships, fleet)).toContain("완료");
+    });
+
+    it("표준 함대에서 길이3 첫째는 순양함, 둘째는 잠수함으로 안내한다(#596)", () => {
+      // 항공모함·전함·순양함 3척 배치 완료 → 다음은 둘째 길이3 = 잠수함.
+      const placed: Ship[] = [5, 4, 3].map((size, i) => ({
+        id: `ship-${i}`,
+        row: i,
+        col: 0,
+        size,
+        orientation: "h",
+      }));
+      const label = placementStatusLabel(placed, STANDARD_FLEET);
+      expect(label).toContain("잠수함");
+      expect(label).not.toContain("순양함");
     });
   });
 });

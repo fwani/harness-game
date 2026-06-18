@@ -109,33 +109,83 @@ export function fireCellDisabled(locked: boolean, fired: boolean): boolean {
   return locked || fired;
 }
 
-/** 함선 길이 → 한국어 함종명(색 비의존 표시·격침 안내용). */
+/**
+ * 길이별 표준 함종명 풀. 표준 함대는 **길이 3이 2척(순양함·잠수함)**이라 길이만으로는 구별할 수 없으므로
+ * 같은 길이가 여러 척이면 등장 순서대로 다른 이름을 배정한다(`fleetShipNames`). 풀에 없는 길이나
+ * 풀을 초과한 같은 길이 함선은 size 기반 일반명(`shipName`)으로 떨어진다.
+ * 출처: `docs/games/battleship.md` 1절 — 항공모함5·전함4·순양함3·잠수함3·구축함2.
+ */
+const SHIP_NAMES_BY_SIZE: Readonly<Record<number, ReadonlyArray<string>>> = {
+  5: ["항공모함"],
+  4: ["전함"],
+  3: ["순양함", "잠수함"],
+  2: ["구축함"],
+};
+
+/** 함선 길이 → 한국어 함종명(색 비의존 표시·격침 안내용). 같은 길이 함선 구별이 필요하면 `fleetShipNames`. */
 export function shipName(size: number): string {
-  switch (size) {
-    case 5:
-      return "항공모함";
-    case 4:
-      return "전함";
-    case 3:
-      return "순양함";
-    case 2:
-      return "구축함";
-    default:
-      return `길이 ${size} 함선`;
-  }
+  // 같은 길이가 2척 이상(예: 길이3=순양함·잠수함)이면 길이만으로는 결정 불가 → 첫 이름으로 떨어진다.
+  // 두 척을 구별하려면 `fleetShipNames`/`shipNameOnBoard`를 쓴다.
+  const pool = SHIP_NAMES_BY_SIZE[size];
+  return pool && pool.length > 0 ? pool[0]! : `길이 ${size} 함선`;
 }
 
-/** 보드에서 shipId가 점유한 칸 수(=함선 길이)를 센다. 없으면 0. */
-function shipSize(board: BattleshipBoard, shipId: string): number {
-  let count = 0;
+/**
+ * 함대(길이 목록)의 각 위치에 표시할 함종명을 계산한다(순수·결정적, 입력 불변).
+ * 같은 길이가 여러 척이면(표준 함대의 길이3=순양함·잠수함) 등장 순서대로 풀에서 다른 이름을 배정해
+ * 화면에서 두 척이 구분되게 한다. 풀에 없는 길이나 초과분은 size 기반 일반명으로 떨어진다.
+ */
+export function fleetShipNames(fleet: ReadonlyArray<number>): string[] {
+  const usedBySize: Record<number, number> = {};
+  return fleet.map((size) => {
+    const pool = SHIP_NAMES_BY_SIZE[size] ?? [];
+    const used = usedBySize[size] ?? 0;
+    usedBySize[size] = used + 1;
+    return pool[used] ?? shipName(size);
+  });
+}
+
+/**
+ * 함대 인덱스 id 규약(`ship-${i}`)에서 인덱스 i를 뽑는다. 규약과 다른 id면 null.
+ * (placeFleetRandomly·placeShipAt가 만든 id는 배치 순서 인덱스를 담는다.)
+ */
+export function fleetIndexFromShipId(shipId: string): number | null {
+  const m = /^ship-(\d+)$/.exec(shipId);
+  return m ? Number(m[1]) : null;
+}
+
+/**
+ * 보드의 특정 함선(shipId)의 함종명을 만든다(순수·결정적, 입력 불변).
+ * 보드에서 함대 구성(길이 목록)을 함대 인덱스(id `ship-${i}`) 순서로 재구성하고 `fleetShipNames`로
+ * 이름을 정하므로, **같은 길이 2척(순양함·잠수함)을 등장 순서로 정확히 구분**한다.
+ * id가 규약과 다르면 id 문자열 순으로 안정 정렬해(임의지만 결정적) 이름을 배정한다.
+ */
+export function shipNameOnBoard(board: BattleshipBoard, shipId: string): string {
+  const sizes = new Map<string, number>();
   for (const row of board) {
     for (const cell of row) {
-      if (cell.shipId === shipId) {
-        count += 1;
+      if (cell.shipId !== null) {
+        sizes.set(cell.shipId, (sizes.get(cell.shipId) ?? 0) + 1);
       }
     }
   }
-  return count;
+  const ordered = [...sizes.keys()].sort((a, b) => {
+    const ia = fleetIndexFromShipId(a);
+    const ib = fleetIndexFromShipId(b);
+    if (ia !== null && ib !== null) {
+      return ia - ib;
+    }
+    if (ia !== null) {
+      return -1;
+    }
+    if (ib !== null) {
+      return 1;
+    }
+    return a < b ? -1 : a > b ? 1 : 0;
+  });
+  const names = fleetShipNames(ordered.map((id) => sizes.get(id)!));
+  const idx = ordered.indexOf(shipId);
+  return idx >= 0 ? names[idx]! : shipName(sizes.get(shipId) ?? 0);
 }
 
 /**
@@ -154,7 +204,7 @@ export function shotSummary(
     return `${who} 사격: 전 함대 격침! 🎉`;
   }
   if (result.sunkShipId !== null) {
-    return `${who} 사격: ${shipName(shipSize(board, result.sunkShipId))} 격침! 💥`;
+    return `${who} 사격: ${shipNameOnBoard(board, result.sunkShipId)} 격침! 💥`;
   }
   if (result.hit) {
     return `${who} 사격: 명중! ✕`;
@@ -290,7 +340,9 @@ export function placementStatusLabel(
     return "모든 함선 배치 완료! '이 배치로 시작'을 눌러 사격을 시작하세요.";
   }
   const remaining = fleet.length - placed.length;
-  return `${shipName(size)}(길이 ${size})을 배치하세요. 남은 함선 ${remaining}척. 클릭=배치 · R=회전.`;
+  // 같은 길이 2척(순양함·잠수함)을 배치 순서로 구분해 안내한다(길이만으로는 둘이 같은 이름이 됨).
+  const name = fleetShipNames(fleet)[placed.length] ?? shipName(size);
+  return `${name}(길이 ${size})을 배치하세요. 남은 함선 ${remaining}척. 클릭=배치 · R=회전.`;
 }
 
 /** vs CPU 한 라운드 진행 결과: 양측 보드 + 양측 사격 결과 + 승자. */

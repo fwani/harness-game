@@ -19,6 +19,7 @@ import {
   type CpuDifficulty,
   difficultyLabel,
   fireCellDisabled,
+  fleetShipNames,
   isCellSunk,
   nextShipSize,
   placeShipAt,
@@ -212,9 +213,11 @@ export function Battleship() {
       BOARD_SIZE,
     );
     if (!ok) {
+      // 같은 길이 2척(순양함·잠수함)을 배치 순서로 구분해 사유를 안내한다.
+      const name = fleetShipNames(FLEET)[state.placed.length] ?? shipName(placingSize);
       setState((s) => ({
         ...s,
-        placementError: `${coordLabel(row, col)}에 ${shipName(placingSize)}을(를) 놓을 수 없습니다(겹침 또는 범위 초과).`,
+        placementError: `${coordLabel(row, col)}에 ${name}을(를) 놓을 수 없습니다(겹침 또는 범위 초과).`,
       }));
       return;
     }
