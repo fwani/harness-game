@@ -12,6 +12,7 @@ import { recordGame } from "../records";
 import { moveKey, legalMoveKeySet, reversiWinSide } from "./reversiView";
 import { chooseCpuReversiMove } from "./reversiCpuView";
 import { boardGridStyle } from "./boardView";
+import { useBoardNavigation } from "./useBoardNavigation";
 
 const SIZE = 8;
 
@@ -32,6 +33,10 @@ export function Reversi() {
   const [state, setState] = useState<ReversiState>(() => startReversiGame());
   // 종료 전환 시 전적을 1회만 기록하기 위한 가드(사람/ CPU 어느 쪽 수로 끝나든 동작).
   const recorded = useRef(false);
+  const { setCellRef, onKeyDown, tabIndexFor, focusOn } = useBoardNavigation(
+    SIZE,
+    SIZE,
+  );
 
   // vs CPU 모드에서 CPU(백) 차례면 한 수 자동 진행한다. 자동 패스로 다시 CPU 차례가 되면
   // state 변화로 이 effect가 재실행되어 연속으로 둔다. 사람은 effect가 도는 동안 입력 불가.
@@ -80,6 +85,7 @@ export function Reversi() {
       : legalMoveKeySet(state.board, state.next);
 
   const place = (x: number, y: number) => {
+    focusOn(x, y);
     if (state.finished || !humanTurn || !legal.has(moveKey(x, y))) {
       return;
     }
@@ -164,6 +170,9 @@ export function Reversi() {
       <div
         className="board reversi"
         style={boardGridStyle(SIZE)}
+        role="grid"
+        aria-label="오델로 보드 (방향 키로 칸 이동, Enter/Space로 착수)"
+        onKeyDown={onKeyDown}
       >
         {state.board.map((row, y) =>
           row.map((cell, x) => {
@@ -171,9 +180,12 @@ export function Reversi() {
             return (
               <button
                 key={moveKey(x, y)}
+                ref={setCellRef(x, y)}
                 className={playable ? "cell legal" : "cell"}
+                role="gridcell"
+                tabIndex={tabIndexFor(x, y)}
                 onClick={() => place(x, y)}
-                disabled={!playable}
+                aria-disabled={!playable}
                 aria-label={
                   cell
                     ? `${x + 1}열 ${y + 1}행 ${LABEL[cell]}`

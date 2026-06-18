@@ -24,3 +24,58 @@ export function boardGridStyle(cols: number, cellPx = BOARD_CELL_PX): CSSPropert
     maxWidth: `${cols * cellPx}px`,
   };
 }
+
+/** 격자 보드의 한 칸 좌표(`board[y][x]`와 일치: x=열, y=행). */
+export interface Cell {
+  x: number;
+  y: number;
+}
+
+/** 격자 보드 치수(cols=열 수, rows=행 수). */
+export interface BoardDims {
+  cols: number;
+  rows: number;
+}
+
+/** 값을 [0, max] 범위로 클램프(래핑 없이 가장자리 유지). */
+function clamp(value: number, max: number): number {
+  return Math.max(0, Math.min(max, value));
+}
+
+/**
+ * 로빙 탭인덱스 격자 보드의 키보드 이동을 계산한다(순수 함수).
+ * - ArrowUp/Down/Left/Right: 한 칸 이동, 가장자리에서는 클램프(래핑 없음).
+ * - Home/End: 같은 행의 처음/끝 열로 이동.
+ * - PageUp/PageDown: 같은 열의 처음/끝 행으로 이동.
+ * - 그 외 키: null(호출 측에서 기본 동작 유지).
+ *
+ * 좌표계는 보드 렌더(`board[y][x]`)와 동일하게 x=열, y=행이다.
+ */
+export function nextBoardFocus(
+  current: Cell,
+  key: string,
+  dims: BoardDims,
+): Cell | null {
+  const maxX = dims.cols - 1;
+  const maxY = dims.rows - 1;
+  switch (key) {
+    case "ArrowLeft":
+      return { x: clamp(current.x - 1, maxX), y: current.y };
+    case "ArrowRight":
+      return { x: clamp(current.x + 1, maxX), y: current.y };
+    case "ArrowUp":
+      return { x: current.x, y: clamp(current.y - 1, maxY) };
+    case "ArrowDown":
+      return { x: current.x, y: clamp(current.y + 1, maxY) };
+    case "Home":
+      return { x: 0, y: current.y };
+    case "End":
+      return { x: maxX, y: current.y };
+    case "PageUp":
+      return { x: current.x, y: 0 };
+    case "PageDown":
+      return { x: current.x, y: maxY };
+    default:
+      return null;
+  }
+}

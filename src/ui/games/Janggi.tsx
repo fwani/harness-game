@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   WIDTH,
+  HEIGHT,
   legalMovesFrom,
   isInCheck,
   type Side,
@@ -10,6 +11,7 @@ import { startGame, applyMove, type JanggiState } from "../../application/playJa
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
 import { recordGame } from "../records";
 import { boardGridStyle } from "./boardView";
+import { useBoardNavigation } from "./useBoardNavigation";
 import {
   pieceGlyph,
   sideMark,
@@ -40,6 +42,10 @@ export function Janggi() {
   const [mode, setMode] = useState<Mode>("local");
   const [state, setState] = useState<JanggiState>(() => startGame());
   const [selected, setSelected] = useState<Pos | null>(null);
+  const { setCellRef, onKeyDown, tabIndexFor, focusOn } = useBoardNavigation(
+    WIDTH,
+    HEIGHT,
+  );
   // 직전 수(from→to) 칸 강조용. 상대(또는 CPU)가 무엇을 두고 잡았는지 인지하게 한다.
   const [lastMove, setLastMove] = useState<{ from: Pos; to: Pos } | null>(null);
 
@@ -60,6 +66,7 @@ export function Janggi() {
   };
 
   const click = (x: number, y: number) => {
+    focusOn(x, y);
     if (state.finished) {
       return;
     }
@@ -202,6 +209,9 @@ export function Janggi() {
       <div
         className="board janggi"
         style={boardGridStyle(WIDTH)}
+        role="grid"
+        aria-label="장기 보드 (방향 키로 칸 이동, Enter/Space로 선택·이동)"
+        onKeyDown={onKeyDown}
       >
         {state.board.map((row, y) =>
           row.map((piece, x) => {
@@ -221,9 +231,12 @@ export function Janggi() {
             return (
               <button
                 key={`${x},${y}`}
+                ref={setCellRef(x, y)}
                 className={cls}
+                role="gridcell"
+                tabIndex={tabIndexFor(x, y)}
                 onClick={() => click(x, y)}
-                disabled={blocked}
+                aria-disabled={blocked}
               >
                 {piece && (
                   <span

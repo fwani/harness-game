@@ -1,5 +1,11 @@
 # UI/UX Guidelines
 
+> **제품 방향 (2026-06-18): 새 게임 도메인 추가는 동결.** 카탈로그(약 50종)는 충분하므로,
+> 이제는 기존 게임을 **실제 사람이 즐길 만한 완성도**로 채운다 — UI/UX 품질, 방(room) 기반
+> 멀티플레이, 방 옵션 설정, 유저 단위 전적(익명+랜덤 이름), 싱글/멀티 구분. 자세한 작업
+> 방향·우선순위는 `automation/planner-prompt.md`, 멀티 설계는
+> `exec-plans/active/game-server-multiplayer-ai.md`.
+
 > 이 레포는 **게임 시스템**이다. 게임에서는 규칙(도메인 로직)만큼이나
 > **플레이 경험(UI/UX)** 이 제품 가치다. 도메인 로직이 구현돼도 그 로직을
 > 플레이어가 화면에서 쓸 수 없으면 "게임"으로는 미완성이다.
@@ -77,6 +83,7 @@
 | 배틀십 (`Battleship.tsx`) | 10×10 두 보드(내 함대/적 함대) vs CPU 한 판 → 적 보드 칸 클릭 사격·CPU 자동 사격·전 함대 격침 승패 | ✅ vs CPU·승자까지 | `placeFleetRandomly`+`createBattleshipBoard`로 양측 함대 무작위 배치(사람=a/CPU=b), `playBattleshipCpuRound`(`battleshipView`)가 `playBattleshipShot`/`chooseRandomShot`(application, `MathRandomSource` 주입)에 위임해 사람 사격 1발+CPU 사격 1발을 처리(규칙 재구현 금지). 적 함대 보드의 미사격 칸만 `<button>`으로 활성, 명중해도 한 발씩 교대(단순화·문서화). 미사격(○ 없음)/빗나감(○)/명중(✕)/격침(💥)·함선(■)을 색뿐 아니라 기호+aria-label(`cellView`, 좌표 `coordLabel` A1~J10)로 구분, 사격 결과를 `shotSummary`(명중/빗나감/`○○함 격침`/전 함대 격침)로 로그 표시, 남은 함선 수(`remainingShips`)·진행/승패(`battleshipStatusLabel`)를 `.outcome`로 표시. 종료 후 입력 차단·적 함대 공개, 새 게임 리셋, 종료 시 전적 저장(`battleship`, 사람=a/CPU=b). 좁은 화면 대응(`boardGridStyle`·보드 줄바꿈). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
 | 하노이탑 (`Hanoi.tsx`) | 디스크 수(3~6) 선택 → 출발 기둥→도착 기둥 두 단계 클릭으로 맨 위 디스크 이동 → 목표 기둥(맨 오른쪽)에 전부 모으면 클리어 1인 플레이 | ✅ vs 퍼즐·클리어까지 | `createHanoi`/`applyHanoiMove`/`isLegalHanoiMove`/`isHanoiSolved`/`minHanoiMoves`(domain `hanoi`)를 UI가 직접 호출(무작위성 없는 결정적 퍼즐이라 별도 application 헬퍼 불필요). 기둥을 `<button>`으로 노출해 출발→도착 2단계 선택(같은 기둥 재클릭=선택 해제), 불법 수(빈 기둥·작은 디스크 위 큰 디스크·같은 기둥)는 조용히 무시하지 않고 `hanoiView.hanoiMoveErrorReason`으로 `.error` 사유 표시. 디스크는 색뿐 아니라 폭(크기 비례)+숫자 라벨로 구분하고 맨 위(집을 수 있는) 디스크를 굵은 테두리·aria(`pegDiskViews`/`pegAriaLabel`)로 강조(색 비의존). 이동 횟수와 `minHanoiMoves` 최소 수를 함께 표시(`hanoiMoveCountLabel`, `.hint`), 진행/선택 안내(`hanoiSelectionPrompt`)·클리어를 `describeHanoiStatus`로 `.outcome` 구분, 종료 후 입력 차단, 새 게임/디스크 수 변경 리셋, 클리어 시 전적 저장(`hanoi`, 승=클리어). 좁은 화면 대응(`max-width`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
 | 슬라이드 퍼즐 (`SlidePuzzle.tsx`) | 크기(3×3/4×4, 기본 4×4) 선택 → 무작위 solvable 시작 → 빈 칸과 맞닿은 타일 클릭으로 밀어 1..N-1 순서 정렬 클리어 1인 플레이 | ✅ vs 퍼즐·클리어까지 | application `createShuffledSlidePuzzle`(`MathRandomSource` 주입)로 항상 풀이 가능·미완성 시작 상태를 만들고, domain `applySlidePuzzleMove`/`isSlidePuzzleSolved`/`legalSlidePuzzleMoves`만 호출(규칙/셔플 재구현 금지). 타일을 `<button>`으로 노출하고 빈 칸과 인접한(합법 수) 타일을 강조 테두리(`slidePuzzleView.slidePuzzleCells`의 `movable`)로 표시, 인접하지 않은 타일 클릭은 조용히 무시하지 않고 도메인 에러 메시지를 `.error`로 노출. 타일은 색뿐 아니라 숫자 텍스트·aria-label(좌표/밀 수 있음 여부)로 구분하고 빈 칸은 입체(움푹한 모양)로도 구분(색 비의존). 이동 횟수(`moveCountLabel`)를 `.hint`로 표시, 클리어를 `describeSlidePuzzleStatus`로 `.outcome` 구분, 종료 후 입력 차단(클리어 시 `slidePuzzleCells(state, solved)`로 어떤 타일도 `movable` 강조/“밀 수 있음” aria 안내를 하지 않아 종료 상태와 표시 일치), 크기 변경/새 게임(재셔플) 리셋, 클리어 시 전적 저장(`slidepuzzle`, 승=클리어). 좁은 화면 대응(`boardGridStyle`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
+| 라이트 아웃 (`LightsOut.tsx`) | 크기(3×3/5×5/7×7, 기본 5×5) 선택 → 무작위 solvable 시작 → 칸 클릭으로 자기+상하좌우 토글 → 모든 불 끄면 클리어 1인 플레이 | ✅ vs 퍼즐·클리어까지 | application `createScrambledLightsOut`(`MathRandomSource` 주입)로 항상 풀이 가능·미완성 시작 보드를 만들고, domain `pressLight`/`isLightsOutSolved`/`countLitCells`만 호출(토글/클리어 판정/난수 재구현 금지). 각 칸을 `<button>`으로 노출해 클릭 시 자기+상하좌우 인접을 토글, 켜짐/꺼짐을 색뿐 아니라 기호(●/○)·라벨·aria-label·입체(밝음/가라앉음)로 구분(`lightsOutView.lightsOutCellViews`, 색 비의존). 누른 횟수(`moveCountLabel`)·남은 켜진 칸 수(`litCountLabel`→domain `countLitCells`)를 `.hint`로 표시, 진행/클리어를 `describeLightsOutStatus`로 `.outcome` 구분, 클리어 후 입력 차단(모든 칸 `disabled`), 크기 변경/새 게임(재셔플) 리셋, 클리어 시 전적 저장(`lightsout`, 승=클리어). 좁은 화면 대응(`boardGridStyle`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
 | 페그 솔리테어 (`PegSolitaire.tsx`) | 표준 33칸 십자 보드(중앙만 빈 32못) → 출발 못→합법 착지(빈) 구멍 두 단계 클릭으로 인접 못을 직선 2칸 뛰어넘어 제거 → 더 둘 수 없을 때 못 1개=클리어(중앙이면 완벽 클리어)·2개 이상=실패 1인 플레이 | ✅ vs 퍼즐·클리어/실패까지 | `createPegSolitaire`/`applyPegMove`/`isLegalPegMove`/`legalPegMoves`/`pegCount`/`isPegSolitaireFinished`/`isPegSolitaireSolved`(domain `pegSolitaire`)를 UI가 직접 호출(난수·셔플 없는 결정적 단일 시작 퍼즐이라 별도 application 헬퍼 불필요). 칸을 `<button>`으로 노출해 출발 못→착지 빈 구멍 2단계 선택(같은 칸 재클릭=선택 해제, 다른 못 클릭=출발 재선택). 선택 없음일 때 뛸 수 있는 못을, 출발 선택 시 그 칸의 합법 착지 칸을 강조(`pegSolitaireView.pegSolitaireCells`의 `selectable`/`movableTarget`, `legalPegMoves` 위임). 불법 클릭(빈 출발·도착 점유·대각선/거리 오류·건너뛸 못 없음·보드 밖)은 조용히 무시하지 않고 `pegMoveErrorReason`으로 `.error` 사유 표시. 못/빈 구멍은 색뿐 아니라 기호(●/◆)·입체·aria-label로 구분(색 비의존). 남은 못 수(`pegRemainingLabel`)를 `.hint`로 표시, 종료/클리어/완벽 클리어/실패를 `describePegSolitaireStatus`로 `.outcome` 구분, 종료 후 입력 차단(종료 상태에서 `pegSolitaireCells`가 어떤 칸도 강조하지 않아 표시-상태 일치), 새 게임 리셋, 종료 시 전적 저장(`pegsolitaire`, 클리어=승/실패=패). 좁은 화면 대응(`boardGridStyle`·`max-width`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
 | 소코반 (`Sokoban.tsx`) | 레벨 선택 → 방향 버튼/화살표 키로 플레이어(@) 이동·상자(□) 밀기 → 모든 상자를 목표(◎)에 올리면 클리어 1인 플레이 | ✅ vs 퍼즐·클리어까지 | domain `sokoban`을 UI가 직접 호출(무작위성 없는 결정적 퍼즐이라 별도 application 헬퍼 불필요). `createSokobanLevel`/`SOKOBAN_LEVEL_COUNT`로 레벨 선택·리셋, `applySokobanMove`/`isLegalSokobanMove`/`isSokobanSolved`만 호출(이동/밀기/클리어 재구현 금지). 방향은 `<button>`(상/하/좌/우) + 보드 포커스 시 화살표 키로 조작(마운트·리셋 시 자동 포커스), 불법 수는 조용히 무시하지 않고 `sokobanView.sokobanMoveErrorReason`으로 `.error` 사유 표시(벽/경계·상자 너머 막힘·상자 2개 밀기). 칸은 색뿐 아니라 기호(`#`/◎/□/■/@)+aria-label(좌표/종류)로 구분하고 목표 위 상자·플레이어는 굵은 테두리로도 강조(`sokobanCellViews`, 색 비의존). 이동 수·남은 목표 수(`countRemainingTargets`)를 `.hint`로, 진행/클리어를 `describeSokobanStatus`로 `.outcome` 구분, 종료 후 입력 차단, 다시 시작/레벨 변경 리셋, 클리어 시 전적 저장(`sokoban`, 승=클리어). 좁은 화면 대응(`boardGridStyle`·`max-width`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
 | 메모리 (`MemoryMatch.tsx`) | 난이도(6/8쌍) 선택 → 카드 두 장 뒤집기 → 매치/미스 → 전체 짝 완성(클리어) 1인 플레이 | ✅ vs 보드 | `startMemoryGame`/`playMemoryAttempt`(`MathRandomSource` 주입, application `playMemory`) 연동. 카드 클릭(`<button>`)으로 첫 장→둘째 장을 앞면으로 보여준 뒤 짧은 지연 후 판정(매치는 남기고 미스는 다시 덮음), 판정 대기 중 추가 클릭 차단. 시도 수·완성/남은 짝 표시(`memoryMatchView.memoryProgressLabel`), 클리어를 `describeMemoryStatus`로 `.outcome` 구분. 카드 값은 색뿐 아니라 기호(🍎 등)·상태 라벨로 구분하고 덮임/뒤집힘/매치는 입체·테두리(점선)로도 구분(색 비의존), 좁은 화면 대응(`boardGridStyle`). 새 게임 리셋, 클리어 시 전적 저장(`memory`, 승=클리어). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
@@ -97,6 +104,15 @@
 
 > 이슈 생성기가 새 이슈를 만들 때 이 목록을 참고한다. 도메인 로직만 있는 항목은
 > "UI 연동" 이슈가 짝으로 필요하다. (✅ 표시는 2026-06-16에 닫힌 항목.)
+>
+> **새 방향(2026-06-18)으로 추가된 갭 — 새 게임 도메인 대신 이것들을 채운다:**
+> - **UI/UX 품질**: 기존 게임을 실제 사람이 즐길 수준으로 — 조작 안내/온보딩, 승패 연출,
+>   부드러운 전환·애니메이션, 빈/로딩/오류 상태, 모바일 반응형, 게임별 위키 규칙 보강(렌주룰·캐슬링 등).
+> - **방(room) 옵션 설정 UI**: 게임 시작/방 생성 화면에서 규칙 옵션(보드 크기·난이도·선공·변형 룰)을 고른다.
+> - **멀티플레이(방)**: 로컬 ws 서버 + 브라우저 다중 탭으로 같은 방 접속·실시간 동기화.
+>   단계는 `exec-plans/active/game-server-multiplayer-ai.md`.
+> - **유저/전적 개념**: 익명 세션 + 랜덤 표시 이름, 전적을 유저 단위로 집계(현 `SELF_PLAYER` 확장).
+> - **싱글/멀티 구분**: 카탈로그를 혼자 즐기는 게임 / 멀티 게임으로 분류·표시.
 
 - ✅ ~~장기 플레이 UI 연동~~: 기물 선택·합법 수·이동·턴·장군·승부 연결(완료).
 - ✅ ~~오델로 플레이 UI 연동~~: 2인 로컬 합법 수 착수·자동 패스·디스크 계가·승자·전적 저장(완료).
@@ -105,8 +121,9 @@
 - ✅ ~~상대 전적(head-to-head) 노출~~: 전적 화면에 맞붙은 플레이어 쌍별 승/패/무·총 판수
   표 추가(`recordsHeadToHeadView` + domain `headToHead` 재사용, 완료).
 - **장기 외통(checkmate) 종료**: 현재 장 포획으로 판정 — `isCheckmate` 정식 종료는 미연동.
-- **멀티플레이**: 제품 설명의 "멀티 진행"이 UI에는 로컬 핫시트/대-CPU만 있고
-  원격 멀티가 없다. 범위·방식 정의 필요(별도 이슈).
+- **멀티플레이(방 기반)**: 제품 설명의 "멀티 진행"이 UI에는 로컬 핫시트/대-CPU만 있고
+  원격 멀티가 없다. → **방향 확정**: native ws 서버 + 방(room), 1차 목표는 로컬 서버 + 브라우저
+  다중 탭 접속. 단계별 계획은 `exec-plans/active/game-server-multiplayer-ai.md`.
 - ✅ ~~기록 영속성(localStorage)~~: `LocalStorageGameRecordRepository`로 브라우저
   localStorage에 영속화 — 새로고침/재방문 후에도 전적 유지(미가용 시 인메모리 폴백). 서버 영속화는 범위 밖(별도 이슈).
 - ✅ ~~누적 점수/세션(화면 내)~~: 가위바위보·홀짝에 더해 단판 vs CPU 화면
@@ -127,6 +144,10 @@
   (`playSnakesAndLadders`)만 있던 게임을 `SnakesAndLadders.tsx`로 연결 — vs CPU 한 판(주사위 굴리기 버튼·
   사람+CPU 한 라운드 조립·양측 진행도·사다리/뱀/초과/골 도달 로그·정확히 골 도달 승자 종료·새 게임·전적
   저장(`snakesandladders`))까지(완료, `snakesAndLaddersView` + `snakesAndLaddersView.test`).
+- ✅ ~~라이트 아웃(Lights Out) 플레이 UI 연동~~: 도메인(`lightsOut`)·application(`createScrambledLightsOut`)만
+  있던 퍼즐을 `LightsOut.tsx`로 연결 — 크기(3×3/5×5/7×7) 선택·무작위 solvable 시작·칸 클릭 토글(자기+상하좌우)·
+  누른 횟수/남은 켜진 칸·전부 끄면 클리어 승리 판정·재셔플/새 게임·전적 저장(`lightsout`)까지
+  (완료, `lightsOutView` + `lightsOutView.test`).
 - ✅ ~~페그 솔리테어(Peg Solitaire) 플레이 UI 연동~~: 도메인(`pegSolitaire`)만 있던 결정적 단일 시작
   퍼즐을 `PegSolitaire.tsx`로 연결 — 표준 33칸 십자 보드·출발 못→합법 착지 2단계 클릭·합법 착지/뛸 못
   강조·불법 수 사유(`.error`)·남은 못 수·종료 시 클리어/완벽 클리어/실패 판정·새 게임·전적 저장
@@ -164,7 +185,9 @@
   (application, `RandomSource` 주입)와 플레이 화면(`Hitori.tsx` + `hitoriView`: 칸 칠하기 토글·세 위반
   종류 색 비의존 강조·클리어 판정·새 게임·전적 저장 `GameId="hitori"`)이 후속 짝 이슈로 필요.
   사양: [`docs/games/hitori.md`](../games/hitori.md).
-- **접근성/반응형 점검**: 보드 셀 키보드 내비게이션, 모바일 레이아웃, 명도 대비.
+- **접근성/반응형 점검**: ✅ ~~보드 셀 키보드 내비게이션~~(격자 보드 4종에 로빙 탭인덱스
+  + 화살표/Home/End/PageUp/PageDown 이동 도입 — `boardView.nextBoardFocus` +
+  `useBoardNavigation`, #227). 모바일 레이아웃·명도 대비는 후속 점검 대상.
 
 ## 참고
 
