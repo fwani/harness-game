@@ -9,6 +9,7 @@ import {
 } from "../domain/battleship";
 import {
   chooseRandomShot,
+  chooseSmartShot,
   placeFleetRandomly,
   playBattleshipShot,
 } from "./playBattleship";
@@ -142,6 +143,89 @@ describe("chooseRandomShot", () => {
     const board = createBattleshipBoard(5, ships);
     const snapshot = JSON.stringify(board);
     chooseRandomShot(board, fixedRng(3));
+    expect(JSON.stringify(board)).toBe(snapshot);
+  });
+});
+
+describe("chooseSmartShot", () => {
+  it("헌트 모드: 명중이 없으면 체커보드 패리티((row+col)짝수) 미사격 칸을 행→열 순서로 고른다", () => {
+    const board = createBattleshipBoard(5, [
+      { id: "a", row: 0, col: 0, size: 2, orientation: "h" },
+    ]);
+    // 첫 패리티 후보는 (0,0).
+    expect(chooseSmartShot(board, fixedRng(0))).toEqual({ row: 0, col: 0 });
+    // 두 번째 패리티 후보는 (0,2) — 홀수합 칸 (0,1)은 건너뛴다.
+    expect(chooseSmartShot(board, fixedRng(1))).toEqual({ row: 0, col: 2 });
+  });
+
+  it("타깃 모드: 미격침 함선에 명중하면 인접한(상하좌우) 미사격 칸을 우선 고른다", () => {
+    const ship: Ship = { id: "a", row: 2, col: 2, size: 3, orientation: "h" };
+    // (2,2) 한 칸만 명중(함선은 아직 격침 아님).
+    const board = fireShot(createBattleshipBoard(5, [ship]), 2, 2);
+    const pick = chooseSmartShot(board, fixedRng(0));
+    // 후보는 (2,2)의 상하좌우 미사격 칸뿐 — 멀리 떨어진 칸은 절대 고르지 않는다.
+    const neighbors = [
+      { row: 2, col: 3 },
+      { row: 2, col: 1 },
+      { row: 3, col: 2 },
+      { row: 1, col: 2 },
+    ];
+    expect(neighbors).toContainEqual(pick);
+    // DIRS 순서상 첫 후보는 오른쪽 (2,3).
+    expect(pick).toEqual({ row: 2, col: 3 });
+  });
+
+  it("타깃 모드: 두 칸 이상 일직선 명중이면 그 직선 방향 연장칸을 우선한다(수직 이웃 배제)", () => {
+    const ship: Ship = { id: "a", row: 2, col: 2, size: 3, orientation: "h" };
+    let board = createBattleshipBoard(5, [ship]);
+    board = fireShot(board, 2, 2);
+    board = fireShot(board, 2, 3); // (2,2)-(2,3) 일직선 명중, 아직 미격침.
+    // 직선 연장 후보는 같은 행의 양 끝 (2,1)·(2,4)뿐 — 수직 이웃 (1,2)/(3,2)/(1,3)/(3,3)은 배제.
+    const a = chooseSmartShot(board, fixedRng(0));
+    const b = chooseSmartShot(board, fixedRng(1));
+    expect([a, b]).toEqual([
+      { row: 2, col: 1 },
+      { row: 2, col: 4 },
+    ]);
+    expect(a!.row).toBe(2);
+    expect(b!.row).toBe(2);
+  });
+
+  it("격침된 함선의 명중 칸은 추적 대상에서 제외하고 헌트 모드로 떨어진다", () => {
+    let board = createBattleshipBoard(5, [
+      { id: "a", row: 0, col: 0, size: 2, orientation: "h" },
+      { id: "b", row: 4, col: 4, size: 1, orientation: "h" },
+    ]);
+    board = fireShot(board, 0, 0);
+    board = fireShot(board, 0, 1); // 함선 a 격침.
+    // a의 인접칸을 추적하지 않고 헌트(패리티) 첫 미사격 칸 (0,2)를 고른다.
+    expect(chooseSmartShot(board, fixedRng(0))).toEqual({ row: 0, col: 2 });
+  });
+
+  it("같은 시드(LCG)로 재현 가능하다(결정적)", () => {
+    const board = createBattleshipBoard(8, placeFleetRandomly(8, STANDARD_FLEET, lcgRng(7)));
+    expect(chooseSmartShot(board, lcgRng(99))).toEqual(chooseSmartShot(board, lcgRng(99)));
+  });
+
+  it("사격할 칸이 없으면 null을 반환한다", () => {
+    const board = fireAll(
+      createBattleshipBoard(3, [{ id: "a", row: 0, col: 0, size: 2, orientation: "h" }]),
+    );
+    expect(chooseSmartShot(board, fixedRng(0))).toBeNull();
+  });
+
+  it("범위 밖 인덱스를 주면 throw 한다", () => {
+    const board = createBattleshipBoard(5, [
+      { id: "a", row: 0, col: 0, size: 2, orientation: "h" },
+    ]);
+    expect(() => chooseSmartShot(board, fixedRng(100))).toThrow(/out-of-range/);
+  });
+
+  it("입력 board를 변형하지 않는다", () => {
+    const ship: Ship = { id: "a", row: 2, col: 2, size: 3, orientation: "h" };
+    const board = fireShot(createBattleshipBoard(5, [ship]), 2, 2);
+    const snapshot = JSON.stringify(board);
+    chooseSmartShot(board, fixedRng(0));
     expect(JSON.stringify(board)).toBe(snapshot);
   });
 });
