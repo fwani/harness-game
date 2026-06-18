@@ -102,11 +102,16 @@
 가드의 금지 목록도 함께 갱신한다(`scripts/check-design-tokens.mjs`).
 
 > **마이그레이션 현황(2026-06-18):**
-> - 공통 테두리/표면/텍스트/강조색 → 토큰화 완료.
+> - 공통 표면/텍스트/강조색 → 토큰화 완료. 인셋 표면 `--sunken`, 의미색 `--bad`,
+>   여러 게임 공통 하이라이트 `--sel`(선택 배경)·`--active`(활성 강조 링) 추가.
 > - **보드 게임 그룹**(오목·바둑·장기·틱택토·오델로·체커·체스·커넥트포) → 스킨
->   로컬 변수로 전환 완료(위 레퍼런스). 새 보드 게임은 이 패턴을 따른다.
-> - 카드 팔레트(`.card-chip` 등) 및 그 외 게임별 색은 아직 생짜 hex로 남아 있어
->   다음 그룹 단위 토큰화 대상이다(가드는 아직 이들을 막지 않는다).
+>   로컬 변수로 전환 완료(위 레퍼런스).
+> - **펜슬 퍼즐 패밀리**(스도쿠·비나이로·후토시키·히토리·켄켄·마천루) → 공용 크림
+>   팔레트(`--pp-*`)를 묶음 셀렉터의 로컬 변수로 전환 완료.
+> - 카드 그룹은 `.card-chip` 한 클래스로 이미 중앙화돼 별도 스킨 변수가 불필요.
+> - 그 외 단일 게임 고유색은 컨벤션상 그대로 둔다(공통/반복 색만 토큰화 대상).
+>   잉크(`#1f2937`)처럼 여러 게임이 같은 hex를 **다른 역할**로 쓰는 경우는 의미가
+>   섞이므로 단일 토큰으로 묶지 않는다.
 
 ## 현재 UI 상태 (관찰: 브라우저 + `src/ui` 코드, 갱신 2026-06-18)
 
@@ -127,7 +132,7 @@
 | 오목 (`Gomoku.tsx`) | 2인 로컬 / vs CPU 착수 + 시작 옵션(보드 크기·선공) | ✅ vs CPU | 모드 토글(2인 로컬/vs CPU). 시작 옵션 폼: 보드 크기(9·13·15·19, `gomokuStartOptionsView.gomokuBoardSizeOptions`/`normalizeGomokuStartOptions`, 기본 15×15)와 vs CPU 선공(사람 흑/사람 백) 선택을 `<button>`(aria-pressed·색 비의존 라벨)으로 노출, 옵션 선택 시 그 옵션으로 새 게임 시작(도메인 `startGame(size)` config 재사용, 로직 수정 없음). vs CPU는 `chooseCpuGomokuMove`(`gomokuCpuView`)로 CPU 색을 자동 착수하고 CPU 선공이면 첫 수를 즉시 둔다. 턴/승자·무승부 표시·리셋·전적 저장, 크기 변경 시에도 반응형 유지(`boardGridStyle`) |
 | 바둑 (`Go.tsx`) | 2인 로컬 / vs CPU 착수+따냄+패스 | ✅ vs CPU·계가·승자까지 | 모드 토글(2인 로컬/vs CPU). vs CPU는 `chooseCpuGoMove`(`goCpuView`)로 백을 자동 착수(둘 곳 없으면 자동 패스 안내). `playGo`+`scoreArea` 연동, 패스→2패스 종료→계가, 전적 저장. 무효수 사유는 `goView` 한국어 매핑 |
 | 오델로 (`Reversi.tsx`) | 2인 로컬 / vs CPU 합법 수 착수 + 시작 옵션(선공·색) | ✅ vs CPU·자동 패스·계가·승자까지 | `playReversi`+`reversiCpuView`(`chooseRandomReversiMove`) 연동. 모드 토글·합법 수만 활성·자동 패스 안내·디스크 점수·전적 저장. vs CPU 시작 옵션 폼: 사람 흑(●) 선공/사람 백(○) 후공을 `<button>`(aria-pressed·색 비의존 라벨, `reversiStartOptionsView.reversiFirstPlayerOptions`/`normalizeReversiStartOptions`, 기본 사람 흑 선공)으로 노출. 보드는 표준 8×8 고정이라 크기 옵션 없음. 백 선택 시 CPU(흑)가 선착하고 턴/진영 이름·"생각 중" 표시가 선택 색과 일치. 전적 저장은 사람=a/CPU=b(색 무관 안정 키), `GameId`는 두 모드 공통 `reversi` |
-| 커넥트포 (`ConnectFour.tsx`) | 2인 로컬 / vs CPU 열 착수(중력 낙하) | ✅ vs CPU·4목 승리/무승부까지 | `playConnectFourMove`+`connectFourCpuView`(`chooseRandomConnectFourColumn`) 연동. 모드 토글·열(▼) 버튼 착수·가득 찬 열 비활성·턴/승자·무승부 표시·새 게임·전적 저장(`connectfour`). 디스크는 색뿐 아니라 기호(●/○)로 1·2 구분(색 비의존) |
+| 커넥트포 (`ConnectFour.tsx`) | 2인 로컬 / vs CPU 열 착수(중력 낙하) | ✅ vs CPU·4목 승리/무승부까지 | `playConnectFourMove`+`connectFourCpuView`(`chooseRandomConnectFourColumn`) 연동. 모드 토글·열(▼) 버튼 착수·가득 찬 열 비활성·턴/승자·무승부 표시·새 게임·전적 저장(`connectfour`). 디스크는 색뿐 아니라 기호(●/○)로 1·2 구분(색 비의존). vs CPU는 **선공/후공 선택 시작 옵션**(`connectFourStartOptionsView`: `humanFirst`·`normalize*`, #509 오목 동형) — 후공(○) 선택 시 CPU(●)가 시작 시 한 수 선착, 사람=○로 진행. 옵션 버튼은 키보드·`aria-pressed`·색 비의존 라벨, 변경 시 새 게임 리셋. 차례·승패·전적 매핑이 선택 진영과 일관(사람=`나`) |
 | 장기 (`Janggi.tsx`) | 2인 로컬 / vs CPU 기물 이동 | ✅ vs CPU·승부까지 | 모드 토글(2인 로컬/vs CPU). vs CPU는 사람=초(선)·CPU=한이며 `chooseCpuJanggiMove`(`janggiCpuView`→`chooseRandomJanggiMove`)로 한을 자동 착수(둘 수 없으면 사람 승리). 선택·합법 수·이동·턴·장군 경고·외통/포획/빅장 승부·전적 저장. 진영 구분은 색뿐 아니라 자형(초=이체자)·도형(초 원형/한 각형)·접근성 라벨로도 표시(`janggiView`, 색 비의존) |
 | 체스 (`Chess.tsx`) | 2인 로컬 / vs CPU 기물 이동 | ✅ vs CPU·외통/스테일메이트까지 | 모드 토글(2인 로컬/vs CPU). vs CPU는 사람=백(선)·CPU=흑(후)이며 `chooseCpuChessMove`(`chessCpuView`→`chessAi.chooseRandomChessMove`, `MathRandomSource` 주입)로 흑을 자동 착수(합법 수/외통/스테일메이트 판정은 `playChess`/`chess` 재사용, 규칙 재구현 금지). 선택 유지·합법 수 하이라이트(`legalTargetsFrom`)·직전 수 강조, 불법 수는 `chessMoveErrorReason` 사유를 `.error`로 표시(조용한 무시 금지), 외통 승/스테일메이트 무승부/체크 경고를 `chessStatusLabel`로 `.outcome`/안내 구분, 종료 후·CPU 차례 입력 차단, 모드 전환·새 게임 리셋. 전적 저장은 2인 로컬=백/흑 핫시트, vs CPU=사람(`SELF_PLAYER`)=a/CPU=b(`chessWinSide`), `GameId`는 두 모드 공통 `chess`. 기물은 색뿐 아니라 자형(백=외곽선 ♔♕♖♗♘♙·흑=채움 ♚♛♜♝♞♟)·좌표/기물명 aria-label로 구분(`chessSquareView`, 색 비의존), 좁은 화면 대응(`boardGridStyle`). vs CPU 화면에 통산 전적·연승 표시(`StreakPanel`, 사람=`SELF_PLAYER`) |
 | 윷놀이 (`Yut.tsx`) | 모드 토글(잡기 경주/단순 경주) → 윷 던지기 → CPU 자동 던지기 → 외곽 20칸 완주 경주 | ✅ vs CPU·잡기까지 | 모드 토글: 잡기 경주(`playYutCaptureRound`→`playYutCaptureTurn`, 같은 칸 잡기→출발점 리셋·한 번 더, 출발점·완주 안전지대) / 단순 경주(`playYutRound`→`playYutTurn`). 도개걸윷모 텍스트 라벨·진행도 막대(traveled/20)·잡기/한 번 더 피드백·승패 표시, 전적 저장(`yut`). 화면 내 통산 전적·연승 표시(`StreakPanel`) |
