@@ -541,6 +541,16 @@ header h1 {
 /* --- boards (gomoku / go / janggi) --- */
 
 .board {
+  /* 보드 스킨(skin): 게임은 아래 로컬 변수만 덮어쓰고 격자/셀 골격은 공유한다.
+     (docs/agent-harness/UX_GUIDELINES.md "디자인 토큰 & 시각 일관성" — 레이어 3) */
+  --board-bg: #b8860b;        /* 바둑/오목/장기 나무판 (기본값) */
+  --board-edge: #7c5e08;
+  --sq-light: #d9c39a;        /* 체커판 밝은 칸 */
+  --sq-dark: #4a3318;         /* 체커판 어두운 칸 */
+  --ring-legal: rgba(248, 250, 252, 0.6);  /* 합법 수 강조 링 */
+  --piece-dark: #111;         /* 흑돌·흑기물 글리프 */
+  --piece-light: #f8fafc;     /* 백돌·백기물 글리프 */
+
   display: grid;
   gap: 0;
   /* 좁은 폭(예: 360px)에서는 컨테이너에 맞춰 줄어들고, 넓은 화면에서는 인라인 maxWidth
@@ -548,8 +558,8 @@ header h1 {
   width: 100%;
   max-width: 100%;
   margin: 1rem 0;
-  background: #b8860b;
-  border: 2px solid #7c5e08;
+  background: var(--board-bg);
+  border: 2px solid var(--board-edge);
   border-radius: 4px;
 }
 
@@ -583,23 +593,23 @@ header h1 {
 }
 
 .stone.black {
-  color: #111;
+  color: var(--piece-dark);
 }
 
 .stone.white {
-  color: #f8fafc;
+  color: var(--piece-light);
   text-shadow: 0 0 1px #000;
 }
 
 .board.go {
-  background: #dcb35c;
+  --board-bg: #dcb35c;
 }
 
 /* --- tic-tac-toe (틱택토) --- */
 
 .board.tictactoe {
-  background: var(--panel);
-  border-color: var(--bg);
+  --board-bg: var(--panel);
+  --board-edge: var(--bg);
 }
 
 /* X/O 기호를 칸 크기에 맞게 크게 표시(색만이 아니라 기호로 구분). */
@@ -620,13 +630,13 @@ header h1 {
 /* --- reversi (오델로) --- */
 
 .board.reversi {
-  background: #1f7a4d;
-  border-color: #145138;
+  --board-bg: #1f7a4d;
+  --board-edge: #145138;
 }
 
 /* 합법 수 칸: 안쪽 링으로 강조(색만으로 구분하지 않도록 호버 외에 상시 표시). */
 .cell.legal {
-  box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.6);
+  box-shadow: inset 0 0 0 2px var(--ring-legal);
 }
 
 .cell.legal:hover {
@@ -636,33 +646,34 @@ header h1 {
 /* --- checkers (체커·서양 장기) --- */
 
 .board.checkers {
-  background: #6b4f2a;
-  border-color: #4a3618;
+  --board-bg: #6b4f2a;
+  --board-edge: #4a3618;
+  --ring-legal: rgba(248, 250, 252, 0.7);
 }
 
 /* 격자: 어두운 칸(기물이 놓이는 칸)과 밝은 칸을 구분(체커판). */
 .board.checkers .cell.sq-dark {
-  background: #4a3318;
+  background: var(--sq-dark);
 }
 
 .board.checkers .cell.sq-light {
-  background: #d9c39a;
+  background: var(--sq-light);
   cursor: default;
 }
 
 /* 밝은 칸은 기물이 없고 클릭 대상도 아니므로 호버 단서를 끈다. */
 .board.checkers .cell.sq-light:hover {
-  background: #d9c39a;
+  background: var(--sq-light);
 }
 
 /* 선택된 기물: 안쪽 링으로 강조(색만이 아니라 형태로 구분). */
 .board.checkers .cell.selected {
-  box-shadow: inset 0 0 0 3px #fbbf24;
+  box-shadow: inset 0 0 0 3px var(--warn);
 }
 
 /* 합법 목적지 칸: 안쪽 링으로 상시 강조(reversi .legal과 동일 단서). */
 .board.checkers .cell.legal {
-  box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.7);
+  box-shadow: inset 0 0 0 2px var(--ring-legal);
 }
 
 .board.checkers .cell.legal:hover {
@@ -676,12 +687,12 @@ header h1 {
 }
 
 .checker.dark {
-  color: #111;
+  color: var(--piece-dark);
   text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
 }
 
 .checker.light {
-  color: #f8fafc;
+  color: var(--piece-light);
   text-shadow: 0 0 2px #000;
 }
 
@@ -693,27 +704,29 @@ header h1 {
 /* --- chess (체스) --- */
 
 .board.chess {
-  background: #6b4f2a;
-  border-color: #4a3618;
+  --board-bg: #6b4f2a;
+  --board-edge: #4a3618;
+  --sq-dark: #8a6a3a;
+  --ring-legal: rgba(248, 250, 252, 0.85);
 }
 
 /* 체스판 교대 칸(밝은/어두운 칸). 진영 구분이 아니라 판 모양을 위한 배경이다. */
 .board.chess .cell.sq-light {
-  background: #d9c39a;
+  background: var(--sq-light);
 }
 
 .board.chess .cell.sq-dark {
-  background: #8a6a3a;
+  background: var(--sq-dark);
 }
 
 /* 선택된 기물: 안쪽 링으로 강조(색만이 아니라 형태로 구분). */
 .board.chess .cell.selected {
-  box-shadow: inset 0 0 0 3px #fbbf24;
+  box-shadow: inset 0 0 0 3px var(--warn);
 }
 
 /* 합법 도착 칸: 안쪽 링으로 상시 강조(빈 칸·포획 대상 모두에서 보임). */
 .board.chess .cell.legal {
-  box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.85);
+  box-shadow: inset 0 0 0 2px var(--ring-legal);
 }
 
 .board.chess .cell.legal:not(:disabled):hover {
@@ -732,20 +745,20 @@ header h1 {
 }
 
 .chess-piece.white {
-  color: #f8fafc;
+  color: var(--piece-light);
   text-shadow: 0 0 2px #000, 0 0 1px #000;
 }
 
 .chess-piece.black {
-  color: #111;
+  color: var(--piece-dark);
   text-shadow: 0 0 2px rgba(255, 255, 255, 0.55);
 }
 
 /* --- connect four (커넥트포·사목) --- */
 
 .board.connectfour {
-  background: #1d4ed8;
-  border-color: #1e3a8a;
+  --board-bg: #1d4ed8;
+  --board-edge: #1e3a8a;
 }
 
 /* 셀은 비인터랙티브(div) — 착수는 상단 열 버튼으로만. 호버/포인터 단서를 끈다. */
@@ -803,7 +816,7 @@ header h1 {
 /* --- janggi --- */
 
 .board.janggi {
-  background: #e3b76a;
+  --board-bg: #e3b76a;
 }
 
 .janggi-cell.selected {
