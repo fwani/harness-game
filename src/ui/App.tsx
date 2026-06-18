@@ -57,8 +57,10 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import {
   GAME_CATALOG,
   filterGames,
+  filterGamesByMode,
   groupGamesByCategory,
   type GameKey,
+  type ModeFilter,
 } from "./gameCatalog";
 
 // 게임 메타(key/label/category)는 gameCatalog에서 단일 정의하고, 여기서는 render만 덧붙인다.
@@ -119,11 +121,21 @@ const RENDERERS: Record<GameKey, () => JSX.Element> = {
   records: () => <Records />,
 };
 
+// 모드 필터 세그먼트(전체/싱글/멀티). 색이 아니라 레이블 텍스트 + aria-pressed로 선택을 노출한다.
+const MODE_FILTERS: { value: ModeFilter; label: string }[] = [
+  { value: "all", label: "전체" },
+  { value: "single", label: "싱글" },
+  { value: "multi", label: "멀티" },
+];
+
 export function App() {
   const [game, setGame] = useState<GameKey>("rps");
   const [query, setQuery] = useState("");
+  const [modeFilter, setModeFilter] = useState<ModeFilter>("all");
 
-  const visible = filterGames(GAME_CATALOG, query);
+  // 적용 순서: 모드 필터 → 이름 검색 → 카테고리 그룹.
+  const byMode = filterGamesByMode(GAME_CATALOG, modeFilter);
+  const visible = filterGames(byMode, query);
   const groups = groupGamesByCategory(visible);
 
   return (
@@ -138,6 +150,23 @@ export function App() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <div
+          className="mode-filter"
+          role="group"
+          aria-label="플레이 모드 필터"
+        >
+          {MODE_FILTERS.map((m) => (
+            <button
+              key={m.value}
+              type="button"
+              className={m.value === modeFilter ? "mode-btn active" : "mode-btn"}
+              aria-pressed={m.value === modeFilter}
+              onClick={() => setModeFilter(m.value)}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
         {groups.length === 0 ? (
           <p className="hint">검색 결과 없음</p>
         ) : (

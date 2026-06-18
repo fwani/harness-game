@@ -6,8 +6,11 @@ import { recordGame, type WinSide } from "../records";
 import { boardGridStyle } from "./boardView";
 import { useBoardNavigation } from "./useBoardNavigation";
 import { chooseCpuGomokuMove } from "./gomokuCpuView";
-
-const SIZE = 15;
+import {
+  gomokuBoardSizeOptions,
+  normalizeGomokuStartOptions,
+  type GomokuStartOptions,
+} from "./gomokuStartOptionsView";
 
 const STONE = { black: "●", white: "○" } as const;
 
@@ -19,18 +22,52 @@ type Mode = "local" | "cpu";
 /** 게임이 끝났는지: 5목 승자가 있거나 무승부(보드 가득)면 종료(application 상태로 판정). */
 const isOver = isFinished;
 
+/** 상대 색. */
+const opponent = (stone: Stone): Stone => (stone === "black" ? "white" : "black");
+
+/** vs CPU에서 사람이 잡는 색(선공이면 흑, 후공이면 백). */
+const humanStone = (humanFirst: boolean): Stone => (humanFirst ? "black" : "white");
+
+/**
+ * 선택한 옵션으로 새 게임을 시작한다. vs CPU에서 CPU가 선공(흑)이면 곧바로 첫 수를 둔다
+ * (사람이 백을 골랐을 때 화면이 사람 차례로 시작하도록).
+ */
+function startNewGame(opts: GomokuStartOptions, mode: Mode): GomokuState {
+  let next = startGame(opts.size);
+  if (mode === "cpu" && !isOver(next) && next.next !== humanStone(opts.humanFirst)) {
+    const cpuMove = chooseCpuGomokuMove(next.board, rng);
+    if (cpuMove !== null) {
+      next = applyMove(next, cpuMove.x, cpuMove.y);
+    }
+  }
+  return next;
+}
+
 export function Gomoku() {
   const [mode, setMode] = useState<Mode>("local");
-  const [state, setState] = useState<GomokuState>(() => startGame(SIZE));
-  const { setCellRef, onKeyDown, tabIndexFor, focusOn } = useBoardNavigation(
-    SIZE,
-    SIZE,
+  // 폼에서 고르는 시작 옵션(보드 크기·선공). 기본 15×15·사람 선공.
+  const [options, setOptions] = useState<GomokuStartOptions>(() =>
+    normalizeGomokuStartOptions({}),
+  );
+  // 현재 진행 중인 판이 시작된 시점의 선공 설정(폼을 바꿔도 진행 중 판의 라벨이 흔들리지 않게 고정).
+  const [activeHumanFirst, setActiveHumanFirst] = useState(options.humanFirst);
+  const [state, setState] = useState<GomokuState>(() =>
+    startNewGame(options, "local"),
   );
 
-  // 모드별 플레이어 라벨. vs CPU에서는 사람(흑)="나" / CPU(백)="CPU".
+  const size = state.board.length;
+  const { setCellRef, onKeyDown, tabIndexFor, focusOn } = useBoardNavigation(
+    size,
+    size,
+  );
+
+  // vs CPU에서 사람이 잡는 색(현재 판 기준).
+  const humanSide = humanStone(activeHumanFirst);
+
+  // 모드별 플레이어 라벨. vs CPU에서는 사람 색="나" / CPU 색="CPU".
   const label = (stone: Stone): string =>
     mode === "cpu"
-      ? stone === "black"
+      ? stone === humanSide
         ? "나"
         : "CPU"
       : stone === "black"
@@ -52,13 +89,13 @@ export function Gomoku() {
     if (isOver(state) || state.board[y]![x] !== null) {
       return;
     }
-    // vs CPU: 사람(흑) 차례에만 입력을 받는다(CPU 차례 입력 차단).
-    if (mode === "cpu" && state.next !== "black") {
+    // vs CPU: 사람 차례에만 입력을 받는다(CPU 차례 입력 차단).
+    if (mode === "cpu" && state.next !== humanSide) {
       return;
     }
 
     let next = applyMove(state, x, y);
-    // vs CPU: 사람 수로 끝나지 않았다면 CPU(백)가 곧바로 한 수 둔다.
+    // vs CPU: 사람 수로 끝나지 않았다면 CPU가 곧바로 한 수 둔다(다음 차례가 CPU 색).
     if (mode === "cpu" && !isOver(next)) {
       const cpuMove = chooseCpuGomokuMove(next.board, rng);
       if (cpuMove !== null) {
@@ -70,15 +107,31 @@ export function Gomoku() {
     recordIfFinished(state, next);
   };
 
+  /** 옵션을 적용해 새 게임을 시작한다(진행 판의 선공 고정·포커스 초기화 포함). */
+  const applyOptions = (next: GomokuStartOptions, nextMode: Mode) => {
+    setOptions(next);
+    setActiveHumanFirst(next.humanFirst);
+    setState(startNewGame(next, nextMode));
+    focusOn(0, 0);
+  };
+
   const switchMode = (nextMode: Mode) => {
     if (nextMode === mode) {
       return;
     }
     setMode(nextMode);
-    setState(startGame(SIZE));
+    applyOptions(options, nextMode);
   };
 
-  const reset = () => setState(startGame(SIZE));
+  const selectSize = (value: number) => {
+    applyOptions(normalizeGomokuStartOptions({ ...options, size: value }), mode);
+  };
+
+  const selectHumanFirst = (humanFirst: boolean) => {
+    applyOptions({ ...options, humanFirst }, mode);
+  };
+
+  const reset = () => applyOptions(options, mode);
 
   const over = isOver(state);
   const draw = state.isDraw;
@@ -107,6 +160,38 @@ export function Gomoku() {
           vs CPU
         </button>
       </div>
+      <div className="controls" role="group" aria-label="보드 크기 선택">
+        <span className="hint">보드 크기:</span>
+        {gomokuBoardSizeOptions().map((opt) => (
+          <button
+            key={opt.value}
+            className={options.size === opt.value ? "primary" : ""}
+            onClick={() => selectSize(opt.value)}
+            aria-pressed={options.size === opt.value}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+      {mode === "cpu" && (
+        <div className="controls" role="group" aria-label="선공 선택">
+          <span className="hint">선공:</span>
+          <button
+            className={options.humanFirst ? "primary" : ""}
+            onClick={() => selectHumanFirst(true)}
+            aria-pressed={options.humanFirst}
+          >
+            사람 선공 (흑 ●)
+          </button>
+          <button
+            className={!options.humanFirst ? "primary" : ""}
+            onClick={() => selectHumanFirst(false)}
+            aria-pressed={!options.humanFirst}
+          >
+            CPU 선공 (사람 백 ○)
+          </button>
+        </div>
+      )}
       {over ? (
         <p className="outcome">
           종료 · <strong>{outcome}</strong>
@@ -114,12 +199,14 @@ export function Gomoku() {
       ) : (
         <p className="hint">
           {STONE[state.next]} {label(state.next)} 차례
-          {mode === "cpu" ? " · 백(○)은 CPU가 자동으로 둡니다" : ""}
+          {mode === "cpu"
+            ? ` · 사람은 ${STONE[humanSide]}, CPU(${STONE[opponent(humanSide)]})는 자동으로 둡니다`
+            : ""}
         </p>
       )}
       <div
         className="board"
-        style={boardGridStyle(SIZE)}
+        style={boardGridStyle(size)}
         role="grid"
         aria-label="오목 보드 (방향 키로 칸 이동, Enter/Space로 착수)"
         onKeyDown={onKeyDown}
@@ -127,7 +214,7 @@ export function Gomoku() {
         {state.board.map((row, y) =>
           row.map((cell, x) => {
             const blocked =
-              over || cell !== null || (mode === "cpu" && state.next !== "black");
+              over || cell !== null || (mode === "cpu" && state.next !== humanSide);
             return (
               <button
                 key={`${x},${y}`}
