@@ -51,6 +51,7 @@ export type GameId =
   | "sudoku"
   | "binairo"
   | "futoshiki"
+  | "hitori"
   | "kenken"
   | "rps-match";
 
