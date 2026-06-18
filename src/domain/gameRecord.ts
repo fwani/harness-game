@@ -52,6 +52,7 @@ export type GameId =
   | "binairo"
   | "futoshiki"
   | "hitori"
+  | "kenken"
   | "rps-match";
 
 /** 한 판에서 한 플레이어의 결과. */
