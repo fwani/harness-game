@@ -15,6 +15,8 @@ import {
   battleshipStatusLabel,
   cellView,
   coordLabel,
+  type CpuDifficulty,
+  difficultyLabel,
   isCellSunk,
   nextShipSize,
   placeShipAt,
@@ -49,6 +51,8 @@ interface ViewState {
   orientation: "h" | "v";
   /** 배치 단계: 직전 잘못된 배치 사유(겹침/범위). */
   placementError: string | null;
+  /** CPU 사격 난이도(쉬움=무작위·어려움=추적). 새 게임에도 유지된다. */
+  difficulty: CpuDifficulty;
   /** 사격 단계: 사람 함대 보드. */
   humanBoard: BattleshipBoard;
   /** 사격 단계: CPU 함대 보드. */
@@ -58,13 +62,14 @@ interface ViewState {
   messages: string[];
 }
 
-function initialState(): ViewState {
+function initialState(difficulty: CpuDifficulty = "easy"): ViewState {
   const empty = createBattleshipBoard(BOARD_SIZE, []);
   return {
     phase: "placement",
     placed: [],
     orientation: "h",
     placementError: null,
+    difficulty,
     humanBoard: empty,
     cpuBoard: empty,
     outcome: null,
@@ -220,6 +225,7 @@ export function Battleship() {
       state.cpuBoard,
       { row, col },
       rng,
+      state.difficulty,
     );
 
     const messages = [shotSummary("사람", round.humanShot, round.cpuBoard)];
@@ -243,8 +249,11 @@ export function Battleship() {
 
   const newGame = () => {
     setHover(null);
-    setState(initialState());
+    setState((s) => initialState(s.difficulty));
   };
+
+  const setDifficulty = (difficulty: CpuDifficulty) =>
+    setState((s) => ({ ...s, difficulty }));
 
   return (
     <section className="game">
@@ -262,6 +271,7 @@ export function Battleship() {
           onRandom={randomPlace}
           onReset={resetPlacement}
           onStart={startFiring}
+          onDifficulty={setDifficulty}
         />
       ) : (
         <>
@@ -273,7 +283,8 @@ export function Battleship() {
 
           <div className="controls">
             <span className="hint">
-              남은 적 함선 <strong>{remainingShips(state.cpuBoard)}</strong> · 남은 내 함선{" "}
+              CPU 난이도 <strong>{difficultyLabel(state.difficulty)}</strong> · 남은 적 함선{" "}
+              <strong>{remainingShips(state.cpuBoard)}</strong> · 남은 내 함선{" "}
               <strong>{remainingShips(state.humanBoard)}</strong>
             </span>
             <button type="button" className="primary" onClick={newGame}>
@@ -329,6 +340,7 @@ function PlacementPhase({
   onRandom,
   onReset,
   onStart,
+  onDifficulty,
 }: {
   state: ViewState;
   hover: { row: number; col: number } | null;
@@ -340,6 +352,7 @@ function PlacementPhase({
   onRandom: () => void;
   onReset: () => void;
   onStart: () => void;
+  onDifficulty: (difficulty: CpuDifficulty) => void;
 }) {
   const board = createBattleshipBoard(BOARD_SIZE, state.placed);
   const preview =
@@ -363,6 +376,21 @@ function PlacementPhase({
         그 칸을 시작점으로 함선이 놓입니다. <strong>R</strong> 키나 "회전" 버튼으로 가로(↔)/세로(↕)를
         바꿉니다. 잘못된 위치(겹침·범위 초과)는 거부되고 사유가 표시됩니다.
       </p>
+
+      <div className="controls" role="group" aria-label="CPU 난이도 선택">
+        <span className="hint">CPU 난이도:</span>
+        {(["easy", "hard"] as const).map((d) => (
+          <button
+            key={d}
+            type="button"
+            className={state.difficulty === d ? "primary" : ""}
+            onClick={() => onDifficulty(d)}
+            aria-pressed={state.difficulty === d}
+          >
+            {difficultyLabel(d)}
+          </button>
+        ))}
+      </div>
 
       <div className="controls">
         <span className="hint">방향: {state.orientation === "h" ? "가로 ↔" : "세로 ↕"}</span>

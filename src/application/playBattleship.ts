@@ -91,6 +91,146 @@ export function chooseRandomShot(
   return candidates[idx]!;
 }
 
+/**
+ * 헌트/타깃(hunt/target) 전략으로 사격 좌표를 고른다(순수·결정적, 입력 board 불변).
+ * 표준 배틀십 CPU 관례(Wikipedia "Battleship", DataGenetics "The Battleship Algorithm"):
+ * - **타깃 모드**: 명중했지만 아직 격침되지 않은 함선이 있으면, 그 명중 칸들에 인접한
+ *   미사격 칸을 후보로 우선한다. 두 칸 이상 일직선으로 명중했으면(같은 축 인접 명중)
+ *   그 직선의 연장칸을 더 우선한다(직선 방향 추적).
+ * - **헌트 모드**: 타깃 후보가 없으면 미사격 칸 중에서 고른다. 체커보드 패리티((row+col)%2===0)
+ *   칸을 우선하고, 그런 칸이 없으면 남은 미사격 칸 전체에서 고른다(최소 균등 무작위).
+ * - 후보가 없으면(모든 칸 사격됨) null.
+ *
+ * 도메인 규칙(isHit/isShipSunk)을 재사용하며 명중·격침 판정을 재구현하지 않는다.
+ * 후보 열거 순서는 행→열(row-major)·방향 고정 순서로 결정적이다. 최종 선택만 rng로,
+ * idx = rng.nextInt(candidates.length); 범위를 벗어난 인덱스를 주면 throw(chooseRandomShot 관례).
+ */
+export function chooseSmartShot(
+  board: BattleshipBoard,
+  rng: RandomSource,
+): { row: number; col: number } | null {
+  const rows = board.length;
+  const unfired = (r: number, c: number): boolean =>
+    r >= 0 && r < rows && c >= 0 && c < (board[r]?.length ?? 0) && !board[r]![c]!.hit;
+
+  // 아직 격침되지 않은 함선에 속한 명중 칸(=추적 대상)을 모은다.
+  // 격침 여부는 shipId별로 한 번만 계산해 재사용한다(O(n²) 반복 회피).
+  const sunkCache = new Map<string, boolean>();
+  const isSunkCached = (shipId: string): boolean => {
+    const cached = sunkCache.get(shipId);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const sunk = isShipSunk(board, shipId);
+    sunkCache.set(shipId, sunk);
+    return sunk;
+  };
+  const activeHits: Array<{ row: number; col: number }> = [];
+  const isActiveHit = (r: number, c: number): boolean => {
+    if (r < 0 || r >= rows || c < 0 || c >= (board[r]?.length ?? 0)) {
+      return false;
+    }
+    if (!isHit(board, r, c)) {
+      return false;
+    }
+    const shipId = board[r]![c]!.shipId;
+    return shipId !== null && !isSunkCached(shipId);
+  };
+  for (let row = 0; row < rows; row += 1) {
+    const cols = board[row]!;
+    for (let col = 0; col < cols.length; col += 1) {
+      if (isActiveHit(row, col)) {
+        activeHits.push({ row, col });
+      }
+    }
+  }
+
+  const DIRS: ReadonlyArray<[number, number]> = [
+    [0, 1],
+    [0, -1],
+    [1, 0],
+    [-1, 0],
+  ];
+
+  // 후보를 중복 없이 행→열 순서로 모으는 헬퍼.
+  const collect = (): {
+    push: (r: number, c: number) => void;
+    list: Array<{ row: number; col: number }>;
+  } => {
+    const seen = new Set<string>();
+    const list: Array<{ row: number; col: number }> = [];
+    return {
+      push(r, c) {
+        const key = `${r},${c}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push({ row: r, col: c });
+        }
+      },
+      list,
+    };
+  };
+
+  if (activeHits.length > 0) {
+    // 직선 연장 후보: 명중 칸 (r,c)에서 진행 방향 반대쪽(r-dr,c-dc)도 명중이면
+    // 같은 축으로 두 칸 이상 늘어선 것 → 진행 방향 칸(r+dr,c+dc)이 미사격이면 강한 후보.
+    const lineCands = collect();
+    for (const { row, col } of activeHits) {
+      for (const [dr, dc] of DIRS) {
+        if (isActiveHit(row - dr, col - dc) && unfired(row + dr, col + dc)) {
+          lineCands.push(row + dr, col + dc);
+        }
+      }
+    }
+    // 일반 인접 후보: 명중 칸의 상하좌우 미사격 칸.
+    const neighborCands = collect();
+    for (const { row, col } of activeHits) {
+      for (const [dr, dc] of DIRS) {
+        if (unfired(row + dr, col + dc)) {
+          neighborCands.push(row + dr, col + dc);
+        }
+      }
+    }
+    const targets = lineCands.list.length > 0 ? lineCands.list : neighborCands.list;
+    if (targets.length > 0) {
+      return pickFrom(targets, rng);
+    }
+    // 타깃 후보가 전혀 없으면 헌트 모드로 떨어진다.
+  }
+
+  // 헌트 모드: 체커보드 패리티 칸 우선, 없으면 남은 미사격 칸 전체.
+  const parity = collect();
+  const allUnfired = collect();
+  for (let row = 0; row < rows; row += 1) {
+    const cols = board[row]!;
+    for (let col = 0; col < cols.length; col += 1) {
+      if (!cols[col]!.hit) {
+        allUnfired.push(row, col);
+        if ((row + col) % 2 === 0) {
+          parity.push(row, col);
+        }
+      }
+    }
+  }
+  const hunt = parity.list.length > 0 ? parity.list : allUnfired.list;
+  if (hunt.length === 0) {
+    return null;
+  }
+  return pickFrom(hunt, rng);
+}
+
+/** 후보 목록에서 rng로 하나를 고른다(범위 밖 인덱스는 throw — chooseRandomShot 관례). */
+function pickFrom(
+  candidates: ReadonlyArray<{ row: number; col: number }>,
+  rng: RandomSource,
+): { row: number; col: number } {
+  const idx = rng.nextInt(candidates.length);
+  if (!Number.isInteger(idx) || idx < 0 || idx >= candidates.length) {
+    throw new Error(`RandomSource returned out-of-range index: ${idx}`);
+  }
+  return candidates[idx]!;
+}
+
 /** 한 발 사격 진행 결과: 사격 후 보드 + 명중·격침·전 함대 격침 판정. */
 export interface BattleshipShotResult {
   /** 사격 후 새 보드(입력 불변 — 도메인 fireShot가 새 보드 반환). */

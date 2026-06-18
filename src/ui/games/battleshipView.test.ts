@@ -10,6 +10,7 @@ import {
   battleshipStatusLabel,
   cellView,
   coordLabel,
+  difficultyLabel,
   isCellSunk,
   nextShipSize,
   placeShipAt,
@@ -322,5 +323,55 @@ describe("playBattleshipCpuRound", () => {
     expect(() =>
       playBattleshipCpuRound(humanBoard, cpuBoard, { row: 5, col: 5 }, seqRandom([0])),
     ).toThrow(/잘못된 사격 좌표/);
+  });
+
+  it("난이도에 따라 CPU 사격 선택이 달라진다: easy=무작위 순서, hard=명중 인접 추적", () => {
+    // 사람 보드: (2,2)-(2,4) 가로 함선, (2,2)는 이미 명중(추적 대상).
+    const humanShip: Ship = { id: "h", row: 2, col: 2, size: 3, orientation: "h" };
+    const humanBoard = fireShot(createBattleshipBoard(5, [humanShip]), 2, 2);
+    // CPU 보드: (0,0)-(0,1) 함선 — 사람은 (4,4)로 빗나가 게임이 계속된다.
+    const cpuBoard = createBattleshipBoard(5, [
+      { id: "c", row: 0, col: 0, size: 2, orientation: "h" },
+    ]);
+
+    // easy: chooseRandomShot → 행→열 첫 미사격 칸 (0,0).
+    const easy = playBattleshipCpuRound(
+      humanBoard,
+      cpuBoard,
+      { row: 4, col: 4 },
+      seqRandom([0]),
+      "easy",
+    );
+    expect(easy.cpuShot!.row).toBe(0);
+    expect(easy.cpuShot!.col).toBe(0);
+
+    // hard: chooseSmartShot → 명중 칸 (2,2)의 인접 칸 (2,3)을 추적.
+    const hard = playBattleshipCpuRound(
+      humanBoard,
+      cpuBoard,
+      { row: 4, col: 4 },
+      seqRandom([0]),
+      "hard",
+    );
+    expect(hard.cpuShot!.row).toBe(2);
+    expect(hard.cpuShot!.col).toBe(3);
+  });
+
+  it("difficulty 인자를 생략하면 기존처럼 easy(무작위)로 동작한다", () => {
+    const humanShip: Ship = { id: "h", row: 2, col: 2, size: 3, orientation: "h" };
+    const humanBoard = fireShot(createBattleshipBoard(5, [humanShip]), 2, 2);
+    const cpuBoard = createBattleshipBoard(5, [
+      { id: "c", row: 0, col: 0, size: 2, orientation: "h" },
+    ]);
+    const round = playBattleshipCpuRound(humanBoard, cpuBoard, { row: 4, col: 4 }, seqRandom([0]));
+    expect(round.cpuShot!.row).toBe(0);
+    expect(round.cpuShot!.col).toBe(0);
+  });
+});
+
+describe("difficultyLabel", () => {
+  it("난이도별 한국어 라벨을 돌려준다", () => {
+    expect(difficultyLabel("easy")).toBe("쉬움 (무작위)");
+    expect(difficultyLabel("hard")).toBe("어려움 (추적)");
   });
 });

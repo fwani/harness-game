@@ -6,6 +6,7 @@ import type { BattleshipBoard, Cell, Ship } from "../../domain/battleship";
 import { isShipSunk, isValidPlacement, shipCellsAt } from "../../domain/battleship";
 import {
   chooseRandomShot,
+  chooseSmartShot,
   playBattleshipShot,
   type BattleshipShotResult,
 } from "../../application/playBattleship";
@@ -15,6 +16,14 @@ import type { WinSide } from "../records";
 // vs CPU 고정 배정: 사람=a, CPU=b. 색만이 아니라 기호/라벨로 칸 상태를 구분한다.
 export const HUMAN: WinSide = "a";
 export const CPU: WinSide = "b";
+
+/** CPU 사격 난이도: 쉬움=순수 무작위, 어려움=헌트/타깃 추적. */
+export type CpuDifficulty = "easy" | "hard";
+
+/** 난이도 → 사람이 읽는 한국어 라벨(컨트롤·안내 표시용). */
+export function difficultyLabel(difficulty: CpuDifficulty): string {
+  return difficulty === "hard" ? "어려움 (추적)" : "쉬움 (무작위)";
+}
 
 /** 한 칸의 표시 종류(색 비의존: 기호+라벨로 구분). */
 export type CellState = "water" | "ship" | "miss" | "hit" | "sunk";
@@ -281,7 +290,9 @@ export interface BattleshipRoundResult {
 /**
  * vs CPU 한 라운드를 진행한다(사람 사격 1발 + 미종료 시 CPU 사격 1발).
  * - 사람은 CPU 보드를, CPU는 사람 보드를 사격한다(2개 보드 관리).
- * - playBattleshipShot/chooseRandomShot(application)에 위임한다(규칙 재구현 금지).
+ * - playBattleshipShot/chooseRandomShot/chooseSmartShot(application)에 위임한다(규칙 재구현 금지).
+ * - difficulty="easy"면 순수 무작위(chooseRandomShot), "hard"면 헌트/타깃 추적(chooseSmartShot)으로
+ *   CPU 좌표를 고른다(기본값 "easy" — 기존 호출부 호환).
  * - 명중해도 한 발씩 교대한다(규칙 단순화). 이미 사격한 칸 지정은 도메인 에러로 전파.
  * - 사람 사격으로 전 함대 격침이면 CPU는 사격하지 않는다(outcome=a).
  * - 입력 보드를 변형하지 않는다(난수 외 결정적 — CPU 좌표만 난수).
@@ -291,6 +302,7 @@ export function playBattleshipCpuRound(
   cpuBoard: BattleshipBoard,
   shot: { row: number; col: number },
   rng: RandomSource,
+  difficulty: CpuDifficulty = "easy",
 ): BattleshipRoundResult {
   const humanShot = playBattleshipShot(cpuBoard, shot.row, shot.col);
   if (humanShot.fleetDestroyed) {
@@ -303,7 +315,10 @@ export function playBattleshipCpuRound(
     };
   }
 
-  const cpuPick = chooseRandomShot(humanBoard, rng);
+  const cpuPick =
+    difficulty === "hard"
+      ? chooseSmartShot(humanBoard, rng)
+      : chooseRandomShot(humanBoard, rng);
   if (cpuPick === null) {
     // 사람 보드에 쏠 칸이 없으면(이론상 모두 사격됨) CPU는 사격을 생략한다.
     return {
