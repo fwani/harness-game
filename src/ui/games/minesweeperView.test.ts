@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { createMinefield, revealCell } from "../../domain/minesweeper";
+import { createMinefield, revealCell, toggleFlag } from "../../domain/minesweeper";
 import {
   cellView,
   countHidden,
   countSafeHidden,
   describeMinesweeperStatus,
+  remainingMines,
 } from "./minesweeperView";
 
 describe("cellView", () => {
@@ -53,6 +54,23 @@ describe("cellView", () => {
     const board = createMinefield(2, 2, []);
     expect(cellView(board[1]![0]!, "none", 1, 0).ariaLabel).toContain("2행 1열");
   });
+
+  it("깃발 칸은 🚩 기호와 깃발 라벨(flag)로 표시하고 지뢰 여부를 노출하지 않는다", () => {
+    // 지뢰 칸에 깃발을 꽂아도 진행 중에는 지뢰임을 노출하지 않는다.
+    const board = toggleFlag(createMinefield(2, 2, [[0, 0]]), 0, 0);
+    const v = cellView(board[0]![0]!, "none", 0, 0);
+    expect(v.kind).toBe("flag");
+    expect(v.content).toBe("🚩");
+    expect(v.revealed).toBe(false);
+    expect(v.ariaLabel).toContain("깃발");
+  });
+
+  it("종료 시(reveal) 지뢰 노출이 깃발 표시보다 우선한다", () => {
+    const board = toggleFlag(createMinefield(2, 2, [[0, 0]]), 0, 0);
+    const exploded = cellView(board[0]![0]!, "exploded", 0, 0);
+    expect(exploded.kind).toBe("mine");
+    expect(exploded.content).toBe("💣");
+  });
 });
 
 describe("countHidden", () => {
@@ -81,6 +99,22 @@ describe("countSafeHidden", () => {
     expect(countSafeHidden(cleared)).toBe(0);
     // 미공개 지뢰는 그대로 남아 있어도(countHidden=1) 남은 안전 칸은 0이다.
     expect(countHidden(cleared)).toBe(1);
+  });
+});
+
+describe("remainingMines", () => {
+  it("남은 지뢰 = 지뢰 총수 − 깃발 수", () => {
+    let board = createMinefield(3, 3, []);
+    expect(remainingMines(board, 3)).toBe(3);
+    board = toggleFlag(board, 0, 0);
+    expect(remainingMines(board, 3)).toBe(2);
+  });
+
+  it("깃발을 지뢰보다 많이 꽂으면 음수가 될 수 있다(표준 카운터)", () => {
+    let board = createMinefield(2, 2, []);
+    board = toggleFlag(board, 0, 0);
+    board = toggleFlag(board, 0, 1);
+    expect(remainingMines(board, 1)).toBe(-1);
   });
 });
 

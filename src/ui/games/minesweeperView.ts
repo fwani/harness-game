@@ -1,11 +1,11 @@
 // Presentation helpers for the 지뢰찾기(Minesweeper) screen. Pure functions only — 한 칸의
-// 표시(기호/숫자/접근성 라벨)·남은 미공개 칸 수·상태 메시지를 React/DOM에서 분리해 단위
-// 테스트할 수 있게 한다. 보드 생성·칸 열기·승패 판정 규칙은 domain(minesweeper)/
+// 표시(기호/숫자/접근성 라벨)·남은 미공개 칸 수·남은 지뢰 수·상태 메시지를 React/DOM에서 분리해 단위
+// 테스트할 수 있게 한다. 보드 생성·칸 열기·깃발 토글·승패 판정 규칙은 domain(minesweeper)/
 // application(playMinesweeper)을 호출해 수행하며 여기서 재구현하지 않는다(표시용 변환, 입력 불변).
-import type { Board, Cell } from "../../domain/minesweeper";
+import { countFlags, type Board, type Cell } from "../../domain/minesweeper";
 
 /** 한 칸을 화면에 어떻게 그릴지(색 비의존: 기호/숫자 + 접근성 라벨). */
-export type CellKind = "hidden" | "mine" | "empty" | "number";
+export type CellKind = "hidden" | "flag" | "mine" | "empty" | "number";
 
 export interface CellView {
   /** 화면에 보일 텍스트(기호 또는 인접 지뢰 수). 빈 칸/미공개는 "". */
@@ -30,6 +30,7 @@ export type MineReveal = "none" | "exploded" | "flagged";
 /**
  * 한 칸의 표시 정보를 만든다(순수·결정적, 입력 불변).
  * - reveal이 "none"이 아니면 미공개 지뢰도 노출한다(패배=💣, 승리=🚩).
+ * - 깃발이 꽂힌 미공개 칸: 🚩(지뢰 의심 표시). 지뢰 여부는 노출하지 않는다.
  * - 미공개 칸: 내용 없음("미공개 칸").
  * - 공개 지뢰: 💣. 인접 0: 빈 칸. 인접>0: 숫자.
  * 색만이 아니라 기호(💣/🚩)·숫자·라벨로 구분한다.
@@ -41,6 +42,10 @@ export function cellView(cell: Cell, reveal: MineReveal, row: number, col: numbe
     return reveal === "flagged"
       ? { content: "🚩", ariaLabel: `${where} 지뢰(안전하게 피함)`, kind: "mine", revealed: false }
       : { content: "💣", ariaLabel: `${where} 지뢰`, kind: "mine", revealed: false };
+  }
+  if (!cell.revealed && cell.flagged) {
+    // 깃발 칸: 지뢰 여부를 노출하지 않고 의심 표시만 보여준다(좌클릭 열기 보호 대상).
+    return { content: "🚩", ariaLabel: `${where} 깃발(지뢰 의심)`, kind: "flag", revealed: false };
   }
   if (!cell.revealed) {
     return { content: "", ariaLabel: `${where} 미공개 칸`, kind: "hidden", revealed: false };
@@ -87,6 +92,15 @@ export function countSafeHidden(board: Board): number {
     }
   }
   return count;
+}
+
+/**
+ * 남은 지뢰 수 = 지뢰 총수 − 깃발 수(도메인 countFlags 위임, 순수·결정적).
+ * 표준 지뢰찾기 카운터: 깃발을 다 꽂으면 0이 된다. 깃발을 지뢰보다 많이 꽂으면 음수가 될 수 있으며,
+ * 음수 방지 없이 표준대로 그대로 반환한다(표시 라벨로 의미를 명확히 한다).
+ */
+export function remainingMines(board: Board, totalMines: number): number {
+  return totalMines - countFlags(board);
 }
 
 /** 진행 상태 구분(승리·패배·진행 중). */

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createMinefield, revealCell, isWin, isLoss } from "./minesweeper";
+import { createMinefield, revealCell, toggleFlag, countFlags, isWin, isLoss } from "./minesweeper";
 
 describe("minesweeper createMinefield", () => {
   it("creates a rows×cols board, all cells unrevealed", () => {
@@ -8,6 +8,11 @@ describe("minesweeper createMinefield", () => {
     expect(board.every((row) => row.length === 5)).toBe(true);
     expect(board.flat().every((cell) => !cell.revealed)).toBe(true);
     expect(board.flat().every((cell) => !cell.mine)).toBe(true);
+  });
+
+  it("starts every cell unflagged", () => {
+    const board = createMinefield(3, 3, [[0, 0]]);
+    expect(board.flat().every((cell) => !cell.flagged)).toBe(true);
   });
 
   it("places mines at the given coordinates", () => {
@@ -130,6 +135,71 @@ describe("minesweeper revealCell", () => {
   it("safely handles an empty board", () => {
     expect(revealCell([], 0, 0)).toEqual([]);
   });
+
+  it("does not reveal a flagged start cell (flag protects)", () => {
+    const board = toggleFlag(createMinefield(3, 3, [[1, 1]]), 0, 0);
+    const next = revealCell(board, 0, 0);
+    expect(next[0]![0]!.revealed).toBe(false);
+    expect(next[0]![0]!.flagged).toBe(true);
+  });
+
+  it("does not flood-fill across flagged cells", () => {
+    // 1×5, 지뢰 없음. (0,2)에 깃발 → (0,0) 연쇄 공개가 깃발을 넘지 못한다.
+    const board = toggleFlag(createMinefield(1, 5, []), 0, 2);
+    const next = revealCell(board, 0, 0);
+    expect(next[0]![0]!.revealed).toBe(true);
+    expect(next[0]![1]!.revealed).toBe(true);
+    expect(next[0]![2]!.revealed).toBe(false); // 깃발 칸: 보호
+    expect(next[0]![3]!.revealed).toBe(false); // 깃발 너머: 연쇄 차단
+    expect(next[0]![4]!.revealed).toBe(false);
+  });
+});
+
+describe("minesweeper toggleFlag", () => {
+  it("toggles flag on an unrevealed cell (and back)", () => {
+    const board = createMinefield(2, 2, []);
+    const flagged = toggleFlag(board, 0, 1);
+    expect(flagged[0]![1]!.flagged).toBe(true);
+    const unflagged = toggleFlag(flagged, 0, 1);
+    expect(unflagged[0]![1]!.flagged).toBe(false);
+  });
+
+  it("does not flag an already revealed cell (returns unchanged copy)", () => {
+    const board = revealCell(createMinefield(1, 3, [[0, 2]]), 0, 0); // (0,0) 공개(숫자)
+    const next = toggleFlag(board, 0, 0);
+    expect(next[0]![0]!.flagged).toBe(false);
+    expect(next).toEqual(board);
+  });
+
+  it("does not mutate the input board", () => {
+    const board = createMinefield(2, 2, []);
+    const snapshot = JSON.stringify(board);
+    toggleFlag(board, 0, 0);
+    expect(JSON.stringify(board)).toBe(snapshot);
+  });
+
+  it("returns the board unchanged for out-of-range / non-integer coordinates", () => {
+    const board = createMinefield(2, 2, []);
+    expect(toggleFlag(board, 5, 5)).toEqual(board);
+    expect(toggleFlag(board, -1, 0)).toEqual(board);
+    expect(toggleFlag(board, 0.5, 0)).toEqual(board);
+  });
+});
+
+describe("minesweeper countFlags", () => {
+  it("counts flagged cells", () => {
+    let board = createMinefield(3, 3, []);
+    expect(countFlags(board)).toBe(0);
+    board = toggleFlag(board, 0, 0);
+    board = toggleFlag(board, 2, 2);
+    expect(countFlags(board)).toBe(2);
+    board = toggleFlag(board, 0, 0); // 해제
+    expect(countFlags(board)).toBe(1);
+  });
+
+  it("is 0 for an empty board", () => {
+    expect(countFlags([])).toBe(0);
+  });
 });
 
 describe("minesweeper isWin", () => {
@@ -150,6 +220,15 @@ describe("minesweeper isWin", () => {
   it("is false for an empty board", () => {
     expect(isWin([])).toBe(false);
     expect(isWin(createMinefield(0, 0, []))).toBe(false);
+  });
+
+  it("is independent of flags (win even with a misplaced flag)", () => {
+    const board = createMinefield(2, 2, [[0, 0]]);
+    const cleared = revealCell(revealCell(revealCell(board, 0, 1), 1, 0), 1, 1);
+    // 안전 칸에 잘못 꽂은 깃발이 있어도 승리 판정은 그대로다.
+    const withFlag = toggleFlag(createMinefield(2, 2, [[0, 0]]), 0, 1);
+    expect(isWin(cleared)).toBe(true);
+    expect(isWin(withFlag)).toBe(false); // 깃발만으로는 승리 아님(공개된 칸 없음)
   });
 });
 
