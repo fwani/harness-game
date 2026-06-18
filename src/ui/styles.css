@@ -2351,3 +2351,83 @@ button.dots-edge:disabled {
 .futoshiki-gap-empty {
   background: #fdf6e3;
 }
+
+/* 히토리(Hitori) 보드 — 고정 숫자 N×N 격자에서 칸을 칠해(black) 푼다.
+   칠 상태는 색뿐 아니라 채움 표식(■)·취소선으로 색 비의존 구분한다. */
+.board.hitori {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.hitori-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 0.5px solid #b9b08a;
+}
+
+.hitori-cell .hitori-number {
+  line-height: 1;
+}
+
+.hitori-cell:disabled {
+  cursor: default;
+}
+
+.hitori-cell:not(:disabled):hover,
+.hitori-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 칠한(black) 칸: 어두운 바탕 + 취소선 숫자 + ■ 표식으로 색 비의존 식별. */
+.hitori-cell.marked {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+.hitori-cell.marked .hitori-number {
+  text-decoration: line-through;
+  opacity: 0.85;
+}
+
+.hitori-cell:not(:disabled).marked:hover,
+.hitori-cell:not(:disabled).marked:focus-visible {
+  background: #374151;
+}
+
+.hitori-cell .hitori-mark {
+  position: absolute;
+  bottom: 1px;
+  left: 3px;
+  font-size: 0.55rem;
+  line-height: 1;
+  color: #f9fafb;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.hitori-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.hitori-cell.marked.conflict {
+  color: #fca5a5;
+}
+
+.hitori-cell .hitori-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+.hitori-cell.marked .hitori-violation-mark {
+  color: #fca5a5;
+}
