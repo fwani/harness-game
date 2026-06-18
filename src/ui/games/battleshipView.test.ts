@@ -11,6 +11,7 @@ import {
   cellView,
   coordLabel,
   difficultyLabel,
+  fireCellDisabled,
   isCellSunk,
   nextShipSize,
   placeShipAt,
@@ -383,6 +384,21 @@ describe("difficultyLabel", () => {
   it("난이도별 한국어 라벨을 돌려준다", () => {
     expect(difficultyLabel("easy")).toBe("쉬움 (무작위)");
     expect(difficultyLabel("hard")).toBe("어려움 (추적)");
+  });
+});
+
+describe("fireCellDisabled", () => {
+  it("아직 안 쏜 칸은 보드가 잠기지 않았으면 활성(클릭 가능)이다", () => {
+    expect(fireCellDisabled(false, false)).toBe(false);
+  });
+
+  it("이미 사격한 칸은 비활성이다(다시 쏠 수 없음)", () => {
+    expect(fireCellDisabled(false, true)).toBe(true);
+  });
+
+  it("보드가 잠기면(게임 종료 또는 CPU 차례) 모든 칸이 비활성이다", () => {
+    expect(fireCellDisabled(true, false)).toBe(true);
+    expect(fireCellDisabled(true, true)).toBe(true);
   });
 });
 

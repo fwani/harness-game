@@ -964,7 +964,9 @@ header h1 {
   background: #2b517a;
 }
 
-.bs-cell.bs-water:not(:disabled):hover {
+/* 사격/배치 보드 칸은 네이티브 disabled 대신 aria-disabled로 비활성을 표시한다(#227).
+   비활성(사격 완료·게임 종료) 물 칸엔 호버 단서를 주지 않는다(잘못된 클릭 어포던스 방지). */
+.bs-cell.bs-water:not([aria-disabled="true"]):hover {
   background: #356092;
 }
 
