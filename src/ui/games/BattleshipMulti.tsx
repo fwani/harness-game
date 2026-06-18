@@ -36,6 +36,8 @@ import {
   type InMemoryRoomHub,
   type RoomClient,
 } from "./battleshipRoomClient";
+import { battleshipMultiMatchRecord } from "./battleshipMultiRecord";
+import { recordGame } from "../records";
 
 const BOARD_SIZE = DEFAULT_BATTLESHIP_SIZE;
 const FLEET = STANDARD_FLEET;
@@ -97,6 +99,9 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
   });
   const [activeSeat, setActiveSeat] = useState<Side>("p1");
   const unsubsRef = useRef<Array<() => void>>([]);
+  // 매치 단위 1회 기록 가드. 두 좌석(p1·p2)이 같은 over status를 모두 구독하므로 중복 기록을 막는다.
+  // 새 매치(배치) 시작·방 입장 시 false로 리셋해 다음 매치도 정확히 1회 기록되게 한다(싱글 recorded 가드 패턴).
+  const recordedRef = useRef(false);
 
   // 구독 해지(언마운트/방 나가기) — 누수 방지.
   useEffect(() => {
@@ -112,6 +117,8 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
       return;
     }
     if (m.type === "setupState") {
+      // 배치(setup) 단계 진입 = 새 매치 시작(첫 판/재대국) → 다음 매치를 1회 기록할 수 있게 가드를 리셋한다.
+      recordedRef.current = false;
       setSeats((s) => ({
         ...s,
         [side]: {
@@ -123,6 +130,13 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
       return;
     }
     if (m.type === "gameState") {
+      // 전 함대 격침(status.over)이 되는 순간, 권위 있는 절대 승자를 좌석 무관 WinSide로 환원해
+      // 정확히 1회만 전적에 기록한다(두 좌석이 같은 over를 구독해도 recordedRef 가드로 1회).
+      const entry = battleshipMultiMatchRecord(m.status, recordedRef.current);
+      if (entry !== null) {
+        recordedRef.current = true;
+        recordGame("battleship", entry.playerA, entry.playerB, entry.win);
+      }
       setSeats((s) => ({
         ...s,
         [side]: {
@@ -144,7 +158,7 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
     if (m.type === "error") {
       setSeats((s) => ({ ...s, [side]: { ...s[side], lastError: m.reason } }));
     }
-    // gameOver는 status(over)로 이미 화면에 반영되므로 별도 처리 없음(로컬 시뮬은 전적 미기록).
+    // gameOver는 status(over)로 이미 화면 반영·전적 기록되므로(gameState 분기) 별도 처리 없음.
   };
 
   const join = () => {
@@ -161,6 +175,7 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
     setSession({ hub, clients, roomCode: code });
     setSeats({ p1: emptySeat(), p2: emptySeat() });
     setActiveSeat("p1");
+    recordedRef.current = false;
     // 두 좌석을 입장시켜 비공개 배치(setup)를 시작한다.
     for (const side of SIDES) {
       clients[side].send({ type: "joinRoom", roomCode: code });
