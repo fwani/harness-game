@@ -30,6 +30,7 @@ import { Nim } from "./games/Nim";
 import { Battleship } from "./games/Battleship";
 import { Hanoi } from "./games/Hanoi";
 import { SlidePuzzle } from "./games/SlidePuzzle";
+import { LightsOut } from "./games/LightsOut";
 import { PegSolitaire } from "./games/PegSolitaire";
 import { Sokoban } from "./games/Sokoban";
 import { FloodIt } from "./games/FloodIt";
@@ -85,6 +86,7 @@ type GameKey =
   | "battleship"
   | "hanoi"
   | "slidepuzzle"
+  | "lightsout"
   | "pegsolitaire"
   | "sokoban"
   | "floodit"
@@ -139,6 +141,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "battleship", label: "배틀십", render: () => <Battleship /> },
   { key: "hanoi", label: "하노이탑", render: () => <Hanoi /> },
   { key: "slidepuzzle", label: "슬라이드 퍼즐", render: () => <SlidePuzzle /> },
+  { key: "lightsout", label: "라이트 아웃", render: () => <LightsOut /> },
   { key: "pegsolitaire", label: "페그 솔리테어", render: () => <PegSolitaire /> },
   { key: "sokoban", label: "소코반", render: () => <Sokoban /> },
   { key: "floodit", label: "플러드 잇", render: () => <FloodIt /> },

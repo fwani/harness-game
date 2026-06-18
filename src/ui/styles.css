@@ -1171,6 +1171,45 @@ button.dots-edge:disabled {
   box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.6);
 }
 
+/* --- 라이트 아웃(Lights Out) --- */
+
+.board.lightsout {
+  background: #1e293b;
+  border-color: #0f172a;
+  gap: 6px;
+  padding: 6px;
+}
+
+/* 칸: 켜짐/꺼짐을 색뿐 아니라 기호(●/○)·입체(밝음/가라앉음)로도 구분(색 비의존). */
+.lo-cell {
+  border-radius: 6px;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.lo-on {
+  background: #f59e0b;
+  color: #1e293b;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.45),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.lo-off {
+  background: #0f172a;
+  color: #64748b;
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.lo-cell:not(:disabled):hover,
+.lo-cell:not(:disabled):focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: -2px;
+}
+
+.lo-cell:disabled {
+  opacity: 0.85;
+}
+
 /* --- 페그 솔리테어(Peg Solitaire) --- */
 
 .board.pegsolitaire {
