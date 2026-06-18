@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   createMatch,
+  createMatchFromState,
   applyMatchMove,
   currentTurn,
   playerOnTurn,
@@ -58,6 +59,27 @@ describe("createMatch — 플레이어 쌍 검증·초기 상태", () => {
     const match = createMatch(createGomokuEngine(), [alice, bob], { size: 9 });
     // 9×9 보드로 초기화됐는지 상태로 확인.
     expect((match.state as { board: unknown[] }).board.length).toBe(9);
+  });
+});
+
+describe("createMatchFromState — 합성된 초기 상태로 진입", () => {
+  it("engine.init을 호출하지 않고 주어진 state를 그대로 채택한다", () => {
+    const engine = createGomokuEngine();
+    // init({size:9})로 만든 9×9 상태를 외부에서 합성해 그대로 진입(예: setup 완료 후).
+    const preset = engine.init({ size: 9 });
+    const match = createMatchFromState(engine, [alice, bob], preset);
+    expect(match.state).toBe(preset); // 같은 참조(재초기화 없음)
+    expect(match.log).toEqual([]);
+    expect(match.players).toEqual([alice, bob]);
+    expect(currentTurn(match)).toBe("p1");
+  });
+
+  it("side 쌍 검증은 createMatch와 동일(중복/누락 거부)", () => {
+    const engine = createTicTacToeEngine();
+    const dupe: Player = { ...bob, side: "p1" };
+    expect(() => createMatchFromState(engine, [alice, dupe], engine.init())).toThrow(
+      /p1, p2/,
+    );
   });
 });
 

@@ -73,6 +73,27 @@ function assertPlayerPair(players: readonly [Player, Player]): void {
 }
 
 /**
+ * 이미 합성된 엔진 상태로 매치를 생성한다(불변). engine.init을 호출하지 않고 주어진 state를 그대로 채택한다.
+ * 멀티 setup(비공개 배치) 단계처럼 매치 바깥에서 초기 상태를 만든 뒤 진입하는 "동등 경로"용이다
+ * (예: battleshipSetup.startBattleshipMatch가 만든 사격 엔진 상태). log=[].
+ * players의 side는 정확히 {p1, p2} 한 쌍이어야 한다(중복/누락 시 throw).
+ * 입력 players를 변형하지 않고 자체 튜플로 복제해 보관한다.
+ */
+export function createMatchFromState<S, M>(
+  engine: GameEngine<S, M>,
+  players: readonly [Player, Player],
+  state: S,
+): MatchState<S, M> {
+  assertPlayerPair(players);
+  return {
+    engine,
+    state,
+    players: [players[0], players[1]],
+    log: [],
+  };
+}
+
+/**
  * 매치를 생성한다(불변). state = engine.init(config), log=[].
  * players의 side는 정확히 {p1, p2} 한 쌍이어야 한다(중복/누락 시 throw).
  * 입력 players를 변형하지 않고 자체 튜플로 복제해 보관한다.
@@ -82,13 +103,7 @@ export function createMatch<S, M>(
   players: readonly [Player, Player],
   config?: unknown,
 ): MatchState<S, M> {
-  assertPlayerPair(players);
-  return {
-    engine,
-    state: engine.init(config),
-    players: [players[0], players[1]],
-    log: [],
-  };
+  return createMatchFromState(engine, players, engine.init(config));
 }
 
 /** 현재 둘 차례(engine.turn 위임). */

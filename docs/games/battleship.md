@@ -59,7 +59,8 @@
 | 애플리케이션 | [`src/application/playBattleship.ts`](../../src/application/playBattleship.ts) | `placeFleetRandomly`·`chooseRandomShot`·`chooseSmartShot`(헌트/타깃 AI)·`playBattleshipShot` | ✅ |
 | UI | [`src/ui/games/Battleship.tsx`](../../src/ui/games/Battleship.tsx) | 배치 단계(직접/무작위 배치·회전·미리보기·CPU 난이도 선택) → 사격 단계(두 보드 렌더·사격 클릭·CPU 차례 "생각 중" 단계 표시 후 반격·승패·새 게임) | ✅ |
 | 멀티(엔진) | [`src/application/battleshipEngine.ts`](../../src/application/battleshipEngine.ts) | `createBattleshipEngine` GameEngine 어댑터 + `redactBattleshipState`/`redactOpponentBoard`(시점별 안개 가림 순수 함수) | ✅(엔진·가림) / ws side 라우팅 후속 |
-| 멀티(배치 setup) | [`src/application/battleshipSetup.ts`](../../src/application/battleshipSetup.ts) | `createBattleshipSetup`·`submitFleet`·`isSetupComplete`·`startBattleshipMatch`·`redactSetup`(양측 비공개 배치 제출→매치 시작, 전송 비종속 순수 단위) | ✅(순수 단위) / UI·전송 소비 후속 |
+| 멀티(배치 setup) | [`src/application/battleshipSetup.ts`](../../src/application/battleshipSetup.ts) | `createBattleshipSetup`·`submitFleet`·`isSetupComplete`·`startBattleshipMatch`·`redactSetup`(양측 비공개 배치 제출→매치 시작, 전송 비종속 순수 단위) | ✅(순수 단위) / UI 소비 후속 |
+| 멀티(방 런타임 연동) | [`src/infrastructure/server/room.ts`](../../src/infrastructure/server/room.ts) + [`setupRegistry.ts`](../../src/infrastructure/server/setupRegistry.ts) | 게임 무관 `SetupAdapter`/`resolveSetup` 주입 — 2석 착석 시 setup 시작(즉시 매치 X), `submitSetup` 메시지로 양측 비공개 함대 제출 후 `startBattleshipMatch`로 매치 시작. 좌석별 `redactSetup` 뷰(`setupState`)로 상대 위치 미노출 | ✅(단일 방 reduceRoom) / native ws 전송 후속(#595) |
 | 기록 | `GameId="battleship"` + [`src/ui/records.ts`](../../src/ui/records.ts) | 종료 시 사람=a/CPU=b로 저장 | ✅ |
 
 ## 4. UI/UX 요구사항

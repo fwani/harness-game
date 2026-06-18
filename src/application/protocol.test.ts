@@ -23,6 +23,7 @@ describe("isClientMessage", () => {
     const valid: ClientMessage[] = [
       { type: "joinRoom", roomCode: "ABCD" },
       { type: "makeMove", gameType: "gomoku", move: { x: 1, y: 2 } },
+      { type: "submitSetup", gameType: "battleship", payload: { ships: [] } },
       { type: "leaveRoom" },
       { type: "requestRematch" },
     ];
@@ -35,6 +36,17 @@ describe("isClientMessage", () => {
     expect(isClientMessage({ type: "makeMove", gameType: "go", move: null })).toBe(true);
     expect(isClientMessage({ type: "makeMove", gameType: "go", move: "encoded" })).toBe(true);
     expect(isClientMessage({ type: "makeMove", gameType: "go", move: 42 })).toBe(true);
+  });
+
+  it("accepts submitSetup with any payload (serialization out of scope)", () => {
+    expect(isClientMessage({ type: "submitSetup", gameType: "battleship", payload: null })).toBe(true);
+    expect(isClientMessage({ type: "submitSetup", gameType: "battleship", payload: 0 })).toBe(true);
+  });
+
+  it("rejects submitSetup with a missing/invalid gameType or missing payload", () => {
+    expect(isClientMessage({ type: "submitSetup", payload: {} })).toBe(false);
+    expect(isClientMessage({ type: "submitSetup", gameType: "", payload: {} })).toBe(false);
+    expect(isClientMessage({ type: "submitSetup", gameType: "battleship" })).toBe(false);
   });
 
   it("rejects unknown or missing type", () => {
@@ -77,12 +89,19 @@ describe("isServerMessage", () => {
         ],
       },
       { type: "gameState", gameType: "gomoku", state: { board: [] }, status: PLAYING, turn: "p1" },
+      { type: "setupState", gameType: "battleship", setup: { p1Ships: [], p2Ships: null } },
       { type: "error", reason: "방이 가득 찼습니다" },
       { type: "gameOver", record: RECORD },
     ];
     for (const msg of valid) {
       expect(isServerMessage(msg)).toBe(true);
     }
+  });
+
+  it("accepts setupState with any setup payload, rejects missing gameType/setup", () => {
+    expect(isServerMessage({ type: "setupState", gameType: "battleship", setup: null })).toBe(true);
+    expect(isServerMessage({ type: "setupState", gameType: "battleship" })).toBe(false);
+    expect(isServerMessage({ type: "setupState", gameType: "", setup: {} })).toBe(false);
   });
 
   it("accepts roomState with an empty players list", () => {
