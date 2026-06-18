@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   SUDOKU_PUZZLES,
+  SUDOKU_PUZZLES_BY_DIFFICULTY,
   pickRandomSudokuPuzzle,
+  pickRandomSudokuPuzzleByDifficulty,
   playSudokuPlacement,
   startSudokuGame,
+  type SudokuDifficulty,
   type SudokuStatus,
 } from "./playSudoku";
 import {
@@ -242,5 +245,107 @@ describe("playSudokuPlacement", () => {
     expect(() =>
       playSudokuPlacement(state, { row: 0, col: 2 }, 10 as never),
     ).toThrow();
+  });
+});
+
+/** 격자의 고정 단서(비-null) 칸 수를 센다. */
+function countGivens(puzzle: SudokuGrid): number {
+  let count = 0;
+  for (const row of puzzle) {
+    for (const value of row) {
+      if (value !== null && value !== undefined) {
+        count += 1;
+      }
+    }
+  }
+  return count;
+}
+
+describe("SUDOKU_PUZZLES_BY_DIFFICULTY", () => {
+  const DIFFICULTIES: SudokuDifficulty[] = ["easy", "medium", "hard"];
+
+  it("각 난이도에 최소 1개의 퍼즐을 제공한다", () => {
+    for (const d of DIFFICULTIES) {
+      expect(SUDOKU_PUZZLES_BY_DIFFICULTY[d].length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it("난이도별 고정 단서 수가 위키 임계값(easy≥36 / medium 28~35 / hard≤27)을 만족한다", () => {
+    for (const puzzle of SUDOKU_PUZZLES_BY_DIFFICULTY.easy) {
+      expect(countGivens(puzzle)).toBeGreaterThanOrEqual(36);
+    }
+    for (const puzzle of SUDOKU_PUZZLES_BY_DIFFICULTY.medium) {
+      const givens = countGivens(puzzle);
+      expect(givens).toBeGreaterThanOrEqual(28);
+      expect(givens).toBeLessThanOrEqual(35);
+    }
+    for (const puzzle of SUDOKU_PUZZLES_BY_DIFFICULTY.hard) {
+      expect(countGivens(puzzle)).toBeLessThanOrEqual(27);
+    }
+  });
+
+  it("난이도별 모든 퍼즐이 createSudoku를 통과하고 충돌 없이 완성 가능하다", () => {
+    for (const d of DIFFICULTIES) {
+      for (const puzzle of SUDOKU_PUZZLES_BY_DIFFICULTY[d]) {
+        expect(() => createSudoku(puzzle)).not.toThrow();
+        expect(solveSudoku(puzzle)).not.toBeNull();
+      }
+    }
+  });
+
+  it("난이도별 풀의 모든 퍼즐은 전체 풀(SUDOKU_PUZZLES)에도 포함된다", () => {
+    for (const d of DIFFICULTIES) {
+      for (const puzzle of SUDOKU_PUZZLES_BY_DIFFICULTY[d]) {
+        expect(SUDOKU_PUZZLES).toContain(puzzle);
+      }
+    }
+  });
+});
+
+describe("pickRandomSudokuPuzzleByDifficulty", () => {
+  it("주입한 RandomSource의 인덱스로 난이도 풀에서 결정적으로 선택한다", () => {
+    expect(pickRandomSudokuPuzzleByDifficulty(new FixedRandom([0]), "easy")).toBe(
+      SUDOKU_PUZZLES_BY_DIFFICULTY.easy[0],
+    );
+    expect(pickRandomSudokuPuzzleByDifficulty(new FixedRandom([0]), "hard")).toBe(
+      SUDOKU_PUZZLES_BY_DIFFICULTY.hard[0],
+    );
+  });
+
+  it("범위 밖 인덱스를 반환하면 throw 한다", () => {
+    expect(() =>
+      pickRandomSudokuPuzzleByDifficulty(new OutOfRangeRandom(), "medium"),
+    ).toThrow();
+    expect(() =>
+      pickRandomSudokuPuzzleByDifficulty(new FixedRandom([-1]), "easy"),
+    ).toThrow();
+  });
+});
+
+describe("startSudokuGame (난이도)", () => {
+  it("난이도 미지정 시 전체 풀에서 고른다(하위호환: ZeroRandom→첫 퍼즐)", () => {
+    const state = startSudokuGame(new ZeroRandom());
+    const puzzle = SUDOKU_PUZZLES[0]!;
+    for (let row = 0; row < SUDOKU_SIZE; row += 1) {
+      for (let col = 0; col < SUDOKU_SIZE; col += 1) {
+        expect(state.cells[row]![col]).toBe(puzzle[row]![col] ?? null);
+      }
+    }
+  });
+
+  it("난이도 지정 시 그 난이도 풀의 퍼즐로 시작한다(결정적)", () => {
+    const difficulties: SudokuDifficulty[] = ["easy", "medium", "hard"];
+    for (const d of difficulties) {
+      const state = startSudokuGame(new ZeroRandom(), d);
+      const puzzle = SUDOKU_PUZZLES_BY_DIFFICULTY[d][0]!;
+      for (let row = 0; row < SUDOKU_SIZE; row += 1) {
+        for (let col = 0; col < SUDOKU_SIZE; col += 1) {
+          const expected = puzzle[row]![col] !== null && puzzle[row]![col] !== undefined;
+          expect(isSudokuGiven(state, { row, col })).toBe(expected);
+          expect(state.cells[row]![col]).toBe(puzzle[row]![col] ?? null);
+        }
+      }
+      expect(isSudokuSolved(state)).toBe(false);
+    }
   });
 });
