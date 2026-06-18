@@ -32,8 +32,11 @@
 - `placementPreview(placed, next, size, row, col, orientation, boardSize)` — 미리보기 칸 + 유효성(`shipCellsAt`+`isValidPlacement`).
 - `placementComplete(placed, fleet)` · `toggleOrientation(o)` · `placementStatusLabel(placed, fleet)` — 완료 판정·방향 토글·안내 라벨.
 
-### vs CPU 라운드 (`battleshipView.ts`, presentation)
-- `playBattleshipCpuRound(humanBoard, cpuBoard, shot, rng)` — 사람 사격 1발 + 미종료 시 CPU 사격 1발.
+### vs CPU 턴 진행 (`battleshipView.ts`, presentation)
+- `playHumanTurn(cpuBoard, row, col)` — 사람 사격 1발만 진행(CPU 보드 갱신·결과·전 함대 격침 시 outcome=a).
+- `playCpuTurn(humanBoard, rng)` — CPU 사격 1발만 진행(미사격 칸이 없으면 cpuShot=null로 생략).
+  UI는 사람 사격 결과를 먼저 화면에 반영한 뒤 짧은 지연(생각 중) 후 CPU 반격을 드러내려고 두 함수를 단계적으로 호출한다.
+- `playBattleshipCpuRound(humanBoard, cpuBoard, shot, rng)` — 위 두 턴을 한 번에 합성(한 번에 두 턴이 필요한 호출부·테스트용).
   명중해도 한 발씩 교대(단순화). 사람 사격으로 전 함대 격침이면 CPU는 쏘지 않는다.
 
 ## 3. 구현 상태
@@ -42,7 +45,7 @@
 | --- | --- | --- | --- |
 | 도메인 | [`src/domain/battleship.ts`](../../src/domain/battleship.ts) | 보드·배치 검증·사격·격침·전 함대 격침 | ✅ |
 | 애플리케이션 | [`src/application/playBattleship.ts`](../../src/application/playBattleship.ts) | `placeFleetRandomly`·`chooseRandomShot`·`playBattleshipShot` | ✅ |
-| UI | [`src/ui/games/Battleship.tsx`](../../src/ui/games/Battleship.tsx) | 배치 단계(직접/무작위 배치·회전·미리보기) → 사격 단계(두 보드 렌더·사격 클릭·CPU 자동 사격·승패·새 게임) | ✅ |
+| UI | [`src/ui/games/Battleship.tsx`](../../src/ui/games/Battleship.tsx) | 배치 단계(직접/무작위 배치·회전·미리보기) → 사격 단계(두 보드 렌더·사격 클릭·CPU 차례 "생각 중" 단계 표시 후 반격·승패·새 게임) | ✅ |
 | 기록 | `GameId="battleship"` + [`src/ui/records.ts`](../../src/ui/records.ts) | 종료 시 사람=a/CPU=b로 저장 | ✅ |
 
 ## 4. UI/UX 요구사항
@@ -51,6 +54,9 @@
   "무작위 배치"·"초기화"·"이 배치로 시작" 버튼. 배치 완료 후에만 사격 단계 진입(CPU 함대는 무작위). 미리보기는
   색뿐 아니라 외곽선(`--good`/`--bad`)+aria-label로 가능/불가를 구분, 잘못된 위치는 `.error`로 사유 표시.
 - 목적·조작법 한 줄 설명(`.hint`), 현재 진행/승패 표시(`battleshipStatusLabel`).
+- **CPU 차례가 화면에 드러난다(DoD A)**: 사람 사격 직후 결과를 먼저 보여주고, 짧은 지연 동안 상태줄에
+  "CPU 차례: 생각 중…"(`role="status"` aria-live)을 표시한 뒤 CPU 반격 결과를 단계적으로 공개한다(즉시 동시 처리 금지).
+  이 지연 동안 적 보드 사격은 비활성(중복 입력 차단).
 - 미사격/빗나감(○)/명중(✕)/격침(💥)·함선(■)을 색뿐 아니라 기호+aria-label로 구분(`cellView`).
 - 사격 결과 요약(명중/빗나감/`○○함 격침`/전 함대 격침)을 텍스트로 안내(`shotSummary`).
 - 이미 쏜 칸은 비활성, 종료 후 입력 차단, "새 게임" 회복 경로, 좁은 화면 대응(`boardGridStyle`).

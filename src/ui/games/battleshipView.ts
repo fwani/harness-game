@@ -142,13 +142,22 @@ export function shotSummary(
   return `${who} 사격: 빗나감 ○`;
 }
 
-/** 진행 상태 라벨: 종료면 승자, 아니면 "사람 차례(클릭해 사격)". */
-export function battleshipStatusLabel(outcome: WinSide | null): string {
+/**
+ * 진행 상태 라벨: 종료면 승자, CPU 차례면 "생각 중", 아니면 "사람 차례(클릭해 사격)".
+ * cpuThinking=true는 사람 사격 직후 CPU 반격을 짧게 지연하는 동안 CPU 차례를 화면에 드러낸다.
+ */
+export function battleshipStatusLabel(
+  outcome: WinSide | null,
+  cpuThinking = false,
+): string {
   if (outcome === HUMAN) {
     return "🎉 사람 승리! 전 함대를 격침했습니다.";
   }
   if (outcome === CPU) {
     return "😢 CPU 승리. 우리 함대가 전멸했습니다.";
+  }
+  if (cpuThinking) {
+    return "CPU 차례: 생각 중… 🤔";
   }
   return "사람 차례: CPU 보드의 칸을 클릭해 사격하세요.";
 }
@@ -278,13 +287,76 @@ export interface BattleshipRoundResult {
   outcome: WinSide | null;
 }
 
+/** 사람 한 발의 결과: 사격 후 CPU 보드 + 사격 결과 + (전 함대 격침 시) 승자. */
+export interface HumanTurnResult {
+  /** 사람이 사격한 뒤의 CPU 보드. */
+  cpuBoard: BattleshipBoard;
+  /** 사람의 사격 결과. */
+  humanShot: BattleshipShotResult;
+  /** 전 함대 격침이면 HUMAN, 아니면 null. */
+  outcome: WinSide | null;
+}
+
+/**
+ * 사람의 한 발만 진행한다(순수·결정적, 입력 불변).
+ * - 사람은 CPU 보드를 사격한다. playBattleshipShot(application)에 위임(규칙 재구현 금지).
+ * - 전 함대 격침이면 outcome=HUMAN(이후 CPU는 쏘지 않는다 — 호출부가 판단).
+ * - 이미 사격한 칸·범위 밖 좌표는 도메인 에러로 전파.
+ * UI는 이 결과를 먼저 화면에 반영한 뒤, 짧은 지연을 두고 playCpuTurn으로 CPU 반격을 드러낸다.
+ */
+export function playHumanTurn(
+  cpuBoard: BattleshipBoard,
+  row: number,
+  col: number,
+): HumanTurnResult {
+  const humanShot = playBattleshipShot(cpuBoard, row, col);
+  return {
+    cpuBoard: humanShot.board,
+    humanShot,
+    outcome: humanShot.fleetDestroyed ? HUMAN : null,
+  };
+}
+
+/** CPU 한 발의 결과: 사격 후 사람 보드 + 사격 좌표·결과 + (전 함대 격침 시) 승자. */
+export interface CpuTurnResult {
+  /** CPU가 사격한 뒤의 사람 보드(쏠 칸이 없으면 입력 그대로). */
+  humanBoard: BattleshipBoard;
+  /** CPU의 사격 좌표·결과(쏠 칸이 없으면 null). */
+  cpuShot: { row: number; col: number; result: BattleshipShotResult } | null;
+  /** 전 함대 격침이면 CPU, 아니면 null. */
+  outcome: WinSide | null;
+}
+
+/**
+ * CPU의 한 발만 진행한다(난수 외 결정적, 입력 불변).
+ * - CPU는 사람 보드를 사격한다. 좌표는 chooseRandomShot(application)으로 고른다(규칙 재구현 금지).
+ * - 미사격 칸이 없으면(이론상 모두 사격됨) cpuShot=null·outcome=null로 사격을 생략한다.
+ */
+export function playCpuTurn(
+  humanBoard: BattleshipBoard,
+  rng: RandomSource,
+): CpuTurnResult {
+  const cpuPick = chooseRandomShot(humanBoard, rng);
+  if (cpuPick === null) {
+    return { humanBoard, cpuShot: null, outcome: null };
+  }
+  const cpuResult = playBattleshipShot(humanBoard, cpuPick.row, cpuPick.col);
+  return {
+    humanBoard: cpuResult.board,
+    cpuShot: { row: cpuPick.row, col: cpuPick.col, result: cpuResult },
+    outcome: cpuResult.fleetDestroyed ? CPU : null,
+  };
+}
+
 /**
  * vs CPU 한 라운드를 진행한다(사람 사격 1발 + 미종료 시 CPU 사격 1발).
  * - 사람은 CPU 보드를, CPU는 사람 보드를 사격한다(2개 보드 관리).
- * - playBattleshipShot/chooseRandomShot(application)에 위임한다(규칙 재구현 금지).
+ * - playHumanTurn/playCpuTurn에 위임한다(규칙 재구현 금지).
  * - 명중해도 한 발씩 교대한다(규칙 단순화). 이미 사격한 칸 지정은 도메인 에러로 전파.
  * - 사람 사격으로 전 함대 격침이면 CPU는 사격하지 않는다(outcome=a).
  * - 입력 보드를 변형하지 않는다(난수 외 결정적 — CPU 좌표만 난수).
+ * 참고: UI는 CPU 차례를 화면에 드러내려고 두 턴을 단계적으로(playHumanTurn→지연→playCpuTurn)
+ * 진행한다. 이 합성 함수는 한 번에 두 턴이 필요한 호출부·테스트용으로 유지한다.
  */
 export function playBattleshipCpuRound(
   humanBoard: BattleshipBoard,
@@ -292,35 +364,24 @@ export function playBattleshipCpuRound(
   shot: { row: number; col: number },
   rng: RandomSource,
 ): BattleshipRoundResult {
-  const humanShot = playBattleshipShot(cpuBoard, shot.row, shot.col);
-  if (humanShot.fleetDestroyed) {
+  const human = playHumanTurn(cpuBoard, shot.row, shot.col);
+  if (human.outcome !== null) {
     return {
-      cpuBoard: humanShot.board,
+      cpuBoard: human.cpuBoard,
       humanBoard,
-      humanShot,
+      humanShot: human.humanShot,
       cpuShot: null,
       outcome: HUMAN,
     };
   }
 
-  const cpuPick = chooseRandomShot(humanBoard, rng);
-  if (cpuPick === null) {
-    // 사람 보드에 쏠 칸이 없으면(이론상 모두 사격됨) CPU는 사격을 생략한다.
-    return {
-      cpuBoard: humanShot.board,
-      humanBoard,
-      humanShot,
-      cpuShot: null,
-      outcome: null,
-    };
-  }
-  const cpuResult = playBattleshipShot(humanBoard, cpuPick.row, cpuPick.col);
+  const cpu = playCpuTurn(humanBoard, rng);
   return {
-    cpuBoard: humanShot.board,
-    humanBoard: cpuResult.board,
-    humanShot,
-    cpuShot: { row: cpuPick.row, col: cpuPick.col, result: cpuResult },
-    outcome: cpuResult.fleetDestroyed ? CPU : null,
+    cpuBoard: human.cpuBoard,
+    humanBoard: cpu.humanBoard,
+    humanShot: human.humanShot,
+    cpuShot: cpu.cpuShot,
+    outcome: cpu.outcome,
   };
 }
 

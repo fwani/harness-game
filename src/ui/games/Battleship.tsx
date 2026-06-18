@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   STANDARD_FLEET,
   createBattleshipBoard,
@@ -21,12 +21,16 @@ import {
   placementComplete,
   placementPreview,
   placementStatusLabel,
-  playBattleshipCpuRound,
+  playCpuTurn,
+  playHumanTurn,
   remainingShips,
   shipName,
   shotSummary,
   toggleOrientation,
 } from "./battleshipView";
+
+// 사람 사격 후 CPU 반격을 이만큼 지연해 "CPU 차례/생각 중"을 화면에 드러낸다(즉시 점프 금지).
+const CPU_THINK_MS = 650;
 
 // 표준 10×10 격자에 표준 함대(5·4·3·3·2)를 배치한다(한 곳에서 바꾼다).
 const BOARD_SIZE = 10;
@@ -53,6 +57,8 @@ interface ViewState {
   humanBoard: BattleshipBoard;
   /** 사격 단계: CPU 함대 보드. */
   cpuBoard: BattleshipBoard;
+  /** 사람 사격 직후 CPU 반격을 기다리는 중(CPU 차례를 화면에 드러내는 상태). */
+  cpuThinking: boolean;
   outcome: WinSide | null;
   /** 직전 라운드의 사격 요약(사람→CPU). 종료 후에도 남겨 마무리 피드백을 제공한다. */
   messages: string[];
@@ -67,6 +73,7 @@ function initialState(): ViewState {
     placementError: null,
     humanBoard: empty,
     cpuBoard: empty,
+    cpuThinking: false,
     outcome: null,
     messages: [],
   };
@@ -78,13 +85,14 @@ function BoardGrid({
   title,
   revealShips,
   onFire,
-  finished,
+  locked,
 }: {
   board: BattleshipBoard;
   title: string;
   revealShips: boolean;
   onFire?: (row: number, col: number) => void;
-  finished: boolean;
+  /** 사격 비활성(게임 종료 또는 CPU 차례 진행 중) — 이미 쏜 칸과 함께 클릭을 막는다. */
+  locked: boolean;
 }) {
   const interactive = onFire !== undefined;
   return (
@@ -110,7 +118,7 @@ function BoardGrid({
                   role="gridcell"
                   className={`cell bs-cell bs-${view.state}`}
                   onClick={() => onFire?.(r, c)}
-                  disabled={finished || view.fired}
+                  disabled={locked || view.fired}
                   aria-label={view.label}
                 >
                   {view.glyph}
@@ -141,6 +149,8 @@ export function Battleship() {
   // 저장소 변경(한 판 기록)에 맞춰 통산 전적·연승 표시를 갱신한다.
   const records = useSyncExternalStore(subscribe, listRecords);
   const streak = selfStreakSummary(records, "battleship");
+  // 한 판당 전적 1회만 기록하기 위한 가드(사람/CPU 어느 수로 끝나든 동일 경로).
+  const recorded = useRef(false);
 
   // 배치 단계에서 R 키로 방향을 회전한다(키보드 접근성).
   useEffect(() => {
@@ -200,49 +210,68 @@ export function Battleship() {
 
   const startFiring = () => {
     if (!complete) return;
+    recorded.current = false;
     setState((s) => ({
       ...s,
       phase: "firing",
       humanBoard: createBattleshipBoard(BOARD_SIZE, s.placed),
       cpuBoard: freshCpuBoard(),
+      cpuThinking: false,
       outcome: null,
       messages: [],
     }));
   };
 
   // ── 사격 단계 핸들러 ──────────────────────────────────────────────
+  // 사람 사격 1발만 즉시 반영하고(결과 표시), 미종료면 cpuThinking을 켜 CPU 차례를 화면에
+  // 드러낸다. 실제 CPU 반격은 아래 effect가 짧은 지연 뒤 진행한다(즉시 점프 금지).
   const fire = (row: number, col: number) => {
-    if (finished) return; // 종료 후 입력 차단.
+    if (finished || state.cpuThinking) return; // 종료/CPU 차례 중 입력 차단.
     if (state.cpuBoard[row]![col]!.hit) return; // 이미 쏜 칸(버튼은 비활성이나 방어적).
 
-    const round = playBattleshipCpuRound(
-      state.humanBoard,
-      state.cpuBoard,
-      { row, col },
-      rng,
-    );
-
-    const messages = [shotSummary("사람", round.humanShot, round.cpuBoard)];
-    if (round.cpuShot) {
-      messages.push(shotSummary("CPU", round.cpuShot.result, round.humanBoard));
-    }
+    const human = playHumanTurn(state.cpuBoard, row, col);
+    const messages = [shotSummary("사람", human.humanShot, human.cpuBoard)];
 
     setState((s) => ({
       ...s,
-      humanBoard: round.humanBoard,
-      cpuBoard: round.cpuBoard,
-      outcome: round.outcome,
+      cpuBoard: human.cpuBoard,
+      // 사람 사격으로 전 함대 격침이면 CPU는 쏘지 않고 즉시 종료(사람 승).
+      outcome: human.outcome,
+      cpuThinking: human.outcome === null,
       messages,
     }));
-
-    // 종료로 막 전환됐을 때 1회 전적을 기록한다(사람=a/CPU=b, 무승부 없음).
-    if (round.outcome !== null) {
-      recordGame("battleship", SELF_PLAYER, "CPU", round.outcome);
-    }
   };
+
+  // CPU 차례: 사람 사격 직후 짧은 지연을 두고 CPU가 한 발 되쏜다. 지연 동안 상태줄에
+  // "CPU 차례: 생각 중…"이 보이고, 그 뒤 CPU 사격 결과가 드러난다(단계적 진행).
+  useEffect(() => {
+    if (!state.cpuThinking) return;
+    const timer = setTimeout(() => {
+      const cpu = playCpuTurn(state.humanBoard, rng);
+      const extra = cpu.cpuShot
+        ? [shotSummary("CPU", cpu.cpuShot.result, cpu.humanBoard)]
+        : [];
+      setState((s) => ({
+        ...s,
+        humanBoard: cpu.humanBoard,
+        outcome: cpu.outcome,
+        cpuThinking: false,
+        messages: [...s.messages, ...extra],
+      }));
+    }, CPU_THINK_MS);
+    return () => clearTimeout(timer);
+  }, [state.cpuThinking, state.humanBoard]);
+
+  // 종료로 전환되면(사람/CPU 어느 수로든) 결과를 전적에 1회만 기록한다(사람=a/CPU=b, 무승부 없음).
+  useEffect(() => {
+    if (state.outcome === null || recorded.current) return;
+    recorded.current = true;
+    recordGame("battleship", SELF_PLAYER, "CPU", state.outcome);
+  }, [state.outcome]);
 
   const newGame = () => {
     setHover(null);
+    recorded.current = false;
     setState(initialState());
   };
 
@@ -281,8 +310,12 @@ export function Battleship() {
             </button>
           </div>
 
-          <p className={finished ? "outcome" : "hint"}>
-            {battleshipStatusLabel(state.outcome)}
+          <p
+            className={finished ? "outcome" : "hint"}
+            role="status"
+            aria-live="polite"
+          >
+            {battleshipStatusLabel(state.outcome, state.cpuThinking)}
           </p>
 
           {state.messages.length > 0 && (
@@ -299,9 +332,9 @@ export function Battleship() {
               title="적 함대 (CPU) — 클릭해 사격"
               revealShips={finished}
               onFire={fire}
-              finished={finished}
+              locked={finished || state.cpuThinking}
             />
-            <BoardGrid board={state.humanBoard} title="내 함대" revealShips finished={finished} />
+            <BoardGrid board={state.humanBoard} title="내 함대" revealShips locked={finished} />
           </div>
 
           {finished && (
