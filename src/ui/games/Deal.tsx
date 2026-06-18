@@ -2,7 +2,12 @@ import { useState } from "react";
 import { createDeck, type Card, type Suit } from "../../domain/card";
 import { shuffle, deal, type DealResult } from "../../application/dealCards";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
-import { validateDealInput, dealFailureMessage } from "./dealView";
+import {
+  validateDealInput,
+  dealFailureMessage,
+  MAX_PLAYERS,
+  MAX_PER_PLAYER,
+} from "./dealView";
 
 const rng = new MathRandomSource();
 
@@ -59,7 +64,7 @@ export function Deal() {
           <input
             type="number"
             min={1}
-            max={8}
+            max={MAX_PLAYERS}
             value={players}
             onChange={(e) => setPlayers(Number(e.target.value))}
           />
@@ -69,7 +74,7 @@ export function Deal() {
           <input
             type="number"
             min={0}
-            max={13}
+            max={MAX_PER_PLAYER}
             value={perPlayer}
             onChange={(e) => setPerPlayer(Number(e.target.value))}
           />

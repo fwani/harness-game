@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { validateDealInput, dealFailureMessage } from "./dealView";
+import {
+  validateDealInput,
+  dealFailureMessage,
+  MAX_PLAYERS,
+  MAX_PER_PLAYER,
+} from "./dealView";
 
 const DECK = 52;
 
@@ -27,6 +32,34 @@ describe("validateDealInput", () => {
     expect(validateDealInput(2.5, 5, DECK)).toEqual({
       ok: false,
       reason: "인원은 1명 이상이어야 합니다.",
+    });
+  });
+
+  it("인원 상한(8명)은 통과", () => {
+    expect(validateDealInput(MAX_PLAYERS, 0, DECK)).toEqual({
+      ok: true,
+      reason: null,
+    });
+  });
+
+  it("인원이 상한(8명)을 넘으면 한국어 사유로 거부(이슈 #485: max 미강제 회귀)", () => {
+    const v = validateDealInput(20, 2, DECK);
+    expect(v.ok).toBe(false);
+    expect(v.reason).toBe("인원은 8명 이하여야 합니다.");
+    expect(v.reason).not.toMatch(/got|integer|max/i);
+  });
+
+  it("1인당이 상한(13장)을 넘으면 한국어 사유로 거부(인원=1, 1인당=52)", () => {
+    const v = validateDealInput(1, 52, DECK);
+    expect(v.ok).toBe(false);
+    expect(v.reason).toBe("1인당 카드 수는 13장 이하여야 합니다.");
+    expect(v.reason).not.toMatch(/got|integer|max/i);
+  });
+
+  it("1인당 상한(13장) 경계는 통과", () => {
+    expect(validateDealInput(1, MAX_PER_PLAYER, DECK)).toEqual({
+      ok: true,
+      reason: null,
     });
   });
 

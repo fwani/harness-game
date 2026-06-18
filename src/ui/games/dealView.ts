@@ -3,6 +3,11 @@
 // 분배 규칙 자체는 application(deal)을 호출해 수행하며 여기서 재구현하지 않는다.
 // 이 파일은 "플레이어용 한국어 사유 메시지" 생성만 담당한다(영어 내부 예외 노출 방지).
 
+/** 인원 상한(명). 입력란 max 속성과 동일하게 유지해 선언·동작을 일치시킨다. */
+export const MAX_PLAYERS = 8;
+/** 1인당 카드 수 상한(장). 입력란 max 속성과 동일하게 유지한다. */
+export const MAX_PER_PLAYER = 13;
+
 /** 입력 검증 결과(불변, 결정적). 정상이면 reason은 null. */
 export interface DealValidation {
   ok: boolean;
@@ -14,8 +19,11 @@ export interface DealValidation {
  * 딜 입력(인원·1인당 장수)을 덱 크기에 비추어 검증하고, 잘못된 경우
  * 플레이어용 한국어 사유를 돌려준다(불변, 결정적).
  * - 인원이 정수 1 이상이 아니면: "인원은 1명 이상이어야 합니다."
+ * - 인원이 상한(MAX_PLAYERS)을 넘으면: "인원은 8명 이하여야 합니다."
  * - 1인당 장수가 정수 0 이상이 아니면: "1인당 카드 수는 0장 이상이어야 합니다."
+ * - 1인당 장수가 상한(MAX_PER_PLAYER)을 넘으면: "1인당 카드 수는 13장 이하여야 합니다."
  * - 필요한 카드 수(인원 × 1인당)가 덱 크기를 초과하면: 카드 부족 사유.
+ * 입력란 max는 직접 타이핑한 값에는 강제되지 않으므로 상한도 여기서 검증한다.
  * application의 deal()이 같은 조건에서 영어 예외를 던지지만, 그 메시지는
  * 개발자용이라 화면에 노출하지 않고 이 함수의 한국어 사유를 쓴다.
  */
@@ -27,8 +35,17 @@ export function validateDealInput(
   if (!Number.isInteger(players) || players < 1) {
     return { ok: false, reason: "인원은 1명 이상이어야 합니다." };
   }
+  if (players > MAX_PLAYERS) {
+    return { ok: false, reason: `인원은 ${MAX_PLAYERS}명 이하여야 합니다.` };
+  }
   if (!Number.isInteger(perPlayer) || perPlayer < 0) {
     return { ok: false, reason: "1인당 카드 수는 0장 이상이어야 합니다." };
+  }
+  if (perPlayer > MAX_PER_PLAYER) {
+    return {
+      ok: false,
+      reason: `1인당 카드 수는 ${MAX_PER_PLAYER}장 이하여야 합니다.`,
+    };
   }
   const needed = players * perPlayer;
   if (needed > deckSize) {
