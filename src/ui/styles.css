@@ -2220,3 +2220,50 @@ button.dots-edge:disabled {
 .controls.num-pad {
   flex-wrap: wrap;
 }
+
+/* 비나이로(Binairo·Takuzu) 보드 — 스도쿠와 같은 결의 격자. */
+.board.binairo {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.binairo-cell {
+  position: relative;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 0.5px solid #b9b08a;
+}
+
+/* 고정 단서: 굵게 + 구분 바탕(흐리게 처리하지 않는다). */
+.binairo-cell.given {
+  font-weight: 800;
+  color: #111827;
+  background: #ece4c9;
+  opacity: 1;
+}
+
+.binairo-cell:disabled {
+  cursor: default;
+}
+
+.binairo-cell:not(:disabled):hover,
+.binairo-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.binairo-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.binairo-cell .binairo-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
