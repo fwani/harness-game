@@ -11,10 +11,16 @@ import {
   cellView,
   coordLabel,
   isCellSunk,
+  nextShipSize,
+  placeShipAt,
+  placementComplete,
+  placementPreview,
+  placementStatusLabel,
   playBattleshipCpuRound,
   remainingShips,
   shipName,
   shotSummary,
+  toggleOrientation,
 } from "./battleshipView";
 
 /** 주어진 인덱스 시퀀스를 순서대로 돌려주는 결정적 가짜 난수(테스트 전용). */
@@ -165,6 +171,95 @@ describe("remainingShips", () => {
     expect(remainingShips(board)).toBe(2);
     const afterSink = fireShot(fireShot(board, 0, 0), 0, 1); // 구축함 격침.
     expect(remainingShips(afterSink)).toBe(1);
+  });
+});
+
+describe("함선 수동 배치 헬퍼", () => {
+  const fleet = [3, 2];
+
+  describe("nextShipSize", () => {
+    it("배치 순서대로 다음 함선 길이를 주고, 모두 배치되면 null", () => {
+      expect(nextShipSize([], fleet)).toBe(3);
+      const one: Ship = { id: "ship-0", row: 0, col: 0, size: 3, orientation: "h" };
+      expect(nextShipSize([one], fleet)).toBe(2);
+      const two: Ship = { id: "ship-1", row: 2, col: 0, size: 2, orientation: "h" };
+      expect(nextShipSize([one, two], fleet)).toBeNull();
+    });
+  });
+
+  describe("toggleOrientation", () => {
+    it("가로↔세로를 토글한다", () => {
+      expect(toggleOrientation("h")).toBe("v");
+      expect(toggleOrientation("v")).toBe("h");
+    });
+  });
+
+  describe("placeShipAt", () => {
+    it("유효한 위치면 함선을 추가하고 ok=true(올바른 id 인덱스)", () => {
+      const r = placeShipAt([], 0, 3, 0, 0, "h", 5);
+      expect(r.ok).toBe(true);
+      expect(r.ships).toEqual([{ id: "ship-0", row: 0, col: 0, size: 3, orientation: "h" }]);
+    });
+
+    it("범위를 벗어나면 ok=false, ships 불변", () => {
+      const r = placeShipAt([], 0, 3, 0, 3, "h", 5); // (0,3)(0,4)(0,5) → 5 밖
+      expect(r.ok).toBe(false);
+      expect(r.ships).toEqual([]);
+    });
+
+    it("기존 함선과 겹치면 ok=false, ships 불변", () => {
+      const placed: Ship[] = [{ id: "ship-0", row: 0, col: 0, size: 3, orientation: "h" }];
+      const r = placeShipAt(placed, 1, 2, 0, 2, "v", 5); // (0,2)가 기존 함선과 겹침
+      expect(r.ok).toBe(false);
+      expect(r.ships).toEqual(placed);
+    });
+
+    it("회전(세로)으로도 배치된다", () => {
+      const r = placeShipAt([], 0, 3, 0, 0, "v", 5);
+      expect(r.ok).toBe(true);
+      expect(r.ships[0]!.orientation).toBe("v");
+    });
+  });
+
+  describe("placementComplete", () => {
+    it("배치 수가 함대 수에 도달하면 true", () => {
+      expect(placementComplete([], fleet)).toBe(false);
+      const ships: Ship[] = [
+        { id: "ship-0", row: 0, col: 0, size: 3, orientation: "h" },
+        { id: "ship-1", row: 2, col: 0, size: 2, orientation: "h" },
+      ];
+      expect(placementComplete(ships, fleet)).toBe(true);
+    });
+  });
+
+  describe("placementPreview", () => {
+    it("후보 칸과 유효성을 함께 준다(겹침이면 valid=false지만 칸은 계산)", () => {
+      const placed: Ship[] = [{ id: "ship-0", row: 0, col: 0, size: 3, orientation: "h" }];
+      const ok = placementPreview(placed, 1, 2, 2, 0, "h", 5);
+      expect(ok.cells).toEqual([
+        [2, 0],
+        [2, 1],
+      ]);
+      expect(ok.valid).toBe(true);
+
+      const bad = placementPreview(placed, 1, 2, 0, 2, "v", 5); // (0,2) 겹침
+      expect(bad.cells).toEqual([
+        [0, 2],
+        [1, 2],
+      ]);
+      expect(bad.valid).toBe(false);
+    });
+  });
+
+  describe("placementStatusLabel", () => {
+    it("다음 함종 안내, 완료 시 시작 안내", () => {
+      expect(placementStatusLabel([], fleet)).toContain("순양함");
+      const ships: Ship[] = [
+        { id: "ship-0", row: 0, col: 0, size: 3, orientation: "h" },
+        { id: "ship-1", row: 2, col: 0, size: 2, orientation: "h" },
+      ];
+      expect(placementStatusLabel(ships, fleet)).toContain("완료");
+    });
   });
 });
 

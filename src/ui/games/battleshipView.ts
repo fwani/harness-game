@@ -2,8 +2,8 @@
 // 컴포넌트를 얇게 유지하고 DOM 없이 단위 테스트할 수 있게 한다. 보드 모델·사격·격침·전 함대
 // 격침 판정 규칙은 domain(battleship)·application(playBattleship)을 재사용하며 여기서 재구현하지
 // 않는다(표시용 변환, 입력 불변). minesweeperView/mukjjippaView와 동일 패턴.
-import type { BattleshipBoard, Cell } from "../../domain/battleship";
-import { isShipSunk } from "../../domain/battleship";
+import type { BattleshipBoard, Cell, Ship } from "../../domain/battleship";
+import { isShipSunk, isValidPlacement, shipCellsAt } from "../../domain/battleship";
 import {
   chooseRandomShot,
   playBattleshipShot,
@@ -170,6 +170,98 @@ export function remainingShips(board: BattleshipBoard): number {
     }
   }
   return alive;
+}
+
+// ── 함선 수동 배치 단계(사격 전 셋업) 헬퍼 ─────────────────────────────
+// 사격 단계 전에 사람이 자기 함대를 한 척씩 직접 배치한다. 도메인 배치 검증(isValidPlacement)·
+// 칸 계산(shipCellsAt)을 재사용하며(규칙 재구현 금지), 순수·결정적(입력 불변)이다.
+// UI(Battleship.tsx)는 이 상태 전이를 호출해 배치 단계를 구성한다.
+
+/**
+ * 다음에 배치할 함선의 길이를 돌려준다(이미 배치된 수 기준). 모두 배치했으면 null.
+ * fleet 순서대로 배치한다고 가정한다(placeFleetRandomly의 id 규약 `ship-${i}`와 동일 인덱스).
+ */
+export function nextShipSize(
+  placed: ReadonlyArray<Ship>,
+  fleet: ReadonlyArray<number>,
+): number | null {
+  return placed.length < fleet.length ? fleet[placed.length]! : null;
+}
+
+/**
+ * 현재 배치 중인 함선을 후보 위치(시작 좌표·방향)에 놓는다(순수·결정적, 입력 불변).
+ * - id는 배치 순서 인덱스 `next`로 `ship-${next}`(placeFleetRandomly 규약과 동일).
+ * - 도메인 isValidPlacement로 기존 함선들과 함께 겹침·범위를 검증한다(규칙 재구현 금지).
+ * - 유효하면 { ships: [...placed, candidate], ok: true }, 아니면 { ships: placed(그대로), ok: false }.
+ */
+export function placeShipAt(
+  placed: ReadonlyArray<Ship>,
+  next: number,
+  size: number,
+  row: number,
+  col: number,
+  orientation: "h" | "v",
+  boardSize: number,
+): { ships: Ship[]; ok: boolean } {
+  const candidate: Ship = { id: `ship-${next}`, row, col, size, orientation };
+  const ships = [...placed, candidate];
+  if (isValidPlacement(boardSize, ships)) {
+    return { ships, ok: true };
+  }
+  return { ships: [...placed], ok: false };
+}
+
+/** 모든 함선이 배치됐는지(배치 수 ≥ 함대 수). */
+export function placementComplete(
+  placed: ReadonlyArray<Ship>,
+  fleet: ReadonlyArray<number>,
+): boolean {
+  return placed.length >= fleet.length;
+}
+
+/** 방향 회전 토글(수평 ↔ 수직). */
+export function toggleOrientation(orientation: "h" | "v"): "h" | "v" {
+  return orientation === "h" ? "v" : "h";
+}
+
+/** 배치 미리보기: 후보 함선이 놓일 칸들 + 그 위치가 유효한지(겹침/범위). */
+export interface PlacementPreview {
+  /** 후보 함선이 점유할 칸([row,col][]). 범위 밖 칸도 포함될 수 있다(하이라이트는 호출부에서). */
+  cells: Array<[number, number]>;
+  /** 이 위치에 실제로 놓을 수 있는지(isValidPlacement). */
+  valid: boolean;
+}
+
+/**
+ * 후보 위치의 미리보기 정보를 만든다(순수·결정적, 입력 불변).
+ * - cells: shipCellsAt로 계산한 점유 예정 칸.
+ * - valid: 기존 함선들과 함께 isValidPlacement(겹침/범위) 통과 여부.
+ */
+export function placementPreview(
+  placed: ReadonlyArray<Ship>,
+  next: number,
+  size: number,
+  row: number,
+  col: number,
+  orientation: "h" | "v",
+  boardSize: number,
+): PlacementPreview {
+  const cells = shipCellsAt(row, col, size, orientation);
+  const candidate: Ship = { id: `ship-${next}`, row, col, size, orientation };
+  return { cells, valid: isValidPlacement(boardSize, [...placed, candidate]) };
+}
+
+/** 배치 단계 안내 라벨(다음 배치할 함종/완료 여부). */
+export function placementStatusLabel(
+  placed: ReadonlyArray<Ship>,
+  fleet: ReadonlyArray<number>,
+): string {
+  const size = nextShipSize(placed, fleet);
+  if (size === null) {
+    return "모든 함선 배치 완료! '이 배치로 시작'을 눌러 사격을 시작하세요.";
+  }
+  const remaining = fleet.length - placed.length;
+  return `${shipName(size)}(길이 ${size})을 배치하세요. 남은 함선 ${remaining}척. 클릭=배치 · R=회전.`;
 }
 
 /** vs CPU 한 라운드 진행 결과: 양측 보드 + 양측 사격 결과 + 승자. */

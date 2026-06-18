@@ -69,6 +69,20 @@ function shipCells(ship: Ship): Array<[number, number]> {
 }
 
 /**
+ * 시작 좌표(row,col)·길이(size)·방향(orientation)으로 한 함선이 점유할 칸 목록을 계산한다.
+ * 내부 `shipCells`를 재사용한다(규칙 재구현 금지). 함선 한 척을 임시 미리보기/배치 후보로
+ * 그릴 때 쓴다. 비정상 입력(정수 아님·size<1·잘못된 방향)이면 빈 배열을 반환한다(검증은 호출부).
+ */
+export function shipCellsAt(
+  row: number,
+  col: number,
+  size: number,
+  orientation: "h" | "v",
+): Array<[number, number]> {
+  return shipCells({ id: "", row, col, size, orientation });
+}
+
+/**
  * 함선 배치가 유효한지 검증한다(범위·겹침만; 인접은 허용).
  * - size가 정수 >=1 이 아니거나 비정상 함선이 있으면 false.
  * - 어떤 함선 칸이 격자 밖(0..size-1)이면 false.
