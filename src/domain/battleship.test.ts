@@ -6,6 +6,7 @@ import {
   STANDARD_FLEET,
   createBattleshipBoard,
   isValidPlacement,
+  shipCellsAt,
   fireShot,
   isHit,
   isShipSunk,
@@ -48,6 +49,27 @@ describe("isValidPlacement", () => {
     expect(isValidPlacement(5, [{ id: "z", row: 0, col: 0, size: 0, orientation: "h" }])).toBe(
       false,
     );
+  });
+});
+
+describe("shipCellsAt", () => {
+  it("가로 함선은 열 증가 방향으로 칸을 만든다", () => {
+    expect(shipCellsAt(1, 2, 3, "h")).toEqual([
+      [1, 2],
+      [1, 3],
+      [1, 4],
+    ]);
+  });
+
+  it("세로 함선은 행 증가 방향으로 칸을 만든다", () => {
+    expect(shipCellsAt(0, 0, 2, "v")).toEqual([
+      [0, 0],
+      [1, 0],
+    ]);
+  });
+
+  it("비정상 입력(size<1)이면 빈 배열", () => {
+    expect(shipCellsAt(0, 0, 0, "h")).toEqual([]);
   });
 });
 

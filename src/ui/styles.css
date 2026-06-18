@@ -980,6 +980,17 @@ header h1 {
   background: #7f1d1d;
 }
 
+/* 배치 단계 미리보기: 색만이 아니라 외곽선 + aria-label로 가능/불가를 구분. */
+.bs-cell.bs-preview-ok {
+  outline: 2px solid var(--good);
+  outline-offset: -2px;
+}
+
+.bs-cell.bs-preview-bad {
+  outline: 2px solid var(--bad);
+  outline-offset: -2px;
+}
+
 /* 사격 결과 로그: 색만이 아니라 텍스트(명중/빗나감/격침)로 안내. */
 .bs-log {
   margin: 0.25rem 0 0.75rem;
