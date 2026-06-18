@@ -30,6 +30,7 @@ import { Nim } from "./games/Nim";
 import { Battleship } from "./games/Battleship";
 import { Hanoi } from "./games/Hanoi";
 import { SlidePuzzle } from "./games/SlidePuzzle";
+import { LightsOut } from "./games/LightsOut";
 import { PegSolitaire } from "./games/PegSolitaire";
 import { Sokoban } from "./games/Sokoban";
 import { FloodIt } from "./games/FloodIt";
@@ -46,6 +47,7 @@ import { Binairo } from "./games/Binairo";
 import { Futoshiki } from "./games/Futoshiki";
 import { Hitori } from "./games/Hitori";
 import { KenKen } from "./games/KenKen";
+import { Skyscrapers } from "./games/Skyscrapers";
 import { Ladder } from "./games/Ladder";
 import { SelfPlay } from "./games/SelfPlay";
 import { Tournament } from "./games/Tournament";
@@ -92,6 +94,7 @@ const RENDERERS: Record<GameKey, () => JSX.Element> = {
   battleship: () => <Battleship />,
   hanoi: () => <Hanoi />,
   slidepuzzle: () => <SlidePuzzle />,
+  lightsout: () => <LightsOut />,
   pegsolitaire: () => <PegSolitaire />,
   sokoban: () => <Sokoban />,
   floodit: () => <FloodIt />,
@@ -108,6 +111,7 @@ const RENDERERS: Record<GameKey, () => JSX.Element> = {
   futoshiki: () => <Futoshiki />,
   hitori: () => <Hitori />,
   kenken: () => <KenKen />,
+  skyscrapers: () => <Skyscrapers />,
   ladder: () => <Ladder />,
   selfplay: () => <SelfPlay />,
   tournament: () => <Tournament />,

@@ -33,6 +33,7 @@ export type GameKey =
   | "battleship"
   | "hanoi"
   | "slidepuzzle"
+  | "lightsout"
   | "pegsolitaire"
   | "sokoban"
   | "floodit"
@@ -49,6 +50,7 @@ export type GameKey =
   | "futoshiki"
   | "hitori"
   | "kenken"
+  | "skyscrapers"
   | "ladder"
   | "selfplay"
   | "tournament"
@@ -115,6 +117,7 @@ export const GAME_CATALOG: GameMeta[] = [
   { key: "minesweeper", label: "지뢰찾기", category: "퍼즐(1인)" },
   { key: "hanoi", label: "하노이탑", category: "퍼즐(1인)" },
   { key: "slidepuzzle", label: "슬라이드 퍼즐", category: "퍼즐(1인)" },
+  { key: "lightsout", label: "라이트 아웃", category: "퍼즐(1인)" },
   { key: "pegsolitaire", label: "페그 솔리테어", category: "퍼즐(1인)" },
   { key: "sokoban", label: "소코반", category: "퍼즐(1인)" },
   { key: "floodit", label: "플러드 잇", category: "퍼즐(1인)" },
@@ -128,6 +131,7 @@ export const GAME_CATALOG: GameMeta[] = [
   { key: "futoshiki", label: "후토시키", category: "퍼즐(1인)" },
   { key: "hitori", label: "히토리", category: "퍼즐(1인)" },
   { key: "kenken", label: "켄켄", category: "퍼즐(1인)" },
+  { key: "skyscrapers", label: "마천루", category: "퍼즐(1인)" },
   { key: "ladder", label: "사다리타기", category: "도구/기타" },
   { key: "selfplay", label: "관전", category: "도구/기타" },
   { key: "tournament", label: "토너먼트", category: "도구/기타" },

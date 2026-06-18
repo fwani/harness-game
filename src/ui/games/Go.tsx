@@ -7,6 +7,7 @@ import { goErrorMessage } from "./goView";
 import { chooseCpuGoMove } from "./goCpuView";
 import { recordGame, type WinSide } from "../records";
 import { boardGridStyle } from "./boardView";
+import { useBoardNavigation } from "./useBoardNavigation";
 
 const SIZE = 9;
 
@@ -23,6 +24,10 @@ export function Go() {
   const [error, setError] = useState<string | null>(null);
   // vs CPU에서 CPU가 둘 곳이 없어 패스했을 때의 안내(기존 자동 패스 안내 패턴).
   const [notice, setNotice] = useState<string | null>(null);
+  const { setCellRef, onKeyDown, tabIndexFor, focusOn } = useBoardNavigation(
+    SIZE,
+    SIZE,
+  );
 
   // 모드별 플레이어 라벨. vs CPU에서는 사람(흑)="나" / CPU(백)="CPU".
   const label = (stone: Stone): string =>
@@ -70,7 +75,12 @@ export function Go() {
   };
 
   const place = (x: number, y: number) => {
+    focusOn(x, y);
     if (state.finished) {
+      return;
+    }
+    // 이미 돌이 있는 칸은 둘 수 없다(기존 비활성 칸 동작 유지: no-op).
+    if (state.board[y]![x] !== null) {
       return;
     }
     // vs CPU: 사람(흑) 차례에만 입력을 받는다(CPU 차례 입력 차단).
@@ -159,14 +169,23 @@ export function Go() {
         </p>
       )}
       {notice && !state.finished && <p className="hint">{notice}</p>}
-      <div className="board go" style={boardGridStyle(SIZE)}>
+      <div
+        className="board go"
+        style={boardGridStyle(SIZE)}
+        role="grid"
+        aria-label="바둑 보드 (방향 키로 칸 이동, Enter/Space로 착수)"
+        onKeyDown={onKeyDown}
+      >
         {state.board.map((row, y) =>
           row.map((cell, x) => (
             <button
               key={`${x},${y}`}
+              ref={setCellRef(x, y)}
               className="cell"
+              role="gridcell"
+              tabIndex={tabIndexFor(x, y)}
               onClick={() => place(x, y)}
-              disabled={cell !== null || blockBoard}
+              aria-disabled={cell !== null || blockBoard}
               aria-label={
                 cell
                   ? `${x + 1}열 ${y + 1}행 ${label(cell)}`
