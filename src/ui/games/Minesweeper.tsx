@@ -19,26 +19,31 @@ import {
   type MineReveal,
   type MinesweeperStatusKind,
 } from "./minesweeperView";
+import {
+  MINESWEEPER_DIFFICULTIES,
+  normalizeMinesweeperDifficulty,
+  type MinesweeperDifficulty,
+} from "./minesweeperStartOptionsView";
 
 /** 입력 모드: 좌클릭/Enter·Space가 칸을 "열기" 또는 "깃발" 토글 중 무엇을 하는지. */
 type InputMode = "open" | "flag";
-
-// 기본 보드: 9×9, 지뢰 10개(초급 난이도). 상수로 정의해 한 곳에서 바꾼다.
-const ROWS = 9;
-const COLS = 9;
-const MINES = 10;
 
 // 난수는 infrastructure 어댑터로 application에 주입한다(UI에서 Math.random 직접 사용 금지).
 const rng = new MathRandomSource();
 
 /** 마운트/새 게임 시의 빈(지뢰 없는) 보드 — 첫 클릭 전까지 표시용. 첫 클릭에 지뢰를 안전하게 배치한다. */
-function emptyBoard(): Board {
-  return startMinesweeperGame(ROWS, COLS, 0, rng);
+function emptyBoard(difficulty: MinesweeperDifficulty): Board {
+  return startMinesweeperGame(difficulty.rows, difficulty.cols, 0, rng);
 }
 
 export function Minesweeper() {
+  // 시작 화면에서 고른 난이도 프리셋(보드 크기·지뢰 수). 기본 초급(9×9·💣10).
+  // 진행 중 보드는 항상 이 프리셋의 크기/지뢰 수를 따른다(선택 시 즉시 새 게임).
+  const [difficulty, setDifficulty] = useState<MinesweeperDifficulty>(() =>
+    normalizeMinesweeperDifficulty(),
+  );
   // 첫 클릭이 안전하도록 지뢰 배치는 첫 클릭 때까지 미룬다(started=false면 placeholder 보드).
-  const [board, setBoard] = useState<Board>(() => emptyBoard());
+  const [board, setBoard] = useState<Board>(() => emptyBoard(difficulty));
   const [started, setStarted] = useState(false);
   const [status, setStatus] = useState<MinesweeperStatusKind>("playing");
   // 입력 모드(열기/깃발) — 터치·키보드 사용자가 우클릭 없이 깃발을 토글할 수 있게 한다.
@@ -90,7 +95,13 @@ export function Minesweeper() {
     if (!started) {
       // 첫 클릭: 그 자리를 exclude로 넘겨 지뢰가 없는 안전한 보드를 만든 뒤 연다.
       // 첫 수 전에 꽂아 둔 깃발은 새 보드에 그대로 옮겨 유지한다.
-      let fresh = startMinesweeperGame(ROWS, COLS, MINES, rng, [row, col]);
+      let fresh = startMinesweeperGame(
+        difficulty.rows,
+        difficulty.cols,
+        difficulty.mines,
+        rng,
+        [row, col],
+      );
       board.forEach((rowCells, r) =>
         rowCells.forEach((cell, c) => {
           if (cell.flagged) {
@@ -121,18 +132,25 @@ export function Minesweeper() {
     flag(row, col);
   };
 
-  const newGame = () => {
-    setBoard(emptyBoard());
+  // 현재(또는 새로) 선택한 난이도로 새 게임을 시작한다(진행 중 보드 리셋·입력 안내 초기화).
+  const resetWith = (next: MinesweeperDifficulty) => {
+    setDifficulty(next);
+    setBoard(emptyBoard(next));
     setStarted(false);
     setStatus("playing");
     setNotice("");
   };
 
+  const newGame = () => resetWith(difficulty);
+
+  // 난이도 버튼: 선택한 프리셋으로 즉시 새 게임을 시작한다(진행 중 보드는 리셋).
+  const selectDifficulty = (next: MinesweeperDifficulty) => resetWith(next);
+
   // "남은 칸"은 아직 열지 않은 "안전한"(지뢰 아닌) 칸 수다. 모두 열면 0이 되어 승리와 일치한다
   // (미공개 지뢰를 포함하던 기존 countHidden은 승리 시 항상 지뢰 수만큼 남아 메시지와 모순됐다).
   const safeHidden = countSafeHidden(board);
   // 남은 지뢰 수 = 지뢰 총수 − 깃발 수(표준 카운터). 깃발을 더 꽂으면 음수가 될 수 있다.
-  const minesLeft = remainingMines(board, MINES);
+  const minesLeft = remainingMines(board, difficulty.mines);
 
   return (
     <section className="game">
@@ -140,8 +158,24 @@ export function Minesweeper() {
       <p className="hint">
         칸을 클릭(또는 Enter/Space)해 엽니다. 숫자는 인접한 8칸의 지뢰 수입니다. 지뢰가 의심되는
         칸은 <strong>우클릭</strong>(또는 아래 깃발 모드)으로 🚩 깃발을 꽂아 보호하세요. 지뢰를 밟지
-        않고 모든 안전한 칸을 열면 승리입니다. 첫 클릭은 항상 안전합니다.
+        않고 모든 안전한 칸을 열면 승리입니다. 첫 클릭은 항상 안전합니다. 아래에서 난이도를
+        고르면 그 크기·지뢰 수로 새 게임이 시작됩니다.
       </p>
+
+      <div className="controls" role="group" aria-label="난이도 선택">
+        <span className="hint">난이도:</span>
+        {MINESWEEPER_DIFFICULTIES.map((d) => (
+          <button
+            key={d.id}
+            type="button"
+            className={difficulty.id === d.id ? "primary" : ""}
+            onClick={() => selectDifficulty(d)}
+            aria-pressed={difficulty.id === d.id}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
 
       <div className="controls" role="group" aria-label="입력 모드">
         <button
@@ -164,8 +198,8 @@ export function Minesweeper() {
 
       <div className="controls">
         <span className="hint">
-          남은 지뢰 <strong>{minesLeft}</strong> (지뢰 {MINES} − 깃발 {MINES - minesLeft}) · 남은 안전
-          칸 <strong>{safeHidden}</strong>
+          남은 지뢰 <strong>{minesLeft}</strong> (지뢰 {difficulty.mines} − 깃발{" "}
+          {difficulty.mines - minesLeft}) · 남은 안전 칸 <strong>{safeHidden}</strong>
         </span>
         <button type="button" className="primary" onClick={newGame}>
           새 게임
@@ -188,7 +222,7 @@ export function Minesweeper() {
         className="board minesweeper"
         role="grid"
         aria-label="지뢰찾기 보드"
-        style={boardGridStyle(COLS)}
+        style={boardGridStyle(difficulty.cols)}
       >
         {board.map((rowCells, r) =>
           rowCells.map((cell, c) => {
