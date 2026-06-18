@@ -98,6 +98,16 @@ export function cellView(
   };
 }
 
+/**
+ * 사격 보드 칸이 클릭 불가(비활성)인지: 게임이 끝났거나 이미 사격한 칸.
+ * 호출부는 이 값을 네이티브 `disabled`가 아니라 `aria-disabled`로 표시하고(컨벤션 #227:
+ * 키보드 포커스로 건너갈 수 있어야 로빙 탭인덱스가 동작하고, `.cell[aria-disabled="true"]`가
+ * cursor:default 예외를 받아 잘못된 클릭 어포던스가 사라진다), true면 onClick을 무시한다.
+ */
+export function fireCellDisabled(finished: boolean, fired: boolean): boolean {
+  return finished || fired;
+}
+
 /** 함선 길이 → 한국어 함종명(색 비의존 표시·격침 안내용). */
 export function shipName(size: number): string {
   switch (size) {

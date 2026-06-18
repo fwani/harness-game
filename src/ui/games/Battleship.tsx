@@ -17,6 +17,7 @@ import {
   coordLabel,
   type CpuDifficulty,
   difficultyLabel,
+  fireCellDisabled,
   isCellSunk,
   nextShipSize,
   placeShipAt,
@@ -108,14 +109,20 @@ function BoardGrid({
               sunk: isCellSunk(board, cell),
             });
             if (interactive) {
+              // 네이티브 disabled 대신 aria-disabled로 비활성 표시(#227): 키보드 포커스로
+              // 건너갈 수 있고 .cell[aria-disabled] cursor:default 예외를 받아 잘못된 클릭
+              // 어포던스가 사라진다. disabled면 onClick은 무시한다.
+              const disabled = fireCellDisabled(finished, view.fired);
               return (
                 <button
                   key={`${r},${c}`}
                   type="button"
                   role="gridcell"
                   className={`cell bs-cell bs-${view.state}`}
-                  onClick={() => onFire?.(r, c)}
-                  disabled={finished || view.fired}
+                  onClick={() => {
+                    if (!disabled) onFire?.(r, c);
+                  }}
+                  aria-disabled={disabled}
                   aria-label={view.label}
                 >
                   {view.glyph}
@@ -447,10 +454,12 @@ function PlacementPhase({
                     type="button"
                     role="gridcell"
                     className={`cell bs-cell bs-${view.state}${previewClass}`}
-                    onClick={() => onPlace(r, c)}
+                    onClick={() => {
+                      if (!complete) onPlace(r, c);
+                    }}
                     onMouseEnter={() => setHover({ row: r, col: c })}
                     onFocus={() => setHover({ row: r, col: c })}
-                    disabled={complete}
+                    aria-disabled={complete}
                     aria-label={`${view.label}${previewLabel}`}
                   >
                     {view.glyph}
