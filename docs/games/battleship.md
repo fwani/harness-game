@@ -57,7 +57,9 @@
 | --- | --- | --- | --- |
 | 도메인 | [`src/domain/battleship.ts`](../../src/domain/battleship.ts) | 보드·배치 검증·사격·격침·전 함대 격침 | ✅ |
 | 애플리케이션 | [`src/application/playBattleship.ts`](../../src/application/playBattleship.ts) | `placeFleetRandomly`·`chooseRandomShot`·`chooseSmartShot`(헌트/타깃 AI)·`playBattleshipShot` | ✅ |
-| UI | [`src/ui/games/Battleship.tsx`](../../src/ui/games/Battleship.tsx) | 배치 단계(직접/무작위 배치·회전·미리보기·CPU 난이도 선택) → 사격 단계(두 보드 렌더·사격 클릭·CPU 차례 "생각 중" 단계 표시 후 반격·승패·새 게임) | ✅ |
+| UI(싱글 진입·모드) | [`src/ui/games/BattleshipGame.tsx`](../../src/ui/games/BattleshipGame.tsx) + [`battleshipMode.ts`](../../src/ui/games/battleshipMode.ts) | 시작 화면 **싱글(vs CPU)/멀티(방)** 모드 세그먼트(`role="group"`+`aria-pressed`, 색 비의존)로 분기 | ✅ |
+| UI(싱글) | [`src/ui/games/Battleship.tsx`](../../src/ui/games/Battleship.tsx) | 배치 단계(직접/무작위 배치·회전·미리보기·CPU 난이도 선택) → 사격 단계(두 보드 렌더·사격 클릭·CPU 차례 "생각 중" 단계 표시 후 반격·승패·새 게임) | ✅ |
+| UI(멀티 온라인, 단계5) | [`src/ui/games/BattleshipMulti.tsx`](../../src/ui/games/BattleshipMulti.tsx) + [`battleshipRoomClient.ts`](../../src/ui/games/battleshipRoomClient.ts) | 주입형 `RoomClient` 포트(send/subscribe)만 소비하는 방 화면 — 방 코드 입장·좌석 배정·비공개 배치(`submitSetup`)·시점별 안개 사격(`makeMove`)·턴 소유권·전 함대 격침·재대국. 기본값은 소켓 없는 **인메모리 허브**(`reduceRoom`+`resolveSetup`+`redactBattleshipState` 위에 좌석별 라우팅)로 한 화면 2석 로컬 시뮬. `battleshipMultiView` 좌석 뷰 소비 | ✅(인메모리 전송) / 실 native ws 바인딩 후속(#595) |
 | 멀티(엔진) | [`src/application/battleshipEngine.ts`](../../src/application/battleshipEngine.ts) | `createBattleshipEngine` GameEngine 어댑터 + `redactBattleshipState`/`redactOpponentBoard`(시점별 안개 가림 순수 함수) | ✅(엔진·가림) / ws side 라우팅 후속 |
 | 멀티(배치 setup) | [`src/application/battleshipSetup.ts`](../../src/application/battleshipSetup.ts) | `createBattleshipSetup`·`submitFleet`·`isSetupComplete`·`startBattleshipMatch`·`redactSetup`(양측 비공개 배치 제출→매치 시작, 전송 비종속 순수 단위) | ✅(순수 단위) / UI 소비 후속 |
 | 멀티(방 런타임 연동) | [`src/infrastructure/server/room.ts`](../../src/infrastructure/server/room.ts) + [`setupRegistry.ts`](../../src/infrastructure/server/setupRegistry.ts) | 게임 무관 `SetupAdapter`/`resolveSetup` 주입 — 2석 착석 시 setup 시작(즉시 매치 X), `submitSetup` 메시지로 양측 비공개 함대 제출 후 `startBattleshipMatch`로 매치 시작. 좌석별 `redactSetup` 뷰(`setupState`)로 상대 위치 미노출 | ✅(단일 방 reduceRoom) / native ws 전송 후속(#595) |
@@ -76,4 +78,9 @@
 - 미사격/빗나감(○)/명중(✕)/격침(💥)·함선(■)을 색뿐 아니라 기호+aria-label로 구분(`cellView`).
 - 사격 결과 요약(명중/빗나감/`○○함 격침`/전 함대 격침)을 텍스트로 안내(`shotSummary`).
 - 이미 쏜 칸은 비활성, 종료 후 입력 차단, "새 게임" 회복 경로, 좁은 화면 대응(`boardGridStyle`).
+- **멀티(방) 모드(DoD B, 단계5)**: 시작 화면에서 싱글/멀티를 고르고(`role="group"`+`aria-pressed`), 멀티는
+  방 코드 입력→입장(좌석 p1/p2 배정·상대 입장 안내 `role="status"`), 좌석별 비공개 배치(상대 위치 미노출·제출 여부만),
+  내 차례에만 상대 보드 사격(턴 소유권 — 상대 차례엔 `aria-disabled`로 비활성), 상대 미사격 칸 함선 비노출(안개),
+  전 함대 격침 종료·재대국·방 나가기. UI는 주입형 `RoomClient` 포트만 소비(소켓 비종속, `ws` 직접 import 금지) —
+  기본값은 인메모리 허브로 한 화면 두 좌석을 번갈아 조작하는 로컬 시뮬이며, 실제 원격 ws 전송은 후속(#595).
 - 도메인/애플리케이션 함수를 실제 호출(규칙 재구현·데드 코드 금지). 난수는 `MathRandomSource` 주입.
