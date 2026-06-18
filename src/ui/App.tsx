@@ -54,6 +54,7 @@ import { Tournament } from "./games/Tournament";
 import { SingleElimination } from "./games/SingleElimination";
 import { Records } from "./games/Records";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { GuestIdentity } from "./GuestIdentity";
 import {
   GAME_CATALOG,
   filterGames,
@@ -141,7 +142,10 @@ export function App() {
   return (
     <div className="app">
       <header>
-        <h1>harness-game</h1>
+        <div className="header-top">
+          <h1>harness-game</h1>
+          <GuestIdentity />
+        </div>
         <input
           type="search"
           className="game-search"

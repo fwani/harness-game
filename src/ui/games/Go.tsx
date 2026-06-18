@@ -8,8 +8,11 @@ import { chooseCpuGoMove } from "./goCpuView";
 import { recordGame, type WinSide } from "../records";
 import { boardGridStyle } from "./boardView";
 import { useBoardNavigation } from "./useBoardNavigation";
-
-const SIZE = 9;
+import {
+  goBoardSizeOptions,
+  normalizeGoStartOptions,
+  type GoStartOptions,
+} from "./goStartOptionsView";
 
 const STONE = { black: "●", white: "○" } as const;
 
@@ -18,21 +21,56 @@ const rng = new MathRandomSource();
 
 type Mode = "local" | "cpu";
 
+/** 상대 색. */
+const opponent = (stone: Stone): Stone => (stone === "black" ? "white" : "black");
+
+/** vs CPU에서 사람이 잡는 색(선공이면 흑, 후공이면 백). */
+const humanStone = (humanFirst: boolean): Stone =>
+  humanFirst ? "black" : "white";
+
+/**
+ * 선택한 옵션으로 새 게임을 시작한다. vs CPU에서 CPU가 선공(흑)이면 곧바로 첫 수를 둔다
+ * (사람이 백을 골랐을 때 화면이 사람 차례로 시작하도록).
+ */
+function startNewGame(opts: GoStartOptions, mode: Mode): GoState {
+  let next = startGame(opts.size);
+  const human = humanStone(opts.humanFirst);
+  if (mode === "cpu" && !next.finished && next.next !== human) {
+    const cpuMove = chooseCpuGoMove(next.board, next.next, rng);
+    if (cpuMove !== null) {
+      next = applyMove(next, cpuMove.x, cpuMove.y);
+    }
+  }
+  return next;
+}
+
 export function Go() {
   const [mode, setMode] = useState<Mode>("local");
-  const [state, setState] = useState<GoState>(() => startGame(SIZE));
+  // 폼에서 고르는 시작 옵션(보드 크기·선공). 기본 9×9·사람 선공.
+  const [options, setOptions] = useState<GoStartOptions>(() =>
+    normalizeGoStartOptions({}),
+  );
+  // 진행 중인 판이 시작된 시점의 선공 설정(폼을 바꿔도 진행 중 판의 라벨이 흔들리지 않게 고정).
+  const [activeHumanFirst, setActiveHumanFirst] = useState(options.humanFirst);
+  const [state, setState] = useState<GoState>(() => startNewGame(options, "local"));
   const [error, setError] = useState<string | null>(null);
   // vs CPU에서 CPU가 둘 곳이 없어 패스했을 때의 안내(기존 자동 패스 안내 패턴).
   const [notice, setNotice] = useState<string | null>(null);
+
+  const size = state.board.length;
   const { setCellRef, onKeyDown, tabIndexFor, focusOn } = useBoardNavigation(
-    SIZE,
-    SIZE,
+    size,
+    size,
   );
 
-  // 모드별 플레이어 라벨. vs CPU에서는 사람(흑)="나" / CPU(백)="CPU".
+  // vs CPU에서 사람·CPU가 잡는 색(현재 판 기준).
+  const humanSide = humanStone(activeHumanFirst);
+  const cpuSide = opponent(humanSide);
+
+  // 모드별 플레이어 라벨. vs CPU에서는 사람 색="나" / CPU 색="CPU".
   const label = (stone: Stone): string =>
     mode === "cpu"
-      ? stone === "black"
+      ? stone === humanSide
         ? "나"
         : "CPU"
       : stone === "black"
@@ -50,9 +88,9 @@ export function Go() {
     recordGame("go", label("black"), label("white"), win);
   };
 
-  // vs CPU: 백(CPU) 차례를 한 번 처리한다. 둘 곳이 있으면 착수, 없으면 패스.
+  // vs CPU: CPU 차례를 한 번 처리한다. 둘 곳이 있으면 착수, 없으면 패스.
   const cpuTurn = (s: GoState): { state: GoState; passed: boolean } => {
-    const move = chooseCpuGoMove(s.board, "white", rng);
+    const move = chooseCpuGoMove(s.board, cpuSide, rng);
     if (move === null) {
       return { state: pass(s), passed: true };
     }
@@ -63,14 +101,18 @@ export function Go() {
   const commit = (humanNext: GoState) => {
     let next = humanNext;
     let cpuPassed = false;
-    if (mode === "cpu" && !next.finished) {
+    if (mode === "cpu" && !next.finished && next.next === cpuSide) {
       const r = cpuTurn(next);
       next = r.state;
       cpuPassed = r.passed;
     }
     setState(next);
     setError(null);
-    setNotice(cpuPassed ? "CPU(백 ○)가 둘 곳이 없어 패스했습니다." : null);
+    setNotice(
+      cpuPassed
+        ? `CPU(${label(cpuSide)} ${STONE[cpuSide]})가 둘 곳이 없어 패스했습니다.`
+        : null,
+    );
     recordIfFinished(state, next);
   };
 
@@ -83,8 +125,8 @@ export function Go() {
     if (state.board[y]![x] !== null) {
       return;
     }
-    // vs CPU: 사람(흑) 차례에만 입력을 받는다(CPU 차례 입력 차단).
-    if (mode === "cpu" && state.next !== "black") {
+    // vs CPU: 사람 차례에만 입력을 받는다(CPU 차례 입력 차단).
+    if (mode === "cpu" && state.next !== humanSide) {
       return;
     }
     try {
@@ -98,10 +140,20 @@ export function Go() {
     if (state.finished) {
       return;
     }
-    if (mode === "cpu" && state.next !== "black") {
+    if (mode === "cpu" && state.next !== humanSide) {
       return;
     }
     commit(pass(state));
+  };
+
+  /** 옵션을 적용해 새 게임을 시작한다(진행 판의 선공 고정·포커스 초기화 포함). */
+  const applyOptions = (next: GoStartOptions, nextMode: Mode) => {
+    setOptions(next);
+    setActiveHumanFirst(next.humanFirst);
+    setState(startNewGame(next, nextMode));
+    setError(null);
+    setNotice(null);
+    focusOn(0, 0);
   };
 
   const switchMode = (nextMode: Mode) => {
@@ -109,16 +161,18 @@ export function Go() {
       return;
     }
     setMode(nextMode);
-    setState(startGame(SIZE));
-    setError(null);
-    setNotice(null);
+    applyOptions(options, nextMode);
   };
 
-  const reset = () => {
-    setState(startGame(SIZE));
-    setError(null);
-    setNotice(null);
+  const selectSize = (value: number) => {
+    applyOptions(normalizeGoStartOptions({ ...options, size: value }), mode);
   };
+
+  const selectHumanFirst = (humanFirst: boolean) => {
+    applyOptions({ ...options, humanFirst }, mode);
+  };
+
+  const reset = () => applyOptions(options, mode);
 
   // 연속 2회 패스로 종료되면 영역 계가로 집·점수·승자를 계산한다.
   const score: GoScore | null = state.finished ? scoreArea(state.board) : null;
@@ -130,12 +184,15 @@ export function Go() {
         ? "무승부! 🤝"
         : `${label(score.winner)} 승리! 🎉`;
 
-  // vs CPU에서는 사람 수 직후 CPU가 즉시 응수하므로, 미종료 시 차례는 항상 사람(흑).
-  const blockBoard = state.finished || (mode === "cpu" && state.next !== "black");
+  // vs CPU에서는 사람 수 직후 CPU가 즉시 응수하므로, 미종료 시 차례는 항상 사람.
+  const blockBoard = state.finished || (mode === "cpu" && state.next !== humanSide);
 
   return (
     <section className="game">
-      <h2>바둑 ({SIZE}×{SIZE}{mode === "cpu" ? ", vs CPU" : ""})</h2>
+      <h2>
+        바둑 ({size}×{size}
+        {mode === "cpu" ? ", vs CPU" : ""})
+      </h2>
       <p className="hint">
         교차점을 눌러 돌을 둡니다. 둘 곳이 없거나 마치려면 패스하세요(연속 2회 패스 시 종료·계가).
       </p>
@@ -155,6 +212,38 @@ export function Go() {
           vs CPU
         </button>
       </div>
+      <div className="controls" role="group" aria-label="보드 크기 선택">
+        <span className="hint">보드 크기:</span>
+        {goBoardSizeOptions().map((value) => (
+          <button
+            key={value}
+            className={options.size === value ? "primary" : ""}
+            onClick={() => selectSize(value)}
+            aria-pressed={options.size === value}
+          >
+            {value}×{value}
+          </button>
+        ))}
+      </div>
+      {mode === "cpu" && (
+        <div className="controls" role="group" aria-label="선공 선택">
+          <span className="hint">선공:</span>
+          <button
+            className={options.humanFirst ? "primary" : ""}
+            onClick={() => selectHumanFirst(true)}
+            aria-pressed={options.humanFirst}
+          >
+            사람 선공 (흑 ●)
+          </button>
+          <button
+            className={!options.humanFirst ? "primary" : ""}
+            onClick={() => selectHumanFirst(false)}
+            aria-pressed={!options.humanFirst}
+          >
+            CPU 선공 (사람 백 ○)
+          </button>
+        </div>
+      )}
       {state.finished ? (
         <p className="outcome">
           종료(연속 2회 패스) · 흑 {score!.black} / 백 {score!.white} ·{" "}
@@ -164,14 +253,16 @@ export function Go() {
         <p className="hint">
           {STONE[state.next]} {label(state.next)} 차례 · 따냄 흑{" "}
           {state.captures.black} / 백 {state.captures.white}
-          {mode === "cpu" ? " · 백(○)은 CPU가 자동으로 둡니다" : ""}
+          {mode === "cpu"
+            ? ` · ${STONE[cpuSide]}은 CPU가 자동으로 둡니다`
+            : ""}
           {state.lastWasPass ? " · 직전 패스(한 번 더 패스하면 종료)" : ""}
         </p>
       )}
       {notice && !state.finished && <p className="hint">{notice}</p>}
       <div
         className="board go"
-        style={boardGridStyle(SIZE)}
+        style={boardGridStyle(size)}
         role="grid"
         aria-label="바둑 보드 (방향 키로 칸 이동, Enter/Space로 착수)"
         onKeyDown={onKeyDown}
