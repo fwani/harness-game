@@ -1,10 +1,51 @@
 :root {
+  color-scheme: dark;
+
+  /* ── 색: 표면(surface) ── */
   --bg: #0f172a;
   --panel: #1e293b;
-  --accent: #38bdf8;
+  --panel-2: #243042;       /* 한 단계 밝은 패널 (중첩 카드/헤더) */
+  --border: #334155;
+
+  /* ── 색: 텍스트 ── */
   --text: #e2e8f0;
   --muted: #94a3b8;
-  color-scheme: dark;
+
+  /* ── 색: 강조 & 의미(semantic) ── */
+  --accent: #38bdf8;
+  --accent-strong: #0ea5e9;
+  --good: #4ade80;          /* 승/성공 */
+  --warn: #fbbf24;          /* 주의 */
+  --bad: #f87171;           /* 패/오류 */
+
+  /* ── 간격 스케일 (4px 베이스) ── */
+  --s-1: .25rem;
+  --s-2: .5rem;
+  --s-3: .75rem;
+  --s-4: 1rem;
+  --s-5: 1.25rem;
+  --s-6: 1.5rem;
+  --s-8: 2rem;
+
+  /* ── 둥글기 ── */
+  --r-sm: .375rem;
+  --r-md: .5rem;
+  --r-lg: .75rem;
+  --r-full: 999px;
+
+  /* ── 그림자 (입체 보드용 inset/raise 포함) ── */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow-raise: 0 2px 0 var(--border), 0 4px 8px rgba(0, 0, 0, .35);
+
+  /* ── 타이포 ── */
+  --fs-sm: .875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.6rem;
+
+  /* ── 모션 ── */
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --dur: 140ms;
 }
 
 * {
@@ -58,7 +99,7 @@ header h1 {
 .guest-rename-save,
 .guest-rename-cancel {
   padding: 0.35rem 0.7rem;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   background: var(--panel);
   color: var(--text);
   border-radius: 0.5rem;
@@ -72,7 +113,7 @@ header h1 {
 
 .guest-rename-input {
   padding: 0.4rem 0.6rem;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   border-radius: 0.5rem;
   background: var(--panel);
   color: var(--text);
@@ -97,7 +138,7 @@ header h1 {
   box-sizing: border-box;
   padding: 0.55rem 0.8rem;
   margin-bottom: 1.25rem;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   border-radius: 0.5rem;
   background: var(--panel);
   color: var(--text);
@@ -113,7 +154,7 @@ header h1 {
 
 .mode-btn {
   padding: 0.45rem 0.9rem;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   background: var(--panel);
   color: var(--muted);
   border-radius: 0.5rem;
@@ -148,7 +189,7 @@ header h1 {
 .tab {
   flex: 1 1 auto;
   padding: 0.6rem 1rem;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   background: var(--panel);
   color: var(--muted);
   border-radius: 0.5rem;
@@ -189,7 +230,7 @@ header h1 {
   align-items: center;
   gap: 0.4rem;
   padding: 1rem;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   background: #0b1220;
   color: var(--text);
   border-radius: 0.6rem;
@@ -217,7 +258,7 @@ header h1 {
 .result {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #334155;
+  border-top: 1px solid var(--border);
   text-align: center;
 }
 
@@ -304,7 +345,7 @@ header h1 {
   width: 5rem;
   padding: 0.4rem 0.5rem;
   background: #0b1220;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   border-radius: 0.4rem;
   color: var(--text);
   font-size: 1rem;
@@ -346,7 +387,7 @@ header h1 {
   width: 2.4rem;
   height: 2.4rem;
   padding: 0;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   background: #0b1220;
   color: var(--text);
   border-radius: 0.4rem;
@@ -377,7 +418,7 @@ header h1 {
 }
 
 .pig-scoreboard > div {
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   border-radius: 0.5rem;
   padding: 0.6rem 0.75rem;
   background: #0b1220;
@@ -453,7 +494,7 @@ header h1 {
   text-align: center;
   padding: 0.25rem 0.4rem;
   background: #f8fafc;
-  color: #0f172a;
+  color: var(--bg);
   border-radius: 0.3rem;
   font-weight: 600;
   font-size: 0.85rem;
@@ -500,6 +541,16 @@ header h1 {
 /* --- boards (gomoku / go / janggi) --- */
 
 .board {
+  /* 보드 스킨(skin): 게임은 아래 로컬 변수만 덮어쓰고 격자/셀 골격은 공유한다.
+     (docs/agent-harness/UX_GUIDELINES.md "디자인 토큰 & 시각 일관성" — 레이어 3) */
+  --board-bg: #b8860b;        /* 바둑/오목/장기 나무판 (기본값) */
+  --board-edge: #7c5e08;
+  --sq-light: #d9c39a;        /* 체커판 밝은 칸 */
+  --sq-dark: #4a3318;         /* 체커판 어두운 칸 */
+  --ring-legal: rgba(248, 250, 252, 0.6);  /* 합법 수 강조 링 */
+  --piece-dark: #111;         /* 흑돌·흑기물 글리프 */
+  --piece-light: #f8fafc;     /* 백돌·백기물 글리프 */
+
   display: grid;
   gap: 0;
   /* 좁은 폭(예: 360px)에서는 컨테이너에 맞춰 줄어들고, 넓은 화면에서는 인라인 maxWidth
@@ -507,8 +558,8 @@ header h1 {
   width: 100%;
   max-width: 100%;
   margin: 1rem 0;
-  background: #b8860b;
-  border: 2px solid #7c5e08;
+  background: var(--board-bg);
+  border: 2px solid var(--board-edge);
   border-radius: 4px;
 }
 
@@ -542,23 +593,23 @@ header h1 {
 }
 
 .stone.black {
-  color: #111;
+  color: var(--piece-dark);
 }
 
 .stone.white {
-  color: #f8fafc;
+  color: var(--piece-light);
   text-shadow: 0 0 1px #000;
 }
 
 .board.go {
-  background: #dcb35c;
+  --board-bg: #dcb35c;
 }
 
 /* --- tic-tac-toe (틱택토) --- */
 
 .board.tictactoe {
-  background: #1e293b;
-  border-color: #0f172a;
+  --board-bg: var(--panel);
+  --board-edge: var(--bg);
 }
 
 /* X/O 기호를 칸 크기에 맞게 크게 표시(색만이 아니라 기호로 구분). */
@@ -579,13 +630,13 @@ header h1 {
 /* --- reversi (오델로) --- */
 
 .board.reversi {
-  background: #1f7a4d;
-  border-color: #145138;
+  --board-bg: #1f7a4d;
+  --board-edge: #145138;
 }
 
 /* 합법 수 칸: 안쪽 링으로 강조(색만으로 구분하지 않도록 호버 외에 상시 표시). */
 .cell.legal {
-  box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.6);
+  box-shadow: inset 0 0 0 2px var(--ring-legal);
 }
 
 .cell.legal:hover {
@@ -595,33 +646,34 @@ header h1 {
 /* --- checkers (체커·서양 장기) --- */
 
 .board.checkers {
-  background: #6b4f2a;
-  border-color: #4a3618;
+  --board-bg: #6b4f2a;
+  --board-edge: #4a3618;
+  --ring-legal: rgba(248, 250, 252, 0.7);
 }
 
 /* 격자: 어두운 칸(기물이 놓이는 칸)과 밝은 칸을 구분(체커판). */
 .board.checkers .cell.sq-dark {
-  background: #4a3318;
+  background: var(--sq-dark);
 }
 
 .board.checkers .cell.sq-light {
-  background: #d9c39a;
+  background: var(--sq-light);
   cursor: default;
 }
 
 /* 밝은 칸은 기물이 없고 클릭 대상도 아니므로 호버 단서를 끈다. */
 .board.checkers .cell.sq-light:hover {
-  background: #d9c39a;
+  background: var(--sq-light);
 }
 
 /* 선택된 기물: 안쪽 링으로 강조(색만이 아니라 형태로 구분). */
 .board.checkers .cell.selected {
-  box-shadow: inset 0 0 0 3px #fbbf24;
+  box-shadow: inset 0 0 0 3px var(--warn);
 }
 
 /* 합법 목적지 칸: 안쪽 링으로 상시 강조(reversi .legal과 동일 단서). */
 .board.checkers .cell.legal {
-  box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.7);
+  box-shadow: inset 0 0 0 2px var(--ring-legal);
 }
 
 .board.checkers .cell.legal:hover {
@@ -635,12 +687,12 @@ header h1 {
 }
 
 .checker.dark {
-  color: #111;
+  color: var(--piece-dark);
   text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
 }
 
 .checker.light {
-  color: #f8fafc;
+  color: var(--piece-light);
   text-shadow: 0 0 2px #000;
 }
 
@@ -652,27 +704,29 @@ header h1 {
 /* --- chess (체스) --- */
 
 .board.chess {
-  background: #6b4f2a;
-  border-color: #4a3618;
+  --board-bg: #6b4f2a;
+  --board-edge: #4a3618;
+  --sq-dark: #8a6a3a;
+  --ring-legal: rgba(248, 250, 252, 0.85);
 }
 
 /* 체스판 교대 칸(밝은/어두운 칸). 진영 구분이 아니라 판 모양을 위한 배경이다. */
 .board.chess .cell.sq-light {
-  background: #d9c39a;
+  background: var(--sq-light);
 }
 
 .board.chess .cell.sq-dark {
-  background: #8a6a3a;
+  background: var(--sq-dark);
 }
 
 /* 선택된 기물: 안쪽 링으로 강조(색만이 아니라 형태로 구분). */
 .board.chess .cell.selected {
-  box-shadow: inset 0 0 0 3px #fbbf24;
+  box-shadow: inset 0 0 0 3px var(--warn);
 }
 
 /* 합법 도착 칸: 안쪽 링으로 상시 강조(빈 칸·포획 대상 모두에서 보임). */
 .board.chess .cell.legal {
-  box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.85);
+  box-shadow: inset 0 0 0 2px var(--ring-legal);
 }
 
 .board.chess .cell.legal:not(:disabled):hover {
@@ -691,20 +745,20 @@ header h1 {
 }
 
 .chess-piece.white {
-  color: #f8fafc;
+  color: var(--piece-light);
   text-shadow: 0 0 2px #000, 0 0 1px #000;
 }
 
 .chess-piece.black {
-  color: #111;
+  color: var(--piece-dark);
   text-shadow: 0 0 2px rgba(255, 255, 255, 0.55);
 }
 
 /* --- connect four (커넥트포·사목) --- */
 
 .board.connectfour {
-  background: #1d4ed8;
-  border-color: #1e3a8a;
+  --board-bg: #1d4ed8;
+  --board-edge: #1e3a8a;
 }
 
 /* 셀은 비인터랙티브(div) — 착수는 상단 열 버튼으로만. 호버/포인터 단서를 끈다. */
@@ -762,7 +816,7 @@ header h1 {
 /* --- janggi --- */
 
 .board.janggi {
-  background: #e3b76a;
+  --board-bg: #e3b76a;
 }
 
 .janggi-cell.selected {
@@ -807,7 +861,7 @@ header h1 {
 /* --- minesweeper (지뢰찾기) --- */
 
 .board.minesweeper {
-  background: #94a3b8;
+  background: var(--muted);
   border-color: #475569;
 }
 
@@ -819,7 +873,7 @@ header h1 {
 }
 
 .ms-cell.ms-hidden:not(:disabled):hover {
-  background: #e2e8f0;
+  background: var(--text);
 }
 
 /* 깃발 칸: 미공개와 같은 올라온(raised) 모양이되 🚩 기호로 구분(색 비의존). */
@@ -890,7 +944,7 @@ header h1 {
 /* 함선(자기 보드의 안 맞은 칸): 회색 선체 + ■ 기호. */
 .bs-cell.bs-ship {
   background: #64748b;
-  color: #0f172a;
+  color: var(--bg);
 }
 
 /* 빗나감: 가라앉은 어두운 물 + ○. */
@@ -931,7 +985,7 @@ header h1 {
   max-width: 100%;
   overflow-x: auto;
   background: #f8fafc;
-  border-color: #94a3b8;
+  border-color: var(--muted);
   padding: 6px;
 }
 
@@ -942,7 +996,7 @@ header h1 {
   height: 8px;
   margin: auto;
   border-radius: 50%;
-  background: #334155;
+  background: var(--border);
 }
 
 /* 변(수평/수직): 트랙을 채우고, 미사용 변은 버튼·그어진 변은 채워진 막대. */
@@ -1164,7 +1218,7 @@ button.dots-edge:disabled {
 /* 돌 기호: 색이 아니라 ● 개수로 양을 표현. 좁은 화면에서 줄바꿈 허용. */
 .nim-stones-symbol {
   letter-spacing: 2px;
-  color: #1e293b;
+  color: var(--panel);
   overflow-wrap: anywhere;
 }
 
@@ -1211,8 +1265,8 @@ button.dots-edge:disabled {
 /* --- 메모리(짝 맞추기) --- */
 
 .board.memory {
-  background: #1e293b;
-  border-color: #0f172a;
+  background: var(--panel);
+  border-color: var(--bg);
   gap: 6px;
   padding: 6px;
 }
@@ -1240,7 +1294,7 @@ button.dots-edge:disabled {
 /* 뒤집힌(판정 대기) 카드: 눌린(flat) 모양 + 강조 테두리. */
 .memory-card.memory-up {
   background: #f8fafc;
-  color: #0f172a;
+  color: var(--bg);
   border: 2px solid #f59e0b;
 }
 
@@ -1254,8 +1308,8 @@ button.dots-edge:disabled {
 /* --- 슬라이드 퍼즐(15-퍼즐) --- */
 
 .board.slidepuzzle {
-  background: #1e293b;
-  border-color: #0f172a;
+  background: var(--panel);
+  border-color: var(--bg);
   gap: 6px;
   padding: 6px;
 }
@@ -1290,15 +1344,15 @@ button.dots-edge:disabled {
 
 /* 빈 칸: 눌린(움푹한) 모양으로 타일과 입체로도 구분. */
 .sp-blank {
-  background: #0f172a;
+  background: var(--bg);
   box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.6);
 }
 
 /* --- 라이트 아웃(Lights Out) --- */
 
 .board.lightsout {
-  background: #1e293b;
-  border-color: #0f172a;
+  background: var(--panel);
+  border-color: var(--bg);
   gap: 6px;
   padding: 6px;
 }
@@ -1312,20 +1366,20 @@ button.dots-edge:disabled {
 
 .lo-on {
   background: #f59e0b;
-  color: #1e293b;
+  color: var(--panel);
   box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.45),
     inset -2px -2px 0 rgba(0, 0, 0, 0.3);
 }
 
 .lo-off {
-  background: #0f172a;
+  background: var(--bg);
   color: #64748b;
   box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.6);
 }
 
 .lo-cell:not(:disabled):hover,
 .lo-cell:not(:disabled):focus-visible {
-  outline: 2px solid #38bdf8;
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
@@ -1377,7 +1431,7 @@ button.dots-edge:disabled {
 
 /* 선택된 출발 못. */
 .peg-cell.selected {
-  border: 2px solid #38bdf8;
+  border: 2px solid var(--accent);
   background: #e2b95c;
 }
 
@@ -1505,8 +1559,8 @@ button.dots-edge:disabled {
 /* --- 빙고(Bingo) --- */
 
 .board.bingo {
-  background: #1e293b;
-  border-color: #0f172a;
+  background: var(--panel);
+  border-color: var(--bg);
   gap: 6px;
   padding: 6px;
 }
@@ -1565,7 +1619,7 @@ button.dots-edge:disabled {
   width: 1.6rem;
   height: 1.6rem;
   border-radius: 0.3rem;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
 }
 
 /* 추측 히스토리 그리드: 행=추측, 열=글자. 좁은 화면에서도 폭에 맞춰 줄어든다. */
@@ -1590,7 +1644,7 @@ button.dots-edge:disabled {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   border-radius: 0.4rem;
   background: #0b1220;
   color: var(--text);
@@ -1625,7 +1679,7 @@ button.dots-edge:disabled {
 
 .wordle-cell.wordle-absent,
 .wordle-chip.wordle-absent {
-  background: #1e293b;
+  background: var(--panel);
   border-color: #475569;
   color: #cbd5e1;
 }
@@ -1788,7 +1842,7 @@ button.dots-edge:disabled {
   height: 0.9rem;
   min-width: 0;
   background: #0b1220;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   border-radius: 0.5rem;
   overflow: hidden;
 }
@@ -1830,7 +1884,7 @@ button.dots-edge:disabled {
 .standings td {
   text-align: left;
   padding: 0.4rem 0.6rem;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid var(--border);
 }
 
 .standings th {
@@ -1916,7 +1970,7 @@ button.dots-edge:disabled {
 .streak {
   margin-top: 1.25rem;
   padding: 0.75rem 1rem;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   border-radius: 0.6rem;
   background: #0b1220;
 }
@@ -1986,7 +2040,7 @@ button.dots-edge:disabled {
   gap: 0.75rem;
   padding: 0.35rem 0.6rem;
   background: #0b1220;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
 }
@@ -2038,7 +2092,7 @@ button.dots-edge:disabled {
   max-width: 40vw;
   padding: 0.4rem 0.5rem;
   background: #0b1220;
-  border: 1px solid #334155;
+  border: 1px solid var(--border);
   border-radius: 0.4rem;
   color: var(--text);
   font-size: 1rem;
@@ -2113,7 +2167,7 @@ button.dots-edge:disabled {
   border-radius: 8px;
   /* 기둥 막대를 가운데 세로선으로 표현(색 비의존 보조; 실제 구분은 기둥 라벨). */
   background:
-    linear-gradient(#94a3b8, #94a3b8) center / 6px 100% no-repeat,
+    linear-gradient(var(--muted), var(--muted)) center / 6px 100% no-repeat,
     #f8fafc;
   cursor: pointer;
 }
@@ -2133,7 +2187,7 @@ button.dots-edge:disabled {
 /* 목표 기둥 표시(맨 오른쪽). */
 .hanoi-peg.target {
   background:
-    linear-gradient(#94a3b8, #94a3b8) center / 6px 100% no-repeat,
+    linear-gradient(var(--muted), var(--muted)) center / 6px 100% no-repeat,
     #ecfeff;
 }
 
@@ -2156,7 +2210,7 @@ button.dots-edge:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #1e293b;
+  border: 1px solid var(--panel);
   border-radius: 6px;
   background: #dbeafe;
   color: #1e3a8a;
@@ -2173,7 +2227,7 @@ button.dots-edge:disabled {
 .hanoi-peg-label {
   font-size: 12px;
   font-weight: 700;
-  color: #334155;
+  color: var(--border);
 }
 
 /* --- 마스터마인드(Mastermind) --- */
@@ -2198,7 +2252,7 @@ button.dots-edge:disabled {
 /* 입력 중인 칸: 빈 칸도 누를 수 있게 버튼 형태(채워지면 색 표시). */
 .peg-slot {
   cursor: pointer;
-  background: #e2e8f0;
+  background: var(--text);
 }
 
 .peg-slot:not(:disabled):hover,
