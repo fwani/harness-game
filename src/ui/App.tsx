@@ -52,140 +52,114 @@ import { Tournament } from "./games/Tournament";
 import { SingleElimination } from "./games/SingleElimination";
 import { Records } from "./games/Records";
 import { ErrorBoundary } from "./ErrorBoundary";
+import {
+  GAME_CATALOG,
+  filterGames,
+  groupGamesByCategory,
+  type GameKey,
+} from "./gameCatalog";
 
-type GameKey =
-  | "rps"
-  | "mukjjippa"
-  | "best-of-n"
-  | "oddeven"
-  | "deal"
-  | "highcard"
-  | "dice"
-  | "baccarat"
-  | "blackjack"
-  | "sutda"
-  | "poker"
-  | "onecard"
-  | "gostop"
-  | "gomoku"
-  | "go"
-  | "reversi"
-  | "connectfour"
-  | "janggi"
-  | "checkers"
-  | "chess"
-  | "tictactoe"
-  | "yut"
-  | "numberbaseball"
-  | "game2048"
-  | "minesweeper"
-  | "dotsandboxes"
-  | "mancala"
-  | "nim"
-  | "battleship"
-  | "hanoi"
-  | "slidepuzzle"
-  | "pegsolitaire"
-  | "sokoban"
-  | "floodit"
-  | "memory"
-  | "hangman"
-  | "pig"
-  | "bingo"
-  | "snakesandladders"
-  | "wordle"
-  | "mastermind"
-  | "nonogram"
-  | "sudoku"
-  | "binairo"
-  | "futoshiki"
-  | "hitori"
-  | "kenken"
-  | "ladder"
-  | "selfplay"
-  | "tournament"
-  | "knockout"
-  | "records";
-
-const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
-  { key: "rps", label: "가위바위보", render: () => <Rps /> },
-  { key: "mukjjippa", label: "묵찌빠", render: () => <Mukjjippa /> },
-  { key: "best-of-n", label: "다전제", render: () => <BestOfN /> },
-  { key: "oddeven", label: "홀짝", render: () => <OddEven /> },
-  { key: "deal", label: "카드 딜", render: () => <Deal /> },
-  { key: "highcard", label: "하이카드", render: () => <HighCard /> },
-  { key: "dice", label: "주사위", render: () => <Dice /> },
-  { key: "baccarat", label: "바카라", render: () => <Baccarat /> },
-  { key: "blackjack", label: "블랙잭", render: () => <Blackjack /> },
-  { key: "sutda", label: "섯다", render: () => <Sutda /> },
-  { key: "poker", label: "포커", render: () => <Poker /> },
-  { key: "onecard", label: "원카드", render: () => <OneCard /> },
-  { key: "gostop", label: "고스톱", render: () => <GoStop /> },
-  { key: "gomoku", label: "오목", render: () => <Gomoku /> },
-  { key: "go", label: "바둑", render: () => <Go /> },
-  { key: "reversi", label: "오델로", render: () => <Reversi /> },
-  { key: "connectfour", label: "커넥트포", render: () => <ConnectFour /> },
-  { key: "janggi", label: "장기", render: () => <Janggi /> },
-  { key: "checkers", label: "체커", render: () => <Checkers /> },
-  { key: "chess", label: "체스", render: () => <Chess /> },
-  { key: "tictactoe", label: "틱택토", render: () => <TicTacToe /> },
-  { key: "yut", label: "윷놀이", render: () => <Yut /> },
-  { key: "numberbaseball", label: "숫자야구", render: () => <NumberBaseball /> },
-  { key: "game2048", label: "2048", render: () => <Game2048 /> },
-  { key: "minesweeper", label: "지뢰찾기", render: () => <Minesweeper /> },
-  { key: "dotsandboxes", label: "도트 앤 박스", render: () => <DotsAndBoxes /> },
-  { key: "mancala", label: "만칼라", render: () => <Mancala /> },
-  { key: "nim", label: "님", render: () => <Nim /> },
-  { key: "battleship", label: "배틀십", render: () => <Battleship /> },
-  { key: "hanoi", label: "하노이탑", render: () => <Hanoi /> },
-  { key: "slidepuzzle", label: "슬라이드 퍼즐", render: () => <SlidePuzzle /> },
-  { key: "pegsolitaire", label: "페그 솔리테어", render: () => <PegSolitaire /> },
-  { key: "sokoban", label: "소코반", render: () => <Sokoban /> },
-  { key: "floodit", label: "플러드 잇", render: () => <FloodIt /> },
-  { key: "memory", label: "메모리", render: () => <MemoryMatch /> },
-  { key: "hangman", label: "행맨", render: () => <Hangman /> },
-  { key: "pig", label: "피그", render: () => <Pig /> },
-  { key: "bingo", label: "빙고", render: () => <Bingo /> },
-  { key: "snakesandladders", label: "뱀과 사다리", render: () => <SnakesAndLadders /> },
-  { key: "wordle", label: "워들", render: () => <Wordle /> },
-  { key: "mastermind", label: "마스터마인드", render: () => <Mastermind /> },
-  { key: "nonogram", label: "네모로직", render: () => <Nonogram /> },
-  { key: "sudoku", label: "스도쿠", render: () => <Sudoku /> },
-  { key: "binairo", label: "비나이로", render: () => <Binairo /> },
-  { key: "futoshiki", label: "후토시키", render: () => <Futoshiki /> },
-  { key: "hitori", label: "히토리", render: () => <Hitori /> },
-  { key: "kenken", label: "켄켄", render: () => <KenKen /> },
-  { key: "ladder", label: "사다리타기", render: () => <Ladder /> },
-  { key: "selfplay", label: "관전", render: () => <SelfPlay /> },
-  { key: "tournament", label: "토너먼트", render: () => <Tournament /> },
-  { key: "knockout", label: "녹아웃", render: () => <SingleElimination /> },
-  { key: "records", label: "전적", render: () => <Records /> },
-];
+// 게임 메타(key/label/category)는 gameCatalog에서 단일 정의하고, 여기서는 render만 덧붙인다.
+const RENDERERS: Record<GameKey, () => JSX.Element> = {
+  rps: () => <Rps />,
+  mukjjippa: () => <Mukjjippa />,
+  "best-of-n": () => <BestOfN />,
+  oddeven: () => <OddEven />,
+  deal: () => <Deal />,
+  highcard: () => <HighCard />,
+  dice: () => <Dice />,
+  baccarat: () => <Baccarat />,
+  blackjack: () => <Blackjack />,
+  sutda: () => <Sutda />,
+  poker: () => <Poker />,
+  onecard: () => <OneCard />,
+  gostop: () => <GoStop />,
+  gomoku: () => <Gomoku />,
+  go: () => <Go />,
+  reversi: () => <Reversi />,
+  connectfour: () => <ConnectFour />,
+  janggi: () => <Janggi />,
+  checkers: () => <Checkers />,
+  chess: () => <Chess />,
+  tictactoe: () => <TicTacToe />,
+  yut: () => <Yut />,
+  numberbaseball: () => <NumberBaseball />,
+  game2048: () => <Game2048 />,
+  minesweeper: () => <Minesweeper />,
+  dotsandboxes: () => <DotsAndBoxes />,
+  mancala: () => <Mancala />,
+  nim: () => <Nim />,
+  battleship: () => <Battleship />,
+  hanoi: () => <Hanoi />,
+  slidepuzzle: () => <SlidePuzzle />,
+  pegsolitaire: () => <PegSolitaire />,
+  sokoban: () => <Sokoban />,
+  floodit: () => <FloodIt />,
+  memory: () => <MemoryMatch />,
+  hangman: () => <Hangman />,
+  pig: () => <Pig />,
+  bingo: () => <Bingo />,
+  snakesandladders: () => <SnakesAndLadders />,
+  wordle: () => <Wordle />,
+  mastermind: () => <Mastermind />,
+  nonogram: () => <Nonogram />,
+  sudoku: () => <Sudoku />,
+  binairo: () => <Binairo />,
+  futoshiki: () => <Futoshiki />,
+  hitori: () => <Hitori />,
+  kenken: () => <KenKen />,
+  ladder: () => <Ladder />,
+  selfplay: () => <SelfPlay />,
+  tournament: () => <Tournament />,
+  knockout: () => <SingleElimination />,
+  records: () => <Records />,
+};
 
 export function App() {
   const [game, setGame] = useState<GameKey>("rps");
-  const active = GAMES.find((g) => g.key === game)!;
+  const [query, setQuery] = useState("");
+
+  const visible = filterGames(GAME_CATALOG, query);
+  const groups = groupGamesByCategory(visible);
 
   return (
     <div className="app">
       <header>
         <h1>harness-game</h1>
-        <nav className="tabs">
-          {GAMES.map((g) => (
-            <button
-              key={g.key}
-              className={g.key === game ? "tab active" : "tab"}
-              onClick={() => setGame(g.key)}
-            >
-              {g.label}
-            </button>
-          ))}
-        </nav>
+        <input
+          type="search"
+          className="game-search"
+          aria-label="게임 이름 검색"
+          placeholder="게임 검색…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {groups.length === 0 ? (
+          <p className="hint">검색 결과 없음</p>
+        ) : (
+          groups.map((group) => (
+            <section key={group.category} className="tab-group">
+              <h2 className="tab-group-title">{group.category}</h2>
+              <nav className="tabs" aria-label={group.category}>
+                {group.games.map((g) => (
+                  <button
+                    key={g.key}
+                    className={g.key === game ? "tab active" : "tab"}
+                    onClick={() => setGame(g.key)}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </nav>
+            </section>
+          ))
+        )}
       </header>
       <main>
         {/* 한 게임이 크래시해도 앱 전체가 백스크린되지 않게 분리한다.
-            key=game이라 탭을 바꾸면 바운더리가 재마운트되어 에러 상태가 초기화된다. */}
-        <ErrorBoundary key={game}>{active.render()}</ErrorBoundary>
+            key=game이라 탭을 바꾸면 바운더리가 재마운트되어 에러 상태가 초기화된다.
+            검색으로 현재 게임 탭이 숨겨져도 선택 상태/렌더는 그대로 유지된다. */}
+        <ErrorBoundary key={game}>{RENDERERS[game]()}</ErrorBoundary>
       </main>
     </div>
   );
