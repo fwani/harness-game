@@ -5,6 +5,8 @@ import {
   noMovesOutcome,
   janggiOutcome,
   janggiWinSide,
+  janggiCpuWinSide,
+  opponentSide,
   CPU_SIDE,
   HUMAN_SIDE,
 } from "./janggiCpuView";
@@ -47,6 +49,18 @@ describe("isCpuTurn", () => {
 
   it("종료 상태면 CPU 차례가 아니다", () => {
     expect(isCpuTurn(finishedState({ next: CPU_SIDE }))).toBe(false);
+  });
+
+  it("cpuSide를 초로 주입하면(사람=한) 초 차례가 CPU 차례다", () => {
+    // 시작 상태는 초 차례 → 사람이 한이면 그때가 CPU(초) 차례.
+    expect(isCpuTurn(startGame(), "cho")).toBe(true);
+  });
+});
+
+describe("opponentSide", () => {
+  it("초↔한 반대 진영을 돌려준다", () => {
+    expect(opponentSide("cho")).toBe("han");
+    expect(opponentSide("han")).toBe("cho");
   });
 });
 
@@ -136,6 +150,34 @@ describe("janggiOutcome", () => {
       "local",
     );
     expect(out.text).toContain("한(漢) 승리");
+  });
+
+  it("cpu 모드 + 사람=한: 한 승은 '나(한)', 초 승은 'CPU(초)'", () => {
+    const humanWin = janggiOutcome(
+      finishedState({ winner: "han", endReason: "checkmate" }),
+      "cpu",
+      "han",
+    );
+    expect(humanWin.text).toContain("나(한) 승리");
+    const cpuWin = janggiOutcome(
+      finishedState({ winner: "cho", endReason: "capture" }),
+      "cpu",
+      "han",
+    );
+    expect(cpuWin.text).toContain("CPU(초) 승리");
+  });
+});
+
+describe("janggiCpuWinSide", () => {
+  it("사람 진영 승=a, CPU 승=b, 무승부=draw (사람=초)", () => {
+    expect(janggiCpuWinSide(finishedState({ winner: "cho" }), "cho")).toBe("a");
+    expect(janggiCpuWinSide(finishedState({ winner: "han" }), "cho")).toBe("b");
+    expect(janggiCpuWinSide(finishedState({ winner: null }), "cho")).toBe("draw");
+  });
+
+  it("사람=한이면 승/패 위치가 뒤집혀도 '나' 관점(a)을 보존한다", () => {
+    expect(janggiCpuWinSide(finishedState({ winner: "han" }), "han")).toBe("a");
+    expect(janggiCpuWinSide(finishedState({ winner: "cho" }), "han")).toBe("b");
   });
 });
 

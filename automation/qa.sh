@@ -17,7 +17,6 @@ BASE="$HOME/Library/Application Support/harness-game-autodev"
 WORKDIR="$BASE/repo-qa"
 LOG="$BASE/qa.log"
 DETAIL="$BASE/qa.detail.log"
-ROT="$BASE/.qa.rotation"
 mkdir -p "$BASE"
 log()  { printf '%s [qa] %s\n' "$(date '+%F %T')" "$*" >>"$LOG"; }
 hr()   { printf '%s [qa] ======== %s ========\n' "$(date '+%F %T')" "$*" >>"$LOG"; }
@@ -55,13 +54,11 @@ for i in $(seq 1 40); do curl -sf "$URL" >/dev/null 2>&1 && { up=1; break; }; sl
 if [ "$up" -ne 1 ]; then log "✗ vite 서버 기동 실패 — skip (상세: $(basename "$DETAIL"))"; exit 0; fi
 log "2) vite 개발 서버 기동 완료: $URL"
 
-# 3) Playwright MCP 설정 + 회전 인덱스
+# 3) Playwright MCP 설정
 cat > "$BASE/pw-mcp.json" <<JSON
 {"mcpServers":{"playwright":{"command":"npx","args":["-y","@playwright/mcp@latest","--headless","--isolated"]}}}
 JSON
-ROTN=$(cat "$ROT" 2>/dev/null); [ -z "$ROTN" ] && ROTN=0
-echo $((ROTN + 1)) > "$ROT"
-log "3) 대상 회전 인덱스=$ROTN (게임 목록 mod 게임수)"
+log "3) 대상 게임은 docs/games/ROADMAP.md의 현재 대상 게임(회전 폐기)"
 
 # 4) 프롬프트(origin/main) + 이번 실행 파라미터 주입
 PROMPT=$(git -C "$WORKDIR" show origin/main:automation/qa-prompt.md 2>/dev/null)
@@ -71,7 +68,7 @@ PROMPT="$PROMPT
 
 ## 이번 실행 파라미터
 - 개발 서버 URL: $URL
-- 회전 인덱스: $ROTN (게임 목록에서 이 인덱스 mod 게임수 번째 1개만 테스트)"
+- 대상 게임: docs/games/ROADMAP.md를 읽어 '현재 대상 게임'(상태가 ✅ 아닌 가장 작은 번호) 1개를 테스트한다."
 
 # 5) claude 플레이테스트 (Playwright MCP). 원시 출력은 detail 로그로.
 log "4) claude 플레이테스트 → 게임 플레이·평가·qa-finding 등록 (상세: $(basename "$DETAIL"))"
