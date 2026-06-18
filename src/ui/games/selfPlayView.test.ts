@@ -8,6 +8,7 @@ import {
   describeSelfPlayResult,
   selfPlayBoard,
   selfPlayCheckersBoard,
+  selfPlayChessState,
   selfPlayDotsBoard,
   selfPlayGlyphBoard,
   selfPlayJanggiBoard,
@@ -36,7 +37,7 @@ function resultWith(
 }
 
 describe("SELF_PLAY_GAMES", () => {
-  it("오목·바둑·오델로·장기·커넥트포·틱택토·도트앤박스·체커·만칼라·님을 노출한다", () => {
+  it("오목·바둑·오델로·장기·커넥트포·틱택토·도트앤박스·체커·만칼라·님·체스를 노출한다", () => {
     expect(SELF_PLAY_GAMES.map((g) => g.key)).toEqual([
       "gomoku",
       "go",
@@ -48,7 +49,16 @@ describe("SELF_PLAY_GAMES", () => {
       "checkers",
       "mancala",
       "nim",
+      "chess",
     ]);
+  });
+
+  it("체스 메타는 8열·.board.chess를 쓴다", () => {
+    const chess = SELF_PLAY_GAMES.find((g) => g.key === "chess")!;
+    expect(chess).toBeDefined();
+    expect(chess.label).toBe("체스");
+    expect(chess.size).toBe(8);
+    expect(chess.boardClass).toBe("chess");
   });
 
   it("님 메타가 포함된다(.board.nim)", () => {
@@ -140,8 +150,25 @@ describe("runSelfPlay", () => {
 
   it("미지원 키는 throw 한다", () => {
     expect(() =>
-      runSelfPlay("chess" as unknown as SelfPlayGameKey, seededRng(1)),
+      runSelfPlay("shogi" as unknown as SelfPlayGameKey, seededRng(1)),
     ).toThrow();
+  });
+
+  it("체스: 정상 종국 시드는 동일 rng면 동일 종국 결과를 낸다", () => {
+    // seed 777은 CHESS_MAX_MOVES(1000) 안에 스테일메이트로 종국한다(무작위 체스는
+    // 외통이 드물어 대개 수 제한에 도달하지만, 이 시드는 결정적으로 종국한다).
+    const a = runSelfPlay("chess", seededRng(777));
+    const b = runSelfPlay("chess", seededRng(777));
+    expect(a.status.over).toBe(true);
+    expect(a.moveCount).toBeGreaterThan(0);
+    expect(a.moveCount).toBe(b.moveCount);
+    expect(a.status).toEqual(b.status);
+  });
+
+  it("체스: 외통이 안 나는 무작위 대국은 수 제한(maxMoves) 초과 시 throw 한다", () => {
+    // 무작위 체스는 보통 외통/스테일메이트에 닿지 못해 수 제한에 도달한다(playChess는
+    // 50수/반복/기물부족 무승부 미모델링). maxMoves=2로는 끝나지 않으므로 throw.
+    expect(() => runSelfPlay("chess", seededRng(12345), 2)).toThrow();
   });
 
   it("도트 앤 박스: 동일 rng면 동일 종국 결과를 낸다(throw 없음)", () => {
@@ -324,6 +351,24 @@ describe("describeSelfPlayResult", () => {
     expect(p2.outcome).toBe("2P(후) 승리 🎉");
   });
 
+  it("체스 승자는 백(선)/흑(후)로 매핑하고 무승부(스테일메이트)도 구분한다", () => {
+    const white = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p1", draw: false }, 30),
+      "chess",
+    );
+    const black = describeSelfPlayResult(
+      resultWith({ over: true, winner: "p2", draw: false }, 31),
+      "chess",
+    );
+    const draw = describeSelfPlayResult(
+      resultWith({ over: true, winner: null, draw: true }, 80),
+      "chess",
+    );
+    expect(white.outcome).toBe("백(선) 승리 🎉");
+    expect(black.outcome).toBe("흑(후) 승리 🎉");
+    expect(draw.outcome).toBe("무승부 🤝");
+  });
+
   it("기존 3종 라벨 회귀 없음(흑/백 유지)", () => {
     for (const game of ["gomoku", "go", "reversi"] as SelfPlayGameKey[]) {
       expect(
@@ -385,6 +430,20 @@ describe("runAndDescribeSelfPlay", () => {
     expect(run.unfinished).toBe(false);
     expect(run.result).not.toBeNull();
     expect(run.outcome).toMatch(/(1P\(선\)|2P\(후\)) 승리/);
+  });
+
+  it("체스: 정상 종국이면 백/흑 승자 또는 무승부 문구를 반환한다", () => {
+    const run = runAndDescribeSelfPlay("chess", seededRng(777));
+    expect(run.unfinished).toBe(false);
+    expect(run.result).not.toBeNull();
+    expect(run.outcome).toMatch(/(백\(선\)|흑\(후\)) 승리|무승부/);
+  });
+
+  it("체스: 수 제한(maxMoves=2) 도달 시 무종국 문구로 우아하게 처리한다(크래시 없음)", () => {
+    const run = runAndDescribeSelfPlay("chess", seededRng(12345), 2);
+    expect(run.unfinished).toBe(true);
+    expect(run.result).toBeNull();
+    expect(run.outcome).toContain("무종국");
   });
 });
 
@@ -535,5 +594,22 @@ describe("selfPlayNimBoard", () => {
     expect(
       selfPlayNimBoard(resultWith({ over: true, winner: "p1", draw: false }, 0)),
     ).toEqual([]);
+  });
+});
+
+describe("selfPlayChessState", () => {
+  it("실제 체스 자동 대국 결과에서 8×8 보드를 가진 종국 상태를 추출한다", () => {
+    const state = selfPlayChessState(runSelfPlay("chess", seededRng(777)));
+    expect(state.finished).toBe(true);
+    expect(state.board.length).toBe(8);
+    expect(state.board[0]!.length).toBe(8);
+  });
+
+  it("board가 없으면 빈 보드 상태를 반환한다(throw 없음)", () => {
+    const state = selfPlayChessState(
+      resultWith({ over: true, winner: null, draw: true }, 0),
+    );
+    expect(state.board).toEqual([]);
+    expect(state.finished).toBe(true);
   });
 });

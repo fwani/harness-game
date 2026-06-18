@@ -288,6 +288,15 @@ header h1 {
   font-size: 1.5rem;
 }
 
+/* 진행도 막대: 좁은 화면에서 카드/뷰포트를 넘치지 않도록 카드 폭에 맞춘다.
+   (progress는 기본 고유 너비가 있어 너비를 지정하지 않으면 카드를 가로로 뚫고 나간다.) */
+.pig-scoreboard progress {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.35rem;
+}
+
 /* CPU 진행 로그: 굴림/버스트/멈춤을 순서대로(번호 매김) 텍스트로 표시(색 비의존). */
 .pig-cpu-log {
   margin: 1rem 0;
@@ -1201,6 +1210,175 @@ button.dots-edge:disabled {
   opacity: 0.85;
 }
 
+/* --- 페그 솔리테어(Peg Solitaire) --- */
+
+.board.pegsolitaire {
+  background: #4b3a1a;
+  border-color: #2f2410;
+  gap: 4px;
+  padding: 6px;
+}
+
+/* 코너(보드 밖) 자리: 보이지 않는 빈 칸으로 격자 정렬만 유지. */
+.peg-void {
+  background: transparent;
+  border: 0;
+  cursor: default;
+}
+
+.peg-cell {
+  border-radius: 50%;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #f8fafc;
+}
+
+/* 빈 구멍: 눌린(움푹한) 모양으로 못과 입체로도 구분(색 비의존). */
+.peg-hole {
+  background: #2f2410;
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.6);
+}
+
+/* 못: 밝은 입체 원으로 표시(● 기호 병행, 색 비의존). */
+.peg-stone {
+  background: #c9a24b;
+  color: #1c1404;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.35),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* 선택 가능한(뛸 수 있는) 못: 강조 테두리로 색 외 단서를 함께 준다. */
+.peg-cell.selectable {
+  border: 2px solid #f59e0b;
+}
+
+/* 선택된 출발 못. */
+.peg-cell.selected {
+  border: 2px solid #38bdf8;
+  background: #e2b95c;
+}
+
+/* 착지 가능한 빈 구멍: 강조 링 + ◆ 기호로 안내(색 비의존). */
+.peg-cell.peg-target {
+  box-shadow: inset 0 0 0 2px #22c55e;
+  color: #bbf7d0;
+}
+
+.peg-cell:not(:disabled):hover,
+.peg-cell:not(:disabled):focus-visible {
+  background: #7c6230;
+}
+
+.peg-cell.peg-stone:not(:disabled):hover,
+.peg-cell.peg-stone:not(:disabled):focus-visible {
+  background: #dbb45f;
+}
+
+.peg-cell:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+/* --- 소코반(Sokoban) --- */
+
+.board.sokoban {
+  background: #3f3f46;
+  border-color: #27272a;
+  font-size: clamp(14px, 5vw, 22px);
+  line-height: 1;
+}
+
+/* 화살표 키 포커스가 보이도록 명시적 아웃라인(키보드 조작 단서). */
+.board.sokoban:focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* 칸은 색만이 아니라 기호(#/◎/□/■/@)와 aria-label로 구분한다. 비인터랙티브 표시 칸. */
+.sokoban-cell {
+  font-weight: 700;
+  color: #f4f4f5;
+  cursor: default;
+}
+
+.sokoban-wall {
+  background: #52525b;
+  color: #18181b;
+}
+
+.sokoban-floor {
+  background: #71717a;
+}
+
+/* 목표 칸: 노란 표식(◎) + 색. */
+.sokoban-target {
+  background: #71717a;
+  color: #fde047;
+}
+
+.sokoban-box {
+  background: #a16207;
+  color: #fff7ed;
+}
+
+/* 목표 위 상자(완료): 굵은 테두리로 색 외 단서도 준다. */
+.sokoban-box-on-target {
+  background: #15803d;
+  color: #ecfccb;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+.sokoban-player,
+.sokoban-player-on-target {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+/* 플레이어가 목표 위에 있을 때: 노란 테두리로 목표 칸임을 함께 표시. */
+.sokoban-player-on-target {
+  box-shadow: inset 0 0 0 2px rgba(253, 224, 71, 0.85);
+}
+
+/* --- 플러드 잇(Flood-It) --- */
+
+.board.floodit {
+  background: #27272a;
+  border-color: #18181b;
+}
+
+/* 칸은 비인터랙티브 표시(색 선택은 팔레트 버튼). 색만이 아니라 문자(A~E)+aria-label로 구분. */
+.floodit-cell {
+  cursor: default;
+  font-weight: 700;
+  font-size: clamp(11px, 3.5vw, 18px);
+  color: #18181b;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+/* 색 선택 팔레트: 실제 버튼(키보드 포커스 가능). */
+.controls.palette {
+  flex-wrap: wrap;
+}
+
+.flood-swatch {
+  min-width: 3rem;
+  font-weight: 700;
+  color: #18181b;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(0, 0, 0, 0.45);
+}
+
+.flood-swatch:not(:disabled):hover,
+.flood-swatch:not(:disabled):focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.flood-swatch:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 /* --- 빙고(Bingo) --- */
 
 .board.bingo {
@@ -1873,4 +2051,507 @@ button.dots-edge:disabled {
   font-size: 12px;
   font-weight: 700;
   color: #334155;
+}
+
+/* --- 마스터마인드(Mastermind) --- */
+
+/* 핀(추측 색 칸·이력 칸): 색뿐 아니라 기호+문자로 구분(색 비의존). */
+.peg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6rem;
+  min-height: 2.2rem;
+  margin: 0 3px 3px 0;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #18181b;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(0, 0, 0, 0.45);
+}
+
+/* 입력 중인 칸: 빈 칸도 누를 수 있게 버튼 형태(채워지면 색 표시). */
+.peg-slot {
+  cursor: pointer;
+  background: #e2e8f0;
+}
+
+.peg-slot:not(:disabled):hover,
+.peg-slot:not(:disabled):focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.peg-slot:disabled {
+  cursor: default;
+}
+
+.mastermind-history {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.mastermind-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mastermind-pegs,
+.mastermind-current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mastermind-current {
+  margin: 8px 0;
+  gap: 4px;
+}
+
+/* --- 네모로직(Nonogram) --- */
+
+/* 좁은 화면에서 단서+격자가 잘리지 않게 가로 스크롤을 허용한다. */
+.nonogram-scroll {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.nonogram-grid {
+  gap: 2px;
+  background: #1f2937;
+  border: 2px solid #111827;
+  border-radius: 4px;
+  padding: 4px;
+}
+
+/* 좌상단 빈 코너(단서 격자 정렬용). */
+.nonogram-corner {
+  background: transparent;
+}
+
+/* 행/열 단서: 색이 아니라 숫자 텍스트로 안내(색 비의존). */
+.nonogram-clue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e5e7eb;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  line-height: 1.1;
+  min-height: 1.6rem;
+  padding: 0 4px;
+}
+
+/* 열 단서는 위→아래로 묶음을 세로로 쌓는다. */
+.nonogram-col-clue {
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0;
+}
+
+.nonogram-row-clue {
+  justify-content: flex-end;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* 격자 칸: 색뿐 아니라 기호(■/✕)와 aria-label로 구분(색 비의존). */
+.nonogram-cell {
+  background: #f8fafc;
+  border: 1px solid #9ca3af;
+  color: #111827;
+  font-size: 1rem;
+  line-height: 1;
+  min-width: 1.6rem;
+}
+
+.nonogram-cell:not(:disabled):hover,
+.nonogram-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 칠해진 칸: 어두운 채움 + ■ 기호. */
+.nonogram-cell.nono-filled {
+  background: #1f2937;
+  color: #f8fafc;
+}
+
+/* X 표시 칸: 밝은 바탕 + ✕ 기호. */
+.nonogram-cell.nono-crossed {
+  color: #b91c1c;
+}
+
+.nonogram-cell:disabled {
+  cursor: default;
+  opacity: 0.95;
+}
+
+/* 스도쿠 9×9 보드: 밝은 바탕, 3×3 박스 경계는 굵게 구분. */
+.board.sudoku {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.sudoku-cell {
+  position: relative;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 0.5px solid #b9b08a;
+}
+
+/* 고정 단서: 굵게 + 구분 바탕(흐리게 처리하지 않는다). */
+.sudoku-cell.given {
+  font-weight: 800;
+  color: #111827;
+  background: #ece4c9;
+  opacity: 1;
+}
+
+.sudoku-cell:disabled {
+  cursor: default;
+}
+
+.sudoku-cell:not(:disabled):hover,
+.sudoku-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
+.sudoku-cell.selected {
+  background: #cfe8ff;
+  outline: 2px solid #1d4ed8;
+  outline-offset: -2px;
+}
+
+/* 충돌 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.sudoku-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.sudoku-cell .sudoku-conflict-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+/* 3×3 박스 경계(오른쪽/아래)는 굵은 선으로 구분. */
+.sudoku-cell.box-right {
+  border-right: 2px solid #1f2937;
+}
+
+.sudoku-cell.box-bottom {
+  border-bottom: 2px solid #1f2937;
+}
+
+/* 숫자 입력 패드: 줄바꿈 허용으로 좁은 화면 대응. */
+.controls.num-pad {
+  flex-wrap: wrap;
+}
+
+/* 비나이로(Binairo·Takuzu) 보드 — 스도쿠와 같은 결의 격자. */
+.board.binairo {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.binairo-cell {
+  position: relative;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 0.5px solid #b9b08a;
+}
+
+/* 고정 단서: 굵게 + 구분 바탕(흐리게 처리하지 않는다). */
+.binairo-cell.given {
+  font-weight: 800;
+  color: #111827;
+  background: #ece4c9;
+  opacity: 1;
+}
+
+.binairo-cell:disabled {
+  cursor: default;
+}
+
+.binairo-cell:not(:disabled):hover,
+.binairo-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.binairo-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.binairo-cell .binairo-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+/* 후토시키(Futoshiki·부등호 라틴방진) 보드 — 칸 사이에 부등호 슬롯을 끼운 확장 그리드.
+   트랙 크기는 인라인(futoshikiGridStyle)로 칸/사이를 번갈아 지정한다. */
+.board.futoshiki {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+  align-items: center;
+  justify-items: center;
+}
+
+.futoshiki-cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 1px solid #b9b08a;
+  cursor: pointer;
+}
+
+/* 고정 단서: 굵게 + 구분 바탕(흐리게 처리하지 않는다). */
+.futoshiki-cell.given {
+  font-weight: 800;
+  color: #111827;
+  background: #ece4c9;
+  opacity: 1;
+}
+
+.futoshiki-cell:disabled {
+  cursor: default;
+}
+
+.futoshiki-cell:not(:disabled):hover,
+.futoshiki-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
+.futoshiki-cell.selected {
+  background: #cfe8ff;
+  outline: 2px solid #1d4ed8;
+  outline-offset: -2px;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.futoshiki-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.futoshiki-cell .futoshiki-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+/* 칸 사이 부등호 슬롯: 색에 의존하지 않고 기호로 제약 방향을 드러낸다. */
+.futoshiki-gap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #1f2937;
+  background: #fdf6e3;
+  line-height: 1;
+}
+
+.futoshiki-gap-empty {
+  background: #fdf6e3;
+}
+
+/* 히토리(Hitori) 보드 — 고정 숫자 N×N 격자에서 칸을 칠해(black) 푼다.
+   칠 상태는 색뿐 아니라 채움 표식(■)·취소선으로 색 비의존 구분한다. */
+.board.hitori {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.hitori-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 0.5px solid #b9b08a;
+}
+
+.hitori-cell .hitori-number {
+  line-height: 1;
+}
+
+.hitori-cell:disabled {
+  cursor: default;
+}
+
+.hitori-cell:not(:disabled):hover,
+.hitori-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 칠한(black) 칸: 어두운 바탕 + 취소선 숫자 + ■ 표식으로 색 비의존 식별. */
+.hitori-cell.marked {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+.hitori-cell.marked .hitori-number {
+  text-decoration: line-through;
+  opacity: 0.85;
+}
+
+.hitori-cell:not(:disabled).marked:hover,
+.hitori-cell:not(:disabled).marked:focus-visible {
+  background: #374151;
+}
+
+.hitori-cell .hitori-mark {
+  position: absolute;
+  bottom: 1px;
+  left: 3px;
+  font-size: 0.55rem;
+  line-height: 1;
+  color: #f9fafb;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.hitori-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.hitori-cell.marked.conflict {
+  color: #fca5a5;
+}
+
+.hitori-cell .hitori-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+.hitori-cell.marked .hitori-violation-mark {
+  color: #fca5a5;
+}
+
+/* 켄켄(KenKen·Calcudoku) 보드 — 라틴방진 격자 위에 굵은 케이지 경계 + 좌상단 목표값/연산. */
+.board.kenken {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.kenken-cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #1f2937;
+  background: #fffdf5;
+  /* 케이지 내부의 얇은 기본 격자선. 굵은 케이지 경계는 cage-* 클래스가 덮어쓴다. */
+  border: 0.5px solid #cdc6a8;
+  cursor: pointer;
+}
+
+.kenken-cell:disabled {
+  cursor: default;
+}
+
+.kenken-cell:not(:disabled):hover,
+.kenken-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 굵은 케이지 경계: 이웃이 다른 케이지/격자 밖인 방향만 두껍게 그어 케이지를 시각적으로 묶는다. */
+.kenken-cell.cage-top {
+  border-top: 2px solid #1f2937;
+}
+.kenken-cell.cage-right {
+  border-right: 2px solid #1f2937;
+}
+.kenken-cell.cage-bottom {
+  border-bottom: 2px solid #1f2937;
+}
+.kenken-cell.cage-left {
+  border-left: 2px solid #1f2937;
+}
+
+/* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
+.kenken-cell.selected {
+  background: #cfe8ff;
+  outline: 2px solid #1d4ed8;
+  outline-offset: -2px;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.kenken-cell.conflict {
+  color: #b91c1c;
+}
+
+.kenken-cell.conflict .kenken-value {
+  text-decoration: underline;
+}
+
+/* 케이지 대표 칸(좌상단)의 목표값/연산 라벨. */
+.kenken-cell .kenken-cage-label {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #374151;
+}
+
+.kenken-cell .kenken-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
 }

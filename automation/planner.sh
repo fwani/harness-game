@@ -61,7 +61,7 @@ PROMPT=$(git -C "$WORKDIR" show origin/main:automation/planner-prompt.md 2>/dev/
 # 4) claude 위임 (트리아지 + 이슈 생성). 원시 출력은 detail 로그로.
 log "3) claude 위임 → qa-finding 트리아지 + 백로그 충원 (상세: $(basename "$DETAIL"))"
 cd "$WORKDIR" || { log "✗ cd 실패: $WORKDIR"; exit 1; }
-claude -p "$PROMPT" --allowedTools Bash Read Glob Grep >>"$DETAIL" 2>&1
+claude -p "$PROMPT" --allowedTools Bash Read Glob Grep WebSearch WebFetch >>"$DETAIL" 2>&1
 rc=$?
 log "4) claude 종료 (exit $rc) — 보고 요약:"
 tailsum

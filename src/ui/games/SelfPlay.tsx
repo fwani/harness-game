@@ -10,6 +10,7 @@ import {
   type DotsLabeler,
 } from "./dotsAndBoxesView";
 import { checkersCellView } from "./checkersView";
+import { chessSquareView, cellKey } from "./chessView";
 import {
   nimPileLabel,
   nimStonesSymbol,
@@ -25,6 +26,7 @@ import {
   SELF_PLAY_GAMES,
   runAndDescribeSelfPlay,
   selfPlayCheckersBoard,
+  selfPlayChessState,
   selfPlayDotsBoard,
   selfPlayGlyphBoard,
   selfPlayJanggiBoard,
@@ -66,7 +68,8 @@ export function SelfPlay() {
     game !== "dotsandboxes" &&
     game !== "checkers" &&
     game !== "mancala" &&
-    game !== "nim"
+    game !== "nim" &&
+    game !== "chess"
       ? selfPlayGlyphBoard(run.result, game)
       : [];
   const janggiBoard =
@@ -85,6 +88,8 @@ export function SelfPlay() {
       : null;
   const nimPiles =
     run?.result && game === "nim" ? selfPlayNimBoard(run.result) : null;
+  const chessState =
+    run?.result && game === "chess" ? selfPlayChessState(run.result) : null;
 
   return (
     <section className="game">
@@ -331,11 +336,45 @@ export function SelfPlay() {
             </div>
           )}
 
+          {game === "chess" && chessState && (
+            <div
+              className="board chess"
+              style={boardGridStyle(meta.size)}
+              role="img"
+              aria-label={`${meta.label} 최종 보드`}
+            >
+              {chessState.board.map((cells, row) =>
+                cells.map((_, col) => {
+                  const view = chessSquareView(chessState, null, { row, col });
+                  // 체스판 교대 칸: 색 외 단서가 아니라 판 모양을 위한 시각 배경(Chess.tsx와 동일).
+                  const light = (row + col) % 2 === 0;
+                  return (
+                    <div
+                      key={cellKey(row, col)}
+                      className={`cell ${light ? "sq-light" : "sq-dark"}`}
+                      aria-label={view.ariaLabel}
+                    >
+                      {view.color !== null && (
+                        <span
+                          className={`chess-piece ${view.color}`}
+                          title={view.pieceLabel}
+                        >
+                          {view.glyph}
+                        </span>
+                      )}
+                    </div>
+                  );
+                }),
+              )}
+            </div>
+          )}
+
           {game !== "janggi" &&
             game !== "dotsandboxes" &&
             game !== "checkers" &&
             game !== "mancala" &&
             game !== "nim" &&
+            game !== "chess" &&
             run.result && (
             <div
               className={`board ${meta.boardClass}`.trim()}

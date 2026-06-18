@@ -10,6 +10,7 @@ import { Baccarat } from "./games/Baccarat";
 import { Blackjack } from "./games/Blackjack";
 import { Sutda } from "./games/Sutda";
 import { Poker } from "./games/Poker";
+import { OneCard } from "./games/OneCard";
 import { GoStop } from "./games/GoStop";
 import { Gomoku } from "./games/Gomoku";
 import { Go } from "./games/Go";
@@ -30,12 +31,22 @@ import { Battleship } from "./games/Battleship";
 import { Hanoi } from "./games/Hanoi";
 import { SlidePuzzle } from "./games/SlidePuzzle";
 import { LightsOut } from "./games/LightsOut";
+import { PegSolitaire } from "./games/PegSolitaire";
+import { Sokoban } from "./games/Sokoban";
+import { FloodIt } from "./games/FloodIt";
 import { MemoryMatch } from "./games/MemoryMatch";
 import { Hangman } from "./games/Hangman";
 import { Pig } from "./games/Pig";
 import { Bingo } from "./games/Bingo";
 import { SnakesAndLadders } from "./games/SnakesAndLadders";
 import { Wordle } from "./games/Wordle";
+import { Mastermind } from "./games/Mastermind";
+import { Nonogram } from "./games/Nonogram";
+import { Sudoku } from "./games/Sudoku";
+import { Binairo } from "./games/Binairo";
+import { Futoshiki } from "./games/Futoshiki";
+import { Hitori } from "./games/Hitori";
+import { KenKen } from "./games/KenKen";
 import { Ladder } from "./games/Ladder";
 import { SelfPlay } from "./games/SelfPlay";
 import { Tournament } from "./games/Tournament";
@@ -55,6 +66,7 @@ type GameKey =
   | "blackjack"
   | "sutda"
   | "poker"
+  | "onecard"
   | "gostop"
   | "gomoku"
   | "go"
@@ -75,12 +87,22 @@ type GameKey =
   | "hanoi"
   | "slidepuzzle"
   | "lightsout"
+  | "pegsolitaire"
+  | "sokoban"
+  | "floodit"
   | "memory"
   | "hangman"
   | "pig"
   | "bingo"
   | "snakesandladders"
   | "wordle"
+  | "mastermind"
+  | "nonogram"
+  | "sudoku"
+  | "binairo"
+  | "futoshiki"
+  | "hitori"
+  | "kenken"
   | "ladder"
   | "selfplay"
   | "tournament"
@@ -99,6 +121,7 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "blackjack", label: "블랙잭", render: () => <Blackjack /> },
   { key: "sutda", label: "섯다", render: () => <Sutda /> },
   { key: "poker", label: "포커", render: () => <Poker /> },
+  { key: "onecard", label: "원카드", render: () => <OneCard /> },
   { key: "gostop", label: "고스톱", render: () => <GoStop /> },
   { key: "gomoku", label: "오목", render: () => <Gomoku /> },
   { key: "go", label: "바둑", render: () => <Go /> },
@@ -119,12 +142,22 @@ const GAMES: { key: GameKey; label: string; render: () => JSX.Element }[] = [
   { key: "hanoi", label: "하노이탑", render: () => <Hanoi /> },
   { key: "slidepuzzle", label: "슬라이드 퍼즐", render: () => <SlidePuzzle /> },
   { key: "lightsout", label: "라이트 아웃", render: () => <LightsOut /> },
+  { key: "pegsolitaire", label: "페그 솔리테어", render: () => <PegSolitaire /> },
+  { key: "sokoban", label: "소코반", render: () => <Sokoban /> },
+  { key: "floodit", label: "플러드 잇", render: () => <FloodIt /> },
   { key: "memory", label: "메모리", render: () => <MemoryMatch /> },
   { key: "hangman", label: "행맨", render: () => <Hangman /> },
   { key: "pig", label: "피그", render: () => <Pig /> },
   { key: "bingo", label: "빙고", render: () => <Bingo /> },
   { key: "snakesandladders", label: "뱀과 사다리", render: () => <SnakesAndLadders /> },
   { key: "wordle", label: "워들", render: () => <Wordle /> },
+  { key: "mastermind", label: "마스터마인드", render: () => <Mastermind /> },
+  { key: "nonogram", label: "네모로직", render: () => <Nonogram /> },
+  { key: "sudoku", label: "스도쿠", render: () => <Sudoku /> },
+  { key: "binairo", label: "비나이로", render: () => <Binairo /> },
+  { key: "futoshiki", label: "후토시키", render: () => <Futoshiki /> },
+  { key: "hitori", label: "히토리", render: () => <Hitori /> },
+  { key: "kenken", label: "켄켄", render: () => <KenKen /> },
   { key: "ladder", label: "사다리타기", render: () => <Ladder /> },
   { key: "selfplay", label: "관전", render: () => <SelfPlay /> },
   { key: "tournament", label: "토너먼트", render: () => <Tournament /> },
