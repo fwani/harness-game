@@ -358,6 +358,20 @@ header h1 {
   margin-top: 0;
 }
 
+/*
+ * 컨트롤 그룹의 버튼은 모두 클릭 가능하므로, 선택 여부(.primary 유무)와 무관하게
+ * hover 시 포인터 커서로 클릭 가능 어포던스를 보인다. 미선택 토글 버튼(className="")이
+ * 브라우저 기본 화살표 커서로 떨어져 "클릭 불가"처럼 보이던 문제를 막는다.
+ * 비활성(disabled) 버튼은 not-allowed로 클릭 불가를 알린다.
+ */
+.controls button:not(:disabled) {
+  cursor: pointer;
+}
+
+.controls button:disabled {
+  cursor: not-allowed;
+}
+
 .error {
   color: var(--bad);
   font-size: 0.9rem;
