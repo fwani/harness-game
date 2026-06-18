@@ -38,6 +38,7 @@ export type GameId =
   | "battleship"
   | "hanoi"
   | "slidepuzzle"
+  | "lightsout"
   | "pegsolitaire"
   | "sokoban"
   | "floodit"
