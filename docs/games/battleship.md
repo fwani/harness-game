@@ -48,6 +48,9 @@
   상대 보드의 **미사격 칸**은 `hasShip:false`·`shipId:null`로 덮어 함선 위치를 숨긴다(사격된 명중/빗나감 칸·`next`는 보존, 입력 불변).
   멀티 전송 시 연결별로 redact한 뷰를 라우팅해 상대 함선 위치 누수를 막는다(실제 ws side 라우팅은 후속). 하위 헬퍼 `redactOpponentBoard(board)`.
 
+### 멀티(DoD B) 배치 setup 단계 (`battleshipSetup.ts`, application)
+- `createBattleshipSetup(size, fleet)`·`submitFleet(setup, side, ships)`·`isSetupComplete(setup)`·`startBattleshipMatch(setup)`·`redactSetup(setup, viewer)` — 두 사람이 각자 함대를 비공개로 제출(길이 multiset 일치 + `isValidPlacement` 통과 시에만 채택, 실패는 `ok:false`로 거부·입력 불변, 양측 완료 전까지 재제출 허용)하고, 양측 완료 시 기존 `createBattleshipEngine().init`으로 사격 엔진 상태를 생성하는 전송 비종속 순수 단위. `redactSetup`은 상대 함대 위치를 숨기고 제출 여부만 노출(제출=`[]`/미제출=`null`).
+
 ## 3. 구현 상태
 
 | 레이어 | 위치 | 내용 | 상태 |
@@ -56,6 +59,7 @@
 | 애플리케이션 | [`src/application/playBattleship.ts`](../../src/application/playBattleship.ts) | `placeFleetRandomly`·`chooseRandomShot`·`chooseSmartShot`(헌트/타깃 AI)·`playBattleshipShot` | ✅ |
 | UI | [`src/ui/games/Battleship.tsx`](../../src/ui/games/Battleship.tsx) | 배치 단계(직접/무작위 배치·회전·미리보기·CPU 난이도 선택) → 사격 단계(두 보드 렌더·사격 클릭·CPU 차례 "생각 중" 단계 표시 후 반격·승패·새 게임) | ✅ |
 | 멀티(엔진) | [`src/application/battleshipEngine.ts`](../../src/application/battleshipEngine.ts) | `createBattleshipEngine` GameEngine 어댑터 + `redactBattleshipState`/`redactOpponentBoard`(시점별 안개 가림 순수 함수) | ✅(엔진·가림) / ws side 라우팅 후속 |
+| 멀티(배치 setup) | [`src/application/battleshipSetup.ts`](../../src/application/battleshipSetup.ts) | `createBattleshipSetup`·`submitFleet`·`isSetupComplete`·`startBattleshipMatch`·`redactSetup`(양측 비공개 배치 제출→매치 시작, 전송 비종속 순수 단위) | ✅(순수 단위) / UI·전송 소비 후속 |
 | 기록 | `GameId="battleship"` + [`src/ui/records.ts`](../../src/ui/records.ts) | 종료 시 사람=a/CPU=b로 저장 | ✅ |
 
 ## 4. UI/UX 요구사항
