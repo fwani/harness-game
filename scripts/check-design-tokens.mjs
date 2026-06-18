@@ -18,6 +18,10 @@ const FORBIDDEN = {
   "#e2e8f0": "var(--text)",
   "#94a3b8": "var(--muted)",
   "#38bdf8": "var(--accent)",
+  "#0b1220": "var(--sunken)",
+  "#f87171": "var(--bad)",
+  "#dbeafe": "var(--sel)",
+  "#f59e0b": "var(--active)",
 };
 
 const css = readFileSync(FILE, "utf8");

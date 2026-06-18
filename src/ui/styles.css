@@ -5,6 +5,7 @@
   --bg: #0f172a;
   --panel: #1e293b;
   --panel-2: #243042;       /* 한 단계 밝은 패널 (중첩 카드/헤더) */
+  --sunken: #0b1220;        /* 인셋 표면 (입력창·점수판·로그) */
   --border: #334155;
 
   /* ── 색: 텍스트 ── */
@@ -17,6 +18,8 @@
   --good: #4ade80;          /* 승/성공 */
   --warn: #fbbf24;          /* 주의 */
   --bad: #f87171;           /* 패/오류 */
+  --sel: #dbeafe;           /* 선택/하이라이트 배경 (여러 게임 공통) */
+  --active: #f59e0b;        /* 현재/활성 강조 링 (border·outline) */
 
   /* ── 간격 스케일 (4px 베이스) ── */
   --s-1: .25rem;
@@ -231,7 +234,7 @@ header h1 {
   gap: 0.4rem;
   padding: 1rem;
   border: 1px solid var(--border);
-  background: #0b1220;
+  background: var(--sunken);
   color: var(--text);
   border-radius: 0.6rem;
   cursor: pointer;
@@ -344,7 +347,7 @@ header h1 {
 .controls input {
   width: 5rem;
   padding: 0.4rem 0.5rem;
-  background: #0b1220;
+  background: var(--sunken);
   border: 1px solid var(--border);
   border-radius: 0.4rem;
   color: var(--text);
@@ -356,7 +359,7 @@ header h1 {
 }
 
 .error {
-  color: #f87171;
+  color: var(--bad);
   font-size: 0.9rem;
 }
 
@@ -388,7 +391,7 @@ header h1 {
   height: 2.4rem;
   padding: 0;
   border: 1px solid var(--border);
-  background: #0b1220;
+  background: var(--sunken);
   color: var(--text);
   border-radius: 0.4rem;
   cursor: pointer;
@@ -421,7 +424,7 @@ header h1 {
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   padding: 0.6rem 0.75rem;
-  background: #0b1220;
+  background: var(--sunken);
 }
 
 .pig-scoreboard dt {
@@ -624,7 +627,7 @@ header h1 {
 }
 
 .ttt-mark.mark-O {
-  color: #f87171;
+  color: var(--bad);
 }
 
 /* --- reversi (오델로) --- */
@@ -1027,7 +1030,7 @@ button.dots-edge.vedge {
 
 button.dots-edge:not(:disabled):hover,
 button.dots-edge:not(:disabled):focus-visible {
-  border-color: #f59e0b;
+  border-color: var(--active);
 }
 
 button.dots-edge:disabled {
@@ -1061,7 +1064,7 @@ button.dots-edge:disabled {
 }
 
 .dots-box.owner-p1 {
-  background: #dbeafe;
+  background: var(--sel);
   color: #1e3a8a;
 }
 
@@ -1103,7 +1106,7 @@ button.dots-edge:disabled {
 }
 
 .mancala-pit.owner-p1 {
-  background: #dbeafe;
+  background: var(--sel);
   border-color: #1e3a8a;
   color: #1e3a8a;
 }
@@ -1117,12 +1120,12 @@ button.dots-edge:disabled {
 /* 현재 차례인 쪽의 둘 수 있는 구덩이를 강조(색 외 단서로 굵은 테두리). */
 .mancala-pit.current:not(:disabled) {
   border-width: 3px;
-  box-shadow: 0 0 0 2px #f59e0b;
+  box-shadow: 0 0 0 2px var(--active);
 }
 
 .mancala-pit:not(:disabled):hover,
 .mancala-pit:not(:disabled):focus-visible {
-  outline: 2px solid #f59e0b;
+  outline: 2px solid var(--active);
 }
 
 .mancala-pit:disabled {
@@ -1160,7 +1163,7 @@ button.dots-edge:disabled {
 }
 
 .mancala-store.owner-p1 {
-  background: #dbeafe;
+  background: var(--sel);
   border-color: #1e3a8a;
   color: #1e3a8a;
 }
@@ -1240,7 +1243,7 @@ button.dots-edge:disabled {
   padding: 6px 10px;
   border: 2px solid #1e3a8a;
   border-radius: 6px;
-  background: #dbeafe;
+  background: var(--sel);
   color: #1e3a8a;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -1249,7 +1252,7 @@ button.dots-edge:disabled {
 
 .nim-take-btn:not(:disabled):hover,
 .nim-take-btn:not(:disabled):focus-visible {
-  outline: 2px solid #f59e0b;
+  outline: 2px solid var(--active);
 }
 
 .nim-take-btn:disabled {
@@ -1295,7 +1298,7 @@ button.dots-edge:disabled {
 .memory-card.memory-up {
   background: #f8fafc;
   color: var(--bg);
-  border: 2px solid #f59e0b;
+  border: 2px solid var(--active);
 }
 
 /* 짝 완성 카드: 가라앉은 모양 + 점선 테두리(색 외 단서). */
@@ -1330,7 +1333,7 @@ button.dots-edge:disabled {
 
 /* 밀 수 있는(빈 칸과 인접) 타일: 강조 테두리로 색 외 단서를 함께 준다. */
 .sp-tile.sp-movable {
-  border: 2px solid #f59e0b;
+  border: 2px solid var(--active);
 }
 
 .sp-tile.sp-movable:not(:disabled):hover,
@@ -1365,7 +1368,7 @@ button.dots-edge:disabled {
 }
 
 .lo-on {
-  background: #f59e0b;
+  background: var(--active);
   color: var(--panel);
   box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.45),
     inset -2px -2px 0 rgba(0, 0, 0, 0.3);
@@ -1426,7 +1429,7 @@ button.dots-edge:disabled {
 
 /* 선택 가능한(뛸 수 있는) 못: 강조 테두리로 색 외 단서를 함께 준다. */
 .peg-cell.selectable {
-  border: 2px solid #f59e0b;
+  border: 2px solid var(--active);
 }
 
 /* 선택된 출발 못. */
@@ -1646,7 +1649,7 @@ button.dots-edge:disabled {
   justify-content: center;
   border: 1px solid var(--border);
   border-radius: 0.4rem;
-  background: #0b1220;
+  background: var(--sunken);
   color: var(--text);
 }
 
@@ -1841,7 +1844,7 @@ button.dots-edge:disabled {
   flex: 1;
   height: 0.9rem;
   min-width: 0;
-  background: #0b1220;
+  background: var(--sunken);
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   overflow: hidden;
@@ -1972,7 +1975,7 @@ button.dots-edge:disabled {
   padding: 0.75rem 1rem;
   border: 1px solid var(--border);
   border-radius: 0.6rem;
-  background: #0b1220;
+  background: var(--sunken);
 }
 
 .streak h3 {
@@ -2039,7 +2042,7 @@ button.dots-edge:disabled {
   align-items: center;
   gap: 0.75rem;
   padding: 0.35rem 0.6rem;
-  background: #0b1220;
+  background: var(--sunken);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
@@ -2091,7 +2094,7 @@ button.dots-edge:disabled {
   width: 9rem;
   max-width: 40vw;
   padding: 0.4rem 0.5rem;
-  background: #0b1220;
+  background: var(--sunken);
   border: 1px solid var(--border);
   border-radius: 0.4rem;
   color: var(--text);
@@ -2174,7 +2177,7 @@ button.dots-edge:disabled {
 
 .hanoi-peg:not(:disabled):hover,
 .hanoi-peg:not(:disabled):focus-visible {
-  outline: 2px solid #f59e0b;
+  outline: 2px solid var(--active);
 }
 
 /* 선택된 출발 기둥 강조(색뿐 아니라 굵은 테두리·점선으로 구분). */
@@ -2212,7 +2215,7 @@ button.dots-edge:disabled {
   justify-content: center;
   border: 1px solid var(--panel);
   border-radius: 6px;
-  background: #dbeafe;
+  background: var(--sel);
   color: #1e3a8a;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -2220,7 +2223,7 @@ button.dots-edge:disabled {
 
 /* 맨 위(집을 수 있는) 디스크 강조(색 비의존: 굵은 테두리). */
 .hanoi-disk.top {
-  border-color: #f59e0b;
+  border-color: var(--active);
   border-width: 2px;
 }
 
@@ -2350,7 +2353,7 @@ button.dots-edge:disabled {
 
 .nonogram-cell:not(:disabled):hover,
 .nonogram-cell:not(:disabled):focus-visible {
-  background: #dbeafe;
+  background: var(--sel);
 }
 
 /* 칠해진 칸: 어두운 채움 + ■ 기호. */
@@ -2369,9 +2372,26 @@ button.dots-edge:disabled {
   opacity: 0.95;
 }
 
+/* 펜슬 퍼즐(라틴 사각) 공용 크림 팔레트 — 스도쿠·비나이로·후토시키·히토리·켄켄·마천루.
+   여섯 보드가 같은 결의 격자라 색을 로컬 변수로 묶는다. 잉크(#1f2937)·위반 빨강
+   (#b91c1c)·선택 외곽선(#1d4ed8)은 다른 게임과도 겹치는 색이라 그대로 둔다.
+   (docs/agent-harness/UX_GUIDELINES.md "디자인 토큰 & 시각 일관성" — 레이어 3) */
+.board.sudoku,
+.board.binairo,
+.board.futoshiki,
+.board.hitori,
+.board.kenken,
+.board.skyscrapers {
+  --pp-paper: #fdf6e3;   /* 보드/단서 바탕(크림) */
+  --pp-cell: #fffdf5;    /* 입력 칸 바탕 */
+  --pp-given: #ece4c9;   /* 고정 단서 칸 바탕 */
+  --pp-line: #b9b08a;    /* 칸 격자선 */
+  --pp-sel: #cfe8ff;     /* 선택 칸 바탕 */
+}
+
 /* 스도쿠 9×9 보드: 밝은 바탕, 3×3 박스 경계는 굵게 구분. */
 .board.sudoku {
-  background: #fdf6e3;
+  background: var(--pp-paper);
   border: 2px solid #1f2937;
 }
 
@@ -2380,15 +2400,15 @@ button.dots-edge:disabled {
   font-size: 1.05rem;
   font-weight: 500;
   color: #1f2937;
-  background: #fffdf5;
-  border: 0.5px solid #b9b08a;
+  background: var(--pp-cell);
+  border: 0.5px solid var(--pp-line);
 }
 
 /* 고정 단서: 굵게 + 구분 바탕(흐리게 처리하지 않는다). */
 .sudoku-cell.given {
   font-weight: 800;
   color: #111827;
-  background: #ece4c9;
+  background: var(--pp-given);
   opacity: 1;
 }
 
@@ -2398,12 +2418,12 @@ button.dots-edge:disabled {
 
 .sudoku-cell:not(:disabled):hover,
 .sudoku-cell:not(:disabled):focus-visible {
-  background: #dbeafe;
+  background: var(--sel);
 }
 
 /* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
 .sudoku-cell.selected {
-  background: #cfe8ff;
+  background: var(--pp-sel);
   outline: 2px solid #1d4ed8;
   outline-offset: -2px;
 }
@@ -2439,7 +2459,7 @@ button.dots-edge:disabled {
 
 /* 비나이로(Binairo·Takuzu) 보드 — 스도쿠와 같은 결의 격자. */
 .board.binairo {
-  background: #fdf6e3;
+  background: var(--pp-paper);
   border: 2px solid #1f2937;
 }
 
@@ -2448,15 +2468,15 @@ button.dots-edge:disabled {
   font-size: 1.05rem;
   font-weight: 600;
   color: #1f2937;
-  background: #fffdf5;
-  border: 0.5px solid #b9b08a;
+  background: var(--pp-cell);
+  border: 0.5px solid var(--pp-line);
 }
 
 /* 고정 단서: 굵게 + 구분 바탕(흐리게 처리하지 않는다). */
 .binairo-cell.given {
   font-weight: 800;
   color: #111827;
-  background: #ece4c9;
+  background: var(--pp-given);
   opacity: 1;
 }
 
@@ -2466,7 +2486,7 @@ button.dots-edge:disabled {
 
 .binairo-cell:not(:disabled):hover,
 .binairo-cell:not(:disabled):focus-visible {
-  background: #dbeafe;
+  background: var(--sel);
 }
 
 /* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
@@ -2487,7 +2507,7 @@ button.dots-edge:disabled {
 /* 후토시키(Futoshiki·부등호 라틴방진) 보드 — 칸 사이에 부등호 슬롯을 끼운 확장 그리드.
    트랙 크기는 인라인(futoshikiGridStyle)로 칸/사이를 번갈아 지정한다. */
 .board.futoshiki {
-  background: #fdf6e3;
+  background: var(--pp-paper);
   border: 2px solid #1f2937;
   align-items: center;
   justify-items: center;
@@ -2506,8 +2526,8 @@ button.dots-edge:disabled {
   font-size: 1.05rem;
   font-weight: 500;
   color: #1f2937;
-  background: #fffdf5;
-  border: 1px solid #b9b08a;
+  background: var(--pp-cell);
+  border: 1px solid var(--pp-line);
   cursor: pointer;
 }
 
@@ -2515,7 +2535,7 @@ button.dots-edge:disabled {
 .futoshiki-cell.given {
   font-weight: 800;
   color: #111827;
-  background: #ece4c9;
+  background: var(--pp-given);
   opacity: 1;
 }
 
@@ -2525,12 +2545,12 @@ button.dots-edge:disabled {
 
 .futoshiki-cell:not(:disabled):hover,
 .futoshiki-cell:not(:disabled):focus-visible {
-  background: #dbeafe;
+  background: var(--sel);
 }
 
 /* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
 .futoshiki-cell.selected {
-  background: #cfe8ff;
+  background: var(--pp-sel);
   outline: 2px solid #1d4ed8;
   outline-offset: -2px;
 }
@@ -2560,18 +2580,18 @@ button.dots-edge:disabled {
   font-weight: 800;
   font-size: 0.95rem;
   color: #1f2937;
-  background: #fdf6e3;
+  background: var(--pp-paper);
   line-height: 1;
 }
 
 .futoshiki-gap-empty {
-  background: #fdf6e3;
+  background: var(--pp-paper);
 }
 
 /* 히토리(Hitori) 보드 — 고정 숫자 N×N 격자에서 칸을 칠해(black) 푼다.
    칠 상태는 색뿐 아니라 채움 표식(■)·취소선으로 색 비의존 구분한다. */
 .board.hitori {
-  background: #fdf6e3;
+  background: var(--pp-paper);
   border: 2px solid #1f2937;
 }
 
@@ -2583,8 +2603,8 @@ button.dots-edge:disabled {
   font-size: 1.05rem;
   font-weight: 600;
   color: #1f2937;
-  background: #fffdf5;
-  border: 0.5px solid #b9b08a;
+  background: var(--pp-cell);
+  border: 0.5px solid var(--pp-line);
 }
 
 .hitori-cell .hitori-number {
@@ -2597,7 +2617,7 @@ button.dots-edge:disabled {
 
 .hitori-cell:not(:disabled):hover,
 .hitori-cell:not(:disabled):focus-visible {
-  background: #dbeafe;
+  background: var(--sel);
 }
 
 /* 칠한(black) 칸: 어두운 바탕 + 취소선 숫자 + ■ 표식으로 색 비의존 식별. */
@@ -2650,7 +2670,7 @@ button.dots-edge:disabled {
 
 /* 켄켄(KenKen·Calcudoku) 보드 — 라틴방진 격자 위에 굵은 케이지 경계 + 좌상단 목표값/연산. */
 .board.kenken {
-  background: #fdf6e3;
+  background: var(--pp-paper);
   border: 2px solid #1f2937;
 }
 
@@ -2668,7 +2688,7 @@ button.dots-edge:disabled {
   font-size: 1.2rem;
   font-weight: 500;
   color: #1f2937;
-  background: #fffdf5;
+  background: var(--pp-cell);
   /* 케이지 내부의 얇은 기본 격자선. 굵은 케이지 경계는 cage-* 클래스가 덮어쓴다. */
   border: 0.5px solid #cdc6a8;
   cursor: pointer;
@@ -2680,7 +2700,7 @@ button.dots-edge:disabled {
 
 .kenken-cell:not(:disabled):hover,
 .kenken-cell:not(:disabled):focus-visible {
-  background: #dbeafe;
+  background: var(--sel);
 }
 
 /* 굵은 케이지 경계: 이웃이 다른 케이지/격자 밖인 방향만 두껍게 그어 케이지를 시각적으로 묶는다. */
@@ -2699,7 +2719,7 @@ button.dots-edge:disabled {
 
 /* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
 .kenken-cell.selected {
-  background: #cfe8ff;
+  background: var(--pp-sel);
   outline: 2px solid #1d4ed8;
   outline-offset: -2px;
 }
@@ -2736,7 +2756,7 @@ button.dots-edge:disabled {
 /* 마천루(Skyscrapers) 보드 — 라틴방진 입력 격자(N×N) 둘레에 네 변 "보이는 빌딩 수" 단서를
    숫자로 두른 (N+2)×(N+2) 그리드. 단서는 색이 아니라 숫자 텍스트로 드러낸다(색 비의존). */
 .board.skyscrapers {
-  background: #fdf6e3;
+  background: var(--pp-paper);
   align-items: center;
   justify-items: center;
 }
@@ -2752,14 +2772,14 @@ button.dots-edge:disabled {
   font-size: 0.95rem;
   font-weight: 800;
   color: #1f2937;
-  background: #fdf6e3;
+  background: var(--pp-paper);
 }
 
 .skyscraper-clue-empty,
 .skyscraper-corner {
   width: 100%;
   height: 100%;
-  background: #fdf6e3;
+  background: var(--pp-paper);
 }
 
 .skyscraper-cell {
@@ -2775,8 +2795,8 @@ button.dots-edge:disabled {
   font-size: 1.1rem;
   font-weight: 500;
   color: #1f2937;
-  background: #fffdf5;
-  border: 1px solid #b9b08a;
+  background: var(--pp-cell);
+  border: 1px solid var(--pp-line);
   cursor: pointer;
 }
 
@@ -2784,7 +2804,7 @@ button.dots-edge:disabled {
 .skyscraper-cell.given {
   font-weight: 800;
   color: #111827;
-  background: #ece4c9;
+  background: var(--pp-given);
   opacity: 1;
 }
 
@@ -2794,12 +2814,12 @@ button.dots-edge:disabled {
 
 .skyscraper-cell:not(:disabled):hover,
 .skyscraper-cell:not(:disabled):focus-visible {
-  background: #dbeafe;
+  background: var(--sel);
 }
 
 /* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
 .skyscraper-cell.selected {
-  background: #cfe8ff;
+  background: var(--pp-sel);
   outline: 2px solid #1d4ed8;
   outline-offset: -2px;
 }
