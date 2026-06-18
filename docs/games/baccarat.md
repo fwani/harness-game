@@ -54,8 +54,8 @@
 | 도메인(정산) | [`src/domain/baccarat.ts`](../../src/domain/baccarat.ts) | `settleBaccaratBet()` — punto banco 배당(1:1 / 0.95:1 / 8:1 / push) | ✅ |
 | 애플리케이션 | [`src/application/playBaccaratRound.ts`](../../src/application/playBaccaratRound.ts) | `playBaccaratRound()` 타블로 진행 · `resolveBaccaratWager()` 베팅 결합 | ✅ |
 | 인프라(RNG) | [`src/infrastructure/mathRandomSource.ts`](../../src/infrastructure/mathRandomSource.ts) | 셔플용 `RandomSource`(`Math.random`) | ✅ |
-| UI | [`src/ui/games/Baccarat.tsx`](../../src/ui/games/Baccarat.tsx) | 베팅 측·베팅액 선택 → 딜링 → 손패·끗수·승자·정산·뱅크롤 표시 | ✅ |
-| UI 보조(뷰) | [`baccaratView.ts`](../../src/ui/games/baccaratView.ts) · [`baccaratStartOptionsView.ts`](../../src/ui/games/baccaratStartOptionsView.ts) · [`baccaratBankrollView.ts`](../../src/ui/games/baccaratBankrollView.ts) | 라벨·베팅 옵션·뱅크롤/정산 포맷(순수 함수, 단위 테스트) | ✅ |
+| UI | [`src/ui/games/Baccarat.tsx`](../../src/ui/games/Baccarat.tsx) | 베팅 측·베팅액 선택 → 딜링 → **카드 단계적 공개**(즉시 점프 금지) → 손패·끗수·승자·정산·뱅크롤 표시 | ✅ |
+| UI 보조(뷰) | [`baccaratView.ts`](../../src/ui/games/baccaratView.ts) · [`baccaratStartOptionsView.ts`](../../src/ui/games/baccaratStartOptionsView.ts) · [`baccaratBankrollView.ts`](../../src/ui/games/baccaratBankrollView.ts) | 라벨 · **딜링 공개 순서(`baccaratRevealSteps`/`baccaratRevealedThrough`)** · 베팅 옵션·뱅크롤/정산 포맷(순수 함수, 단위 테스트) | ✅ |
 | 기록 | `GameId="baccarat"` + [`src/ui/records.ts`](../../src/ui/records.ts) | 매 판 베팅 기준 나=a 적중/b 빗나감/draw(타이 push)로 저장 → 전적 노출 | ✅ |
 
 ## 4. UI/UX 요구사항
@@ -63,6 +63,7 @@
 - [x] 목적·조작·배당 안내(`.hint`): 베팅 측/액 선택 후 딜링, 1:1·0.95:1·8:1·타이 push 설명.
 - [x] **시작 옵션 UI**: 베팅 측(플레이어/뱅커/타이) + 베팅액(프리셋·직접 입력) 선택(`aria-pressed`).
 - [x] 현재 베팅 측·베팅액·보유 칩(뱅크롤)을 상시 표시(`aria-live`).
+- [x] **딜링 단계적 공개(DoD A 턴제/상호작용)**: 플레이어→뱅커→플레이어→뱅커 초기 4장 + (있으면)세 번째 카드를 한 장씩 순차 공개(즉시 점프 금지). 진행 단계를 `role="status"` `aria-live`로 안내("뱅커 카드 공개 중" 등), "건너뛰기"로 즉시 전체 공개 선택 가능, 공개 중 "다시 딜링" 비활성. 정산·뱅크롤·전적은 **마지막 결과 공개 시 1회만** 반영(중복 없음).
 - [x] 결과: 양측 손패(랭크+슈트 텍스트)·끗수·핸드 승자·베팅 적중 여부·정산액·갱신 잔고 명확 표시.
 - [x] 잘못된 입력 피드백: 잔고 초과 베팅 비활성(`disabled`), 파산 시 경고(`role="alert"`)·리셋 경로.
 - [x] "딜링/다시 딜링" 반복 경로와 파산 시 "새 뱅크롤로 리셋" 회복 경로.
