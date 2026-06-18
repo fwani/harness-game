@@ -822,6 +822,18 @@ header h1 {
   background: #e2e8f0;
 }
 
+/* 깃발 칸: 미공개와 같은 올라온(raised) 모양이되 🚩 기호로 구분(색 비의존). */
+.ms-cell.ms-flag {
+  background: #fde68a;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.7),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.3);
+  font-size: 0.95rem;
+}
+
+.ms-cell.ms-flag:not(:disabled):hover {
+  background: #fcd34d;
+}
+
 /* 공개된 칸: 눌린(flat) 모양. 숫자/빈칸/지뢰를 텍스트·기호로 구분한다. */
 .ms-cell.ms-empty,
 .ms-cell.ms-number,
