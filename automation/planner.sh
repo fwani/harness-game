@@ -11,7 +11,7 @@
 
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 REPO="fwani/harness-game"
-TARGET=6
+TARGET=4  # 한 게임에 집중하므로 백로그 목표 축소(planner-prompt §2와 일치)
 BASE="$HOME/Library/Application Support/harness-game-autodev"
 WORKDIR="$BASE/repo-planner"
 LOG="$BASE/planner.log"
