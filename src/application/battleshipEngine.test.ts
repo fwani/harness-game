@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   createBattleshipEngine,
+  redactBattleshipState,
+  redactOpponentBoard,
   DEFAULT_BATTLESHIP_SIZE,
   type BattleshipEngineState,
 } from "./battleshipEngine";
@@ -197,5 +199,97 @@ describe("createBattleshipEngine — status (전멸 승자·무승부 없음)", 
     const status = engine.status(s);
     expect(status).toEqual({ over: true, winner: "p1", draw: false });
     expect(isFleetDestroyed(s.p2Board)).toBe(true);
+  });
+});
+
+describe("redactOpponentBoard — 상대 보드 안개 가림", () => {
+  it("미사격 함선 칸은 hasShip:false·shipId:null로 가려진다", () => {
+    const board = createBattleshipBoard(5, FLEET2); // (0,0)·(0,1)에 함선, 전부 미사격
+    const redacted = redactOpponentBoard(board);
+    expect(redacted[0]![0]).toEqual({ hasShip: false, shipId: null, hit: false });
+    expect(redacted[0]![1]).toEqual({ hasShip: false, shipId: null, hit: false });
+    // 원래 빈 바다 칸도 그대로 빈 바다.
+    expect(redacted[2]![2]).toEqual({ hasShip: false, shipId: null, hit: false });
+  });
+
+  it("사격된 칸(명중·빗나감)은 그대로 보존된다", () => {
+    // (0,0) 명중(함선), (2,2) 빗나감(빈 바다)으로 사격해 둔다.
+    const board = fireShot(fireShot(createBattleshipBoard(5, FLEET2), 0, 0), 2, 2);
+    const redacted = redactOpponentBoard(board);
+    // 명중: hit이라 함선 정보 보존.
+    expect(redacted[0]![0]).toEqual({ hasShip: true, shipId: "s", hit: true });
+    // 빗나감: hit이지만 함선 없음 — 그대로.
+    expect(redacted[2]![2]).toEqual({ hasShip: false, shipId: null, hit: true });
+    // 미사격 함선 칸 (0,1)은 여전히 가려진다.
+    expect(redacted[0]![1]).toEqual({ hasShip: false, shipId: null, hit: false });
+  });
+
+  it("입력 보드/셀을 변형하지 않는다(불변·새 객체)", () => {
+    const board = createBattleshipBoard(5, FLEET2);
+    const redacted = redactOpponentBoard(board);
+    expect(board[0]![0]!.hasShip).toBe(true); // 원본 보존
+    expect(redacted[0]![0]).not.toBe(board[0]![0]); // 새 셀 객체
+  });
+});
+
+describe("redactBattleshipState — 시점별 가림", () => {
+  /** p1Board (0,0) 명중·(2,2) 빗나감, p2Board (0,1) 명중인 진행 상태. */
+  function midGame(): BattleshipEngineState {
+    return {
+      p1Board: fireShot(fireShot(createBattleshipBoard(5, FLEET2), 0, 0), 2, 2),
+      p2Board: fireShot(createBattleshipBoard(5, FLEET2), 0, 1),
+      next: "p2",
+    };
+  }
+
+  it("viewer=p1: 자기 보드(p1Board) 전부 보존, 상대 보드(p2Board) 미사격 함선 가림", () => {
+    const state = midGame();
+    const view = redactBattleshipState(state, "p1");
+    // 자기 보드(p1Board)는 그대로: (0,0) 명중·(0,1) 미사격 함선도 노출.
+    expect(view.p1Board[0]![0]).toEqual({ hasShip: true, shipId: "s", hit: true });
+    expect(view.p1Board[0]![1]).toEqual({ hasShip: true, shipId: "s", hit: false });
+    // 상대 보드(p2Board): (0,1)은 사격됨(명중) → 보존, (0,0)은 미사격 함선 → 가림.
+    expect(view.p2Board[0]![1]).toEqual({ hasShip: true, shipId: "s", hit: true });
+    expect(view.p2Board[0]![0]).toEqual({ hasShip: false, shipId: null, hit: false });
+    expect(view.next).toBe("p2"); // next 보존
+  });
+
+  it("viewer=p2: 자기 보드(p2Board) 전부 보존, 상대 보드(p1Board) 미사격 함선 가림", () => {
+    const state = midGame();
+    const view = redactBattleshipState(state, "p2");
+    // 자기 보드(p2Board)는 그대로: (0,0) 미사격 함선도 노출.
+    expect(view.p2Board[0]![0]).toEqual({ hasShip: true, shipId: "s", hit: false });
+    // 상대 보드(p1Board): (0,0) 명중 보존·(2,2) 빗나감 보존·(0,1) 미사격 함선 가림.
+    expect(view.p1Board[0]![0]).toEqual({ hasShip: true, shipId: "s", hit: true });
+    expect(view.p1Board[2]![2]).toEqual({ hasShip: false, shipId: null, hit: true });
+    expect(view.p1Board[0]![1]).toEqual({ hasShip: false, shipId: null, hit: false });
+    expect(view.next).toBe("p2");
+  });
+
+  it("입력 상태/보드를 변형하지 않는다(불변·새 객체 반환)", () => {
+    const state = midGame();
+    const view = redactBattleshipState(state, "p1");
+    // 원본의 상대 미사격 함선 칸은 그대로 노출 상태.
+    expect(state.p2Board[0]![0]!.hasShip).toBe(true);
+    expect(view).not.toBe(state);
+    expect(view.p1Board).not.toBe(state.p1Board);
+    expect(view.p2Board).not.toBe(state.p2Board);
+  });
+
+  it("사격된 칸이 전혀 없으면 상대 함대가 통째로 가려진다(대칭)", () => {
+    const fresh: BattleshipEngineState = engine.init({
+      size: 5,
+      p1Ships: FLEET2,
+      p2Ships: FLEET2,
+    });
+    const p1View = redactBattleshipState(fresh, "p1");
+    const p2View = redactBattleshipState(fresh, "p2");
+    // p1 시점: 상대(p2Board) 함선 전부 가림.
+    expect(p1View.p2Board[0]![1]!.hasShip).toBe(false);
+    // p2 시점: 상대(p1Board) 함선 전부 가림.
+    expect(p2View.p1Board[0]![0]!.hasShip).toBe(false);
+    // 각자 자기 보드 함선은 노출.
+    expect(p1View.p1Board[0]![0]!.hasShip).toBe(true);
+    expect(p2View.p2Board[0]![1]!.hasShip).toBe(true);
   });
 });

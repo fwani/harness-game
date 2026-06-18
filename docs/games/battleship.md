@@ -42,6 +42,12 @@
   명중해도 한 발씩 교대(단순화). 사람 사격으로 전 함대 격침이면 CPU는 쏘지 않는다.
 - `difficultyLabel(difficulty)` — 난이도 한국어 라벨("쉬움 (무작위)"/"어려움 (추적)").
 
+### 멀티(DoD B) 엔진·안개 가림 (`battleshipEngine.ts`, application)
+- `createBattleshipEngine()` — 양측 보드를 들고 멀티 코어가 통일되게 쓰는 `GameEngine` 어댑터(init/turn/isLegal/apply/status).
+- `redactBattleshipState(state, viewer)` — 시점(side)별 안개(fog-of-war) 가림 순수 함수: viewer 자기 보드는 그대로,
+  상대 보드의 **미사격 칸**은 `hasShip:false`·`shipId:null`로 덮어 함선 위치를 숨긴다(사격된 명중/빗나감 칸·`next`는 보존, 입력 불변).
+  멀티 전송 시 연결별로 redact한 뷰를 라우팅해 상대 함선 위치 누수를 막는다(실제 ws side 라우팅은 후속). 하위 헬퍼 `redactOpponentBoard(board)`.
+
 ## 3. 구현 상태
 
 | 레이어 | 위치 | 내용 | 상태 |
@@ -49,6 +55,7 @@
 | 도메인 | [`src/domain/battleship.ts`](../../src/domain/battleship.ts) | 보드·배치 검증·사격·격침·전 함대 격침 | ✅ |
 | 애플리케이션 | [`src/application/playBattleship.ts`](../../src/application/playBattleship.ts) | `placeFleetRandomly`·`chooseRandomShot`·`chooseSmartShot`(헌트/타깃 AI)·`playBattleshipShot` | ✅ |
 | UI | [`src/ui/games/Battleship.tsx`](../../src/ui/games/Battleship.tsx) | 배치 단계(직접/무작위 배치·회전·미리보기·CPU 난이도 선택) → 사격 단계(두 보드 렌더·사격 클릭·CPU 차례 "생각 중" 단계 표시 후 반격·승패·새 게임) | ✅ |
+| 멀티(엔진) | [`src/application/battleshipEngine.ts`](../../src/application/battleshipEngine.ts) | `createBattleshipEngine` GameEngine 어댑터 + `redactBattleshipState`/`redactOpponentBoard`(시점별 안개 가림 순수 함수) | ✅(엔진·가림) / ws side 라우팅 후속 |
 | 기록 | `GameId="battleship"` + [`src/ui/records.ts`](../../src/ui/records.ts) | 종료 시 사람=a/CPU=b로 저장 | ✅ |
 
 ## 4. UI/UX 요구사항
