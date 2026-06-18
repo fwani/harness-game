@@ -10,6 +10,7 @@ import {
 } from "./engineRegistry";
 
 const EXPECTED_MULTIPLAYER: readonly GameId[] = [
+  "battleship",
   "checkers",
   "chess",
   "connectfour",
@@ -23,17 +24,25 @@ const EXPECTED_MULTIPLAYER: readonly GameId[] = [
   "dotsandboxes",
 ];
 
+/**
+ * init()이 config 없이 동작하는 게임들(무-config 스모크 대상).
+ * battleship은 init에 양측 함대 배치(config.p1Ships/p2Ships)가 필요하므로 별도 테스트한다.
+ */
+const NO_CONFIG_MULTIPLAYER: readonly GameId[] = EXPECTED_MULTIPLAYER.filter(
+  (id) => id !== "battleship",
+);
+
 describe("MULTIPLAYER_GAME_IDS — 화이트리스트", () => {
-  it("멀티 지원 11종을 정확히 담는다", () => {
+  it("멀티 지원 12종을 정확히 담는다", () => {
     expect([...MULTIPLAYER_GAME_IDS].sort()).toEqual(
       [...EXPECTED_MULTIPLAYER].sort(),
     );
-    expect(MULTIPLAYER_GAME_IDS).toHaveLength(11);
+    expect(MULTIPLAYER_GAME_IDS).toHaveLength(12);
   });
 });
 
 describe("isMultiplayerGame", () => {
-  it("화이트리스트 11종은 모두 true", () => {
+  it("화이트리스트 12종은 모두 true", () => {
     for (const id of EXPECTED_MULTIPLAYER) {
       expect(isMultiplayerGame(id)).toBe(true);
     }
@@ -53,8 +62,8 @@ describe("isMultiplayerGame", () => {
   });
 });
 
-describe("createEngineFor — 화이트리스트 11종 라운드 스모크", () => {
-  for (const id of EXPECTED_MULTIPLAYER) {
+describe("createEngineFor — 화이트리스트 라운드 스모크(무-config)", () => {
+  for (const id of NO_CONFIG_MULTIPLAYER) {
     it(`${id}: 엔진을 반환하고 init/turn/status가 정상 동작`, () => {
       const engine = createEngineFor(id);
       const init = engine.init();
@@ -70,6 +79,21 @@ describe("createEngineFor — 화이트리스트 11종 라운드 스모크", () 
       expect(status.draw).toBe(false);
     });
   }
+
+  it("battleship: 어댑터를 반환하고 양측 함대 config로 init/turn/status 정상", () => {
+    const engine = createEngineFor("battleship");
+    const ships = [
+      { id: "a", row: 0, col: 0, size: 3, orientation: "h" as const },
+      { id: "b", row: 2, col: 0, size: 2, orientation: "h" as const },
+    ];
+    const init = engine.init({ size: 5, p1Ships: ships, p2Ships: ships });
+    expect(init).toBeDefined();
+    expect(engine.turn(init)).toBe("p1");
+    const status = engine.status(init);
+    expect(status.over).toBe(false);
+    expect(status.winner).toBeNull();
+    expect(status.draw).toBe(false);
+  });
 
   it("go: config.komi를 팩토리에 전달해도 init/turn/status 정상", () => {
     const engine = createEngineFor("go", { komi: 6.5 });

@@ -12,6 +12,7 @@ import { createGomokuEngine } from "./gameEngine";
 import { createGoEngine } from "./goEngine";
 import { createMancalaEngine } from "./mancalaEngine";
 import { createDotsAndBoxesEngine } from "./dotsAndBoxesEngine";
+import { createBattleshipEngine } from "./battleshipEngine";
 import { createCheckersEngine } from "./checkersEngine";
 import { createChessEngine } from "./chessEngine";
 import { createConnectFourEngine } from "./connectFourEngine";
@@ -25,6 +26,7 @@ import { createTicTacToeEngine } from "./ticTacToeEngine";
  * 순서는 안정적이며, 여기에 없는 GameId는 멀티 비대상이다.
  */
 export const MULTIPLAYER_GAME_IDS: readonly GameId[] = [
+  "battleship",
   "checkers",
   "chess",
   "connectfour",
@@ -93,6 +95,8 @@ export function createEngineFor(
   config?: unknown,
 ): GameEngine<unknown, unknown> {
   switch (gameType) {
+    case "battleship":
+      return createBattleshipEngine() as GameEngine<unknown, unknown>;
     case "checkers":
       return createCheckersEngine() as GameEngine<unknown, unknown>;
     case "chess":
