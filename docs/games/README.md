@@ -31,6 +31,7 @@
 | 가위바위보 | [rps.md](rps.md) | vs CPU 1판. 가위바위보 승패 판정 |
 | 홀짝 | [odd-even.md](odd-even.md) | 0–99 난수의 홀짝 맞히기 |
 | 카드 (덱·딜·하이카드) | [card.md](card.md) | 52장 덱 셔플·딜, 하이카드 비교 |
+| 바카라 | [baccarat.md](baccarat.md) | 1인 vs 하우스 punto banco 타블로 자동 진행·베팅(플레이어/뱅커/타이)·칩 뱅크롤 정산 |
 | 오목 | [gomoku.md](gomoku.md) | 2인 로컬, 5목 승리 판정 (레퍼런스 구현) |
 | 바둑 | [go.md](go.md) | 2인 로컬 착수·따냄, 영역 계가 |
 | 오델로 | [reversi.md](reversi.md) | 2인 로컬, 합법 수 착수·자동 패스·디스크 계가 |
@@ -43,7 +44,7 @@
 | 히토리 | [hitori.md](hitori.md) | 숫자 N×N에서 칸 칠하기·white 행/열 중복 금지·black 비인접·white 연결이면 클리어 (domain ✅ / app·UI ❌) |
 | 기록(공통) | [records.md](records.md) | 게임 종류 독립 전적 기록·집계 |
 
-## 구현 상태 매트릭스 (갱신: 2026-06-16)
+## 구현 상태 매트릭스 (갱신: 2026-06-18)
 
 각 게임이 **도메인 → 애플리케이션 → UI → 기록 연동**의 어디까지 왔는지 한눈에 본다.
 ✅ 완료 · ⚠️ 부분 · ❌ 없음.
@@ -54,6 +55,7 @@
 | 홀짝 | ✅ `oddEven.ts` | ✅ `playOddEven.ts` | ✅ vs 난수 | ✅ 저장 |
 | 카드 딜 | ✅ `card.ts` | ✅ `dealCards.ts` | ✅ 딜만(유틸) | — (게임 아님) |
 | 하이카드 | ✅ `highCard.ts` | ✅ `playHighCard.ts` | ✅ vs CPU 1판 | ✅ 저장(`GameId="card"`) |
+| 바카라 | ✅ `baccarat.ts` | ✅ `playBaccaratRound.ts` | ✅ 베팅·타블로 자동·뱅크롤 정산 | ✅ 저장(`GameId="baccarat"`) |
 | 오목 | ✅ `gomoku.ts` | ✅ `playGomoku.ts` | ✅ 2인 로컬 | ✅ 저장 |
 | 바둑 | ✅ `go.ts`+`goScore.ts` | ✅ `playGo.ts` | ✅ 착수·패스·계가·승자 | ✅ 저장 |
 | 오델로 | ✅ `reversi*.ts` | ✅ `playReversi.ts` | ✅ 착수·자동패스·계가·승자 | ✅ 저장 |
