@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { HwatuCard } from "../../domain/hwatu";
 import { createHwatuDeck } from "../../domain/hwatu";
 import type { GoStopFinalScore } from "../../domain/goStopBak";
@@ -8,8 +8,14 @@ import {
   type GoStopShowdownResult,
 } from "../../application/settleGoStopShowdown";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
-import { recordGame } from "../records";
-import { formatGoStopFinalScore, describeGoStopOutcome } from "./goStopView";
+import { listRecords, recordGame, subscribe } from "../records";
+import {
+  describeHwatuCard,
+  buildGoStopScoreBreakdown,
+  describeGoStopOutcome,
+} from "./goStopView";
+import { selfStreakSummary, SELF_PLAYER } from "./streakView";
+import { StreakPanel } from "./StreakPanel";
 
 const rng = new MathRandomSource();
 
@@ -21,7 +27,14 @@ const GO_OPTIONS = [0, 1, 2, 3, 4, 5];
 const CPU_GO_COUNT = 0;
 
 function HwatuChip({ card }: { card: HwatuCard }) {
-  return <span className="card-chip">{card.month}월</span>;
+  const d = describeHwatuCard(card);
+  // 월과 분류(광/열끗/띠/피)를 함께 표시 — 어떤 카드가 점수에 기여하는지 색이 아닌 텍스트로 알린다.
+  return (
+    <span className="card-chip" aria-label={d.label}>
+      <span className="card-chip-month">{d.month}월</span>
+      <span className="card-chip-category">{d.category}</span>
+    </span>
+  );
 }
 
 function CapturedPile({ label, cards }: { label: string; cards: HwatuCard[] }) {
@@ -41,22 +54,33 @@ function CapturedPile({ label, cards }: { label: string; cards: HwatuCard[] }) {
 
 function ScoreLine({
   label,
+  captured,
   score,
   goCount,
   winner,
 }: {
   label: string;
+  captured: HwatuCard[];
   score: GoStopFinalScore;
   goCount: number;
   winner: boolean;
 }) {
-  const d = formatGoStopFinalScore(score);
+  // 점수 산출 근거를 분해해 표시한다: 카드 기본 점수(광·열끗·띠·피) → 고 보너스 → 고 배수 → 박 배수 → 최종.
+  const b = buildGoStopScoreBreakdown(captured, goCount, score);
   return (
-    <p className="hint">
-      {label} · 고 {goCount}회 · 기본 {d.base}점 × 배수 {d.multiplier} = <strong>{d.total}점</strong>
-      {d.flagLabels.length > 0 ? ` · ${d.flagLabels.join(" · ")}` : ""}
-      {winner ? " · 승자" : ""}
-    </p>
+    <div className="score-line">
+      <p className="hint">
+        <strong>{label}</strong> · 고 {b.goCount}회 · 최종 <strong>{b.total}점</strong>
+        {b.flagLabels.length > 0 ? ` · ${b.flagLabels.join(" · ")}` : ""}
+        {winner ? " · 승자" : ""}
+      </p>
+      <p className="score-breakdown">
+        카드 {b.cardTotal}점 (광 {b.gwang} · 열끗 {b.yeol} · 띠 {b.tti} · 피 {b.pi}) · 고 보너스 +
+        {b.goBonus} · 고 배수 ×{b.goMultiplier} · 박 배수 ×{b.bakMultiplier}
+        <br />= ({b.cardTotal} + {b.goBonus}) × {b.goMultiplier} × {b.bakMultiplier} ={" "}
+        {b.total}점
+      </p>
+    </div>
   );
 }
 
@@ -64,6 +88,9 @@ export function GoStop() {
   const [piles, setPiles] = useState<{ a: HwatuCard[]; b: HwatuCard[] } | null>(null);
   const [goCount, setGoCount] = useState(0);
   const [result, setResult] = useState<GoStopShowdownResult | null>(null);
+  // 고스톱 통산 전적("gostop")을 화면에 표시한다(저장 변경을 구독해 즉시 갱신).
+  const records = useSyncExternalStore(subscribe, listRecords);
+  const streak = selfStreakSummary(records, "gostop");
 
   function startDeal() {
     const deck = shuffle(createHwatuDeck(), rng);
@@ -83,7 +110,8 @@ export function GoStop() {
     );
     setResult(r);
     // 매치 단위로 한 번만 기록(쇼다운 확정 시점).
-    recordGame("gostop", "나", "CPU", r.winner);
+    // 표시(selfStreakSummary)와 기록이 동일 라벨을 쓰도록 SELF_PLAYER 상수 사용.
+    recordGame("gostop", SELF_PLAYER, "CPU", r.winner);
   }
 
   function reset() {
@@ -141,12 +169,14 @@ export function GoStop() {
             <>
               <ScoreLine
                 label="나"
+                captured={piles.a}
                 score={result.a}
                 goCount={goCount}
                 winner={result.winner === "a"}
               />
               <ScoreLine
                 label="CPU"
+                captured={piles.b}
                 score={result.b}
                 goCount={CPU_GO_COUNT}
                 winner={result.winner === "b"}
@@ -160,6 +190,8 @@ export function GoStop() {
           </button>
         </div>
       )}
+
+      <StreakPanel title="고스톱 통산 전적 (나)" summary={streak} />
     </section>
   );
 }

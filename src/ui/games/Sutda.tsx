@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { HwatuCard } from "../../domain/hwatu";
 import type { SutdaHandRank } from "../../domain/sutda";
 import { playSutdaRound, type SutdaRoundResult } from "../../application/playSutdaRound";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
-import { recordGame } from "../records";
+import { listRecords, recordGame, subscribe } from "../records";
 import { sutdaRankLabel, sutdaOutcomeLabel } from "./sutdaView";
+import { selfStreakSummary, SELF_PLAYER } from "./streakView";
+import { StreakPanel } from "./StreakPanel";
 
 const rng = new MathRandomSource();
 
@@ -38,6 +40,9 @@ function Hand({
 
 export function Sutda() {
   const [round, setRound] = useState<SutdaRoundResult | null>(null);
+  // 섯다 통산 전적을 화면에 표시한다(게임별 고유 키 "sutda").
+  const records = useSyncExternalStore(subscribe, listRecords);
+  const streak = selfStreakSummary(records, "sutda");
 
   return (
     <section className="game">
@@ -50,7 +55,7 @@ export function Sutda() {
         onClick={() => {
           const result = playSutdaRound(rng);
           setRound(result);
-          recordGame("card", "나", "CPU", result.result);
+          recordGame("sutda", SELF_PLAYER, "CPU", result.result);
         }}
       >
         {round ? "다시 딜링" : "딜링"}
@@ -65,6 +70,7 @@ export function Sutda() {
           <p className="outcome">{sutdaOutcomeLabel(round.result)}</p>
         </div>
       )}
+      <StreakPanel title="섯다 통산 전적 (나)" summary={streak} />
     </section>
   );
 }

@@ -16,18 +16,21 @@
 - 승패 조합 유효성: `(win, loss)` 또는 `(draw, draw)`만 허용 — 그 외 조합이면 throw.
 - 플레이어 라벨은 공백 아닌 문자열, 두 플레이어는 서로 달라야 한다.
 - `summarize`: 여러 판을 플레이어별 `{wins, losses, draws}`로 집계. 등장 순서 보존(결정적).
-- **`GameId` = `"rps" | "oddEven" | "gomoku" | "card" | "go" | "janggi" | "reversi" | "dice"`** (전 게임 커버).
+- `summarizeByGame`: 게임(`GameId`)별로 묶어 각 게임의 `PlayerStats[]`를 집계. 기록 있는 게임만,
+  게임/플레이어 모두 처음 등장 순서 보존(결정적, 입력 불변).
+- **`GameId`** = `"rps" | "oddEven" | "gomoku" | "go" | "janggi" | "highcard" | "blackjack" | "baccarat" | "sutda" | "poker" | "reversi" | "dice" | "yut" | "gostop" | "rps-match"` (전 게임 커버). 카드 게임 5종(하이카드/블랙잭/바카라/섯다/포커)은 각자 고유 키로 기록한다. `"card"`는 과거 5종이 공유하던 레거시 키로, 이미 영속된 기록을 읽기 위해서만 유지한다(신규 기록은 사용하지 않음).
 
 ## 3. 구현 상태
 
 | 레이어 | 위치 | 내용 | 상태 |
 | --- | --- | --- | --- |
-| 도메인 | [`src/domain/gameRecord.ts`](../../src/domain/gameRecord.ts) | `createGameRecord()`, `summarize()`, `GameId`, `PlayerStats` | ✅ |
+| 도메인 | [`src/domain/gameRecord.ts`](../../src/domain/gameRecord.ts) | `createGameRecord()`, `summarize()`, `summarizeByGame()`, `GameId`, `PlayerStats`, `GameStats` | ✅ |
 | 애플리케이션 | [`src/application/gameRecordStore.ts`](../../src/application/gameRecordStore.ts) | `GameRecordRepository` 포트, `standings(repo)` | ✅ |
 | 인프라 | [`src/infrastructure/inMemoryGameRecordRepository.ts`](../../src/infrastructure/inMemoryGameRecordRepository.ts) | 인메모리 저장소 | ✅ |
 | 애플리케이션(쓰기) | [`src/application/recordRound.ts`](../../src/application/recordRound.ts) | `recordRound(repo, game, players, winner)` — 승자→검증된 기록 저장 | ✅ |
 | UI(연동) | [`src/ui/records.ts`](../../src/ui/records.ts) | 공유 저장소 + 구독 + `recordGame()`(저장은 `recordRound`에 위임) | ✅ |
-| UI(화면) | [`src/ui/games/Records.tsx`](../../src/ui/games/Records.tsx) | "전적" 탭 — 플레이어별 승/패/무 표 + 최근 기록 | ✅ |
+| UI(뷰 헬퍼) | [`src/ui/games/recordsByGameView.ts`](../../src/ui/games/recordsByGameView.ts) | `buildRecordsByGameRows()` — 게임별 전적 표시 행 변환(`summarizeByGame` 재사용) | ✅ |
+| UI(화면) | [`src/ui/games/Records.tsx`](../../src/ui/games/Records.tsx) | "전적" 탭 — 플레이어별 승/패/무 표 + 게임별 전적 표 + 최근 기록 | ✅ |
 
 > 각 게임 화면이 한 판을 끝내면 `recordGame(game, playerA, playerB, win)`을 호출해 저장하고,
 > 전적 화면은 `useSyncExternalStore`로 변경을 구독해 실시간 갱신한다.
@@ -43,7 +46,8 @@
 - ✅ ~~`GameId` 확장~~: `"go"`·`"janggi"`·`"reversi"`·`"dice"` 추가(완료).
 - ✅ ~~기록 저장 연동~~: 전 게임 "종료 → 저장" 연결(완료).
 - ✅ ~~기록 노출 UI~~: "전적" 탭 신설(완료).
+- ✅ ~~게임별(per-game) 전적~~: "게임별 전적" 표 추가(`summarizeByGame` + `Records.tsx`, 완료).
 - **영속성**: 현재 인메모리만 — 새로고침 시 소실. 영속 저장소(localStorage/서버) 필요 여부 정의.
 - **플레이어 라벨 정합성**: vs CPU는 "나"/"CPU"/"딜러", 보드 게임은 "흑"/"백"·"초"/"한"으로
   라벨이 게임마다 달라 전적이 라벨별로 분리 집계된다. 통합 식별 체계(로그인/세션) 필요 여부 정의.
-- **무승부 외 결과**: 바둑/장기의 2인 승패 매핑은 연결됨. 오목 무승부(보드 가득)는 아직 미기록.
+- ✅ ~~오목 무승부 기록~~: 보드 가득 종료가 application `playGomoku`(`isDraw`)에 모델링되어, UI가 `draw`로 기록(완료). 바둑/장기의 2인 승패 매핑도 연결됨.

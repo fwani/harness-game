@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { Card, Suit } from "../../domain/card";
 import type { HighCardResult } from "../../domain/highCard";
 import { playHighCardRound, type HighCardRoundResult } from "../../application/playHighCard";
 import { MathRandomSource } from "../../infrastructure/mathRandomSource";
-import { recordGame } from "../records";
+import { listRecords, recordGame, subscribe } from "../records";
+import { selfStreakSummary, SELF_PLAYER } from "./streakView";
+import { StreakPanel } from "./StreakPanel";
 
 const rng = new MathRandomSource();
 
@@ -32,6 +34,9 @@ function BigCard({ card }: { card: Card }) {
 
 export function HighCard() {
   const [round, setRound] = useState<HighCardRoundResult | null>(null);
+  // 하이카드 통산 전적을 화면에 표시한다(게임별 고유 키 "highcard").
+  const records = useSyncExternalStore(subscribe, listRecords);
+  const streak = selfStreakSummary(records, "highcard");
 
   return (
     <section className="game">
@@ -45,8 +50,8 @@ export function HighCard() {
           const result = playHighCardRound(rng);
           setRound(result);
           recordGame(
-            "card",
-            "나",
+            "highcard",
+            SELF_PLAYER,
             "CPU",
             result.result === "first" ? "a" : result.result === "second" ? "b" : "draw",
           );
@@ -70,6 +75,7 @@ export function HighCard() {
           <p className="outcome">{OUTCOME[round.result]}</p>
         </div>
       )}
+      <StreakPanel title="하이카드 통산 전적 (나)" summary={streak} />
     </section>
   );
 }

@@ -210,6 +210,113 @@ header h1 {
   font-size: 0.9rem;
 }
 
+/* --- hangman --- */
+
+/* 마스킹된 정답: 색이 아니라 큰 모노스페이스 텍스트('_'/글자)로 표시(색 비의존). */
+.hangman-word {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-align: center;
+  word-break: break-all;
+  margin: 0.75rem 0;
+}
+
+/* a..z 키패드: 좁은 화면(360px)에서도 줄바꿈되도록 flex-wrap + max-width. */
+.hangman-keypad {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+  max-width: 30rem;
+  margin: 1rem auto;
+}
+
+.hangman-keypad .key {
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 1px solid #334155;
+  background: #0b1220;
+  color: var(--text);
+  border-radius: 0.4rem;
+  cursor: pointer;
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
+.hangman-keypad .key:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hangman-keypad .key:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- pig (피그) --- */
+
+/* 점수판: 좁은 화면(360px)에서도 깨지지 않도록 auto-fit 그리드로 감싼다. */
+.pig-scoreboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.6rem;
+  margin: 1rem 0;
+  max-width: 32rem;
+}
+
+.pig-scoreboard > div {
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: #0b1220;
+}
+
+.pig-scoreboard dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.pig-scoreboard dd {
+  margin: 0.2rem 0 0;
+  font-size: 1.1rem;
+}
+
+.pig-scoreboard dd strong {
+  font-size: 1.5rem;
+}
+
+/* 진행도 막대: 좁은 화면에서 카드/뷰포트를 넘치지 않도록 카드 폭에 맞춘다.
+   (progress는 기본 고유 너비가 있어 너비를 지정하지 않으면 카드를 가로로 뚫고 나간다.) */
+.pig-scoreboard progress {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.35rem;
+}
+
+/* CPU 진행 로그: 굴림/버스트/멈춤을 순서대로(번호 매김) 텍스트로 표시(색 비의존). */
+.pig-cpu-log {
+  margin: 1rem 0;
+  max-width: 32rem;
+}
+
+.pig-cpu-log h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.pig-cpu-log ol {
+  margin: 0;
+  padding-left: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 /* --- card deal --- */
 
 .hand {
@@ -252,6 +359,28 @@ header h1 {
   padding: 0.6rem 0.5rem;
   font-size: 1.5rem;
   margin-top: 0.3rem;
+}
+
+.card-chip-month {
+  display: block;
+}
+
+.card-chip-category {
+  display: block;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.72rem;
+}
+
+.score-line {
+  margin: 0.5rem 0;
+}
+
+.score-breakdown {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: -0.15rem;
+  line-height: 1.5;
 }
 
 .dice-total {
@@ -316,6 +445,28 @@ header h1 {
   background: #dcb35c;
 }
 
+/* --- tic-tac-toe (틱택토) --- */
+
+.board.tictactoe {
+  background: #1e293b;
+  border-color: #0f172a;
+}
+
+/* X/O 기호를 칸 크기에 맞게 크게 표시(색만이 아니라 기호로 구분). */
+.ttt-mark {
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ttt-mark.mark-X {
+  color: #60a5fa;
+}
+
+.ttt-mark.mark-O {
+  color: #f87171;
+}
+
 /* --- reversi (오델로) --- */
 
 .board.reversi {
@@ -332,6 +483,173 @@ header h1 {
   background: rgba(255, 255, 255, 0.22);
 }
 
+/* --- checkers (체커·서양 장기) --- */
+
+.board.checkers {
+  background: #6b4f2a;
+  border-color: #4a3618;
+}
+
+/* 격자: 어두운 칸(기물이 놓이는 칸)과 밝은 칸을 구분(체커판). */
+.board.checkers .cell.sq-dark {
+  background: #4a3318;
+}
+
+.board.checkers .cell.sq-light {
+  background: #d9c39a;
+  cursor: default;
+}
+
+/* 밝은 칸은 기물이 없고 클릭 대상도 아니므로 호버 단서를 끈다. */
+.board.checkers .cell.sq-light:hover {
+  background: #d9c39a;
+}
+
+/* 선택된 기물: 안쪽 링으로 강조(색만이 아니라 형태로 구분). */
+.board.checkers .cell.selected {
+  box-shadow: inset 0 0 0 3px #fbbf24;
+}
+
+/* 합법 목적지 칸: 안쪽 링으로 상시 강조(reversi .legal과 동일 단서). */
+.board.checkers .cell.legal {
+  box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.7);
+}
+
+.board.checkers .cell.legal:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* 기물: 색뿐 아니라 기호(●/○, 왕 ♚/♔)로 구분. */
+.checker {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.checker.dark {
+  color: #111;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.checker.light {
+  color: #f8fafc;
+  text-shadow: 0 0 2px #000;
+}
+
+/* 왕(king)은 더 굵게 — 기호(♚/♔)에 더해 시각적 강조. */
+.checker.king {
+  font-weight: 700;
+}
+
+/* --- chess (체스) --- */
+
+.board.chess {
+  background: #6b4f2a;
+  border-color: #4a3618;
+}
+
+/* 체스판 교대 칸(밝은/어두운 칸). 진영 구분이 아니라 판 모양을 위한 배경이다. */
+.board.chess .cell.sq-light {
+  background: #d9c39a;
+}
+
+.board.chess .cell.sq-dark {
+  background: #8a6a3a;
+}
+
+/* 선택된 기물: 안쪽 링으로 강조(색만이 아니라 형태로 구분). */
+.board.chess .cell.selected {
+  box-shadow: inset 0 0 0 3px #fbbf24;
+}
+
+/* 합법 도착 칸: 안쪽 링으로 상시 강조(빈 칸·포획 대상 모두에서 보임). */
+.board.chess .cell.legal {
+  box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.85);
+}
+
+.board.chess .cell.legal:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* 직전 수(from→to): 색 외 단서(점선 강조 링)로도 구분. */
+.board.chess .cell.last-move {
+  box-shadow: inset 0 0 0 2px rgba(202, 138, 4, 0.9);
+}
+
+/* 기물 글리프: 색뿐 아니라 자형(백=외곽선 ♔, 흑=채움 ♚)으로 진영 구분. */
+.chess-piece {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.chess-piece.white {
+  color: #f8fafc;
+  text-shadow: 0 0 2px #000, 0 0 1px #000;
+}
+
+.chess-piece.black {
+  color: #111;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.55);
+}
+
+/* --- connect four (커넥트포·사목) --- */
+
+.board.connectfour {
+  background: #1d4ed8;
+  border-color: #1e3a8a;
+}
+
+/* 셀은 비인터랙티브(div) — 착수는 상단 열 버튼으로만. 호버/포인터 단서를 끈다. */
+.board.connectfour .cell {
+  cursor: default;
+}
+
+.board.connectfour .cell:hover {
+  background: transparent;
+}
+
+/* 디스크: 색뿐 아니라 기호(●/○)로도 1·2를 구분(색각 이상 대응). */
+.disc {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.disc.p1 {
+  color: #ef4444;
+}
+
+.disc.p2 {
+  color: #fde047;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+/* 열 선택(▼) 버튼 행: 보드와 동일한 그리드(boardGridStyle)로 열을 정렬한다. */
+.connectfour-cols {
+  display: grid;
+  gap: 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 0.5rem 0 0;
+}
+
+.col-drop {
+  min-width: 0;
+  padding: 0.3rem 0;
+  border: 1px solid #1e3a8a;
+  background: #93c5fd;
+  color: #1e3a8a;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.col-drop:not(:disabled):hover {
+  background: #bfdbfe;
+}
+
+.col-drop:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* --- janggi --- */
 
 .board.janggi {
@@ -345,6 +663,907 @@ header h1 {
 /* 합법 수 칸: 안쪽 링으로 표시(빈 칸·포획 대상 모두에서 보임). */
 .janggi-cell.target {
   box-shadow: inset 0 0 0 3px rgba(56, 189, 248, 0.75);
+}
+
+/* 직전 수(from→to) 칸: 색 외 단서(점선 테두리)로도 구분되게 강조. */
+.janggi-cell.last-move {
+  background: rgba(234, 179, 8, 0.3);
+  box-shadow: inset 0 0 0 2px rgba(202, 138, 4, 0.9);
+}
+
+/* 따냄 현황 트레이: 진영별 한 줄씩, 글자 단서 + 텍스트 이름 병기(색 비의존). */
+.janggi-captures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+.janggi-captures-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.janggi-captured-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.janggi-captured-name {
+  font-size: 0.85rem;
+}
+
+/* --- minesweeper (지뢰찾기) --- */
+
+.board.minesweeper {
+  background: #94a3b8;
+  border-color: #475569;
+}
+
+/* 미공개 칸: 올라온(raised) 모양 — 공개된 칸과 색이 아니라 입체/배경으로도 구분된다. */
+.ms-cell.ms-hidden {
+  background: #cbd5e1;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.7),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.ms-cell.ms-hidden:not(:disabled):hover {
+  background: #e2e8f0;
+}
+
+/* 공개된 칸: 눌린(flat) 모양. 숫자/빈칸/지뢰를 텍스트·기호로 구분한다. */
+.ms-cell.ms-empty,
+.ms-cell.ms-number,
+.ms-cell.ms-mine {
+  background: #e5e7eb;
+  color: #1f2937;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.ms-cell.ms-mine {
+  background: #fecaca;
+}
+
+/* --- 배틀십(Battleship) --- */
+
+/* 두 보드(적 함대/내 함대)를 나란히 두되 좁은 화면에서는 세로로 쌓고 가로 스크롤 없이 줄어든다. */
+.bs-boards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+}
+
+.bs-board-wrap {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.bs-board-wrap h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+}
+
+.board.battleship {
+  background: #1e3a5f;
+  border-color: #0b2540;
+}
+
+/* 물(미사격): 잔잔한 파랑. 색만이 아니라 기호(빈칸)로 구분되며 상태는 aria-label로 보강. */
+.bs-cell {
+  color: #f8fafc;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.bs-cell.bs-water {
+  background: #2b517a;
+}
+
+.bs-cell.bs-water:not(:disabled):hover {
+  background: #356092;
+}
+
+/* 함선(자기 보드의 안 맞은 칸): 회색 선체 + ■ 기호. */
+.bs-cell.bs-ship {
+  background: #64748b;
+  color: #0f172a;
+}
+
+/* 빗나감: 가라앉은 어두운 물 + ○. */
+.bs-cell.bs-miss {
+  background: #16314d;
+  color: #cbd5e1;
+}
+
+/* 명중: 붉은 경고 + ✕. */
+.bs-cell.bs-hit {
+  background: #b91c1c;
+}
+
+/* 격침: 더 진한 붉은 + 💥. */
+.bs-cell.bs-sunk {
+  background: #7f1d1d;
+}
+
+/* 사격 결과 로그: 색만이 아니라 텍스트(명중/빗나감/격침)로 안내. */
+.bs-log {
+  margin: 0.25rem 0 0.75rem;
+  padding-left: 1.1rem;
+  font-size: 0.95rem;
+}
+
+.bs-log li {
+  margin: 0.1rem 0;
+}
+
+/* --- 도트 앤 박스(Dots and Boxes) --- */
+
+/* 점·변·박스가 교차 배치되는 격자. 트랙 크기는 인라인(dotsGridTemplate)으로 지정하므로
+   여기서는 내용 폭에 맞춰 줄어들게만 한다(좁은 화면은 가로 스크롤 허용). */
+.board.dotsandboxes {
+  display: grid;
+  gap: 0;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  background: #f8fafc;
+  border-color: #94a3b8;
+  padding: 6px;
+}
+
+/* 점: 작은 원(장식, 비인터랙티브). */
+.dots-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin: auto;
+  border-radius: 50%;
+  background: #334155;
+}
+
+/* 변(수평/수직): 트랙을 채우고, 미사용 변은 버튼·그어진 변은 채워진 막대. */
+.dots-edge {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* 미사용 변 버튼: 평소엔 옅은 점선, 호버/포커스 시 또렷하게(색뿐 아니라 굵기로 단서). */
+button.dots-edge {
+  cursor: pointer;
+}
+
+button.dots-edge.hedge {
+  border-top: 4px dashed #cbd5e1;
+  border-bottom: 4px dashed transparent;
+}
+
+button.dots-edge.vedge {
+  border-left: 4px dashed #cbd5e1;
+  border-right: 4px dashed transparent;
+}
+
+button.dots-edge:not(:disabled):hover,
+button.dots-edge:not(:disabled):focus-visible {
+  border-color: #f59e0b;
+}
+
+button.dots-edge:disabled {
+  cursor: default;
+}
+
+/* 그어진 변: 진한 실선 막대. */
+.dots-edge.drawn.hedge {
+  align-self: center;
+  height: 5px;
+  background: #1f2937;
+  border-radius: 2px;
+}
+
+.dots-edge.drawn.vedge {
+  justify-self: center;
+  width: 5px;
+  background: #1f2937;
+  border-radius: 2px;
+}
+
+/* 박스: 소유자를 색뿐 아니라 레이블(P1/P2)로도 구분. */
+.dots-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.dots-box.owner-p1 {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.dots-box.owner-p2 {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* --- 만칼라(Mancala / Kalah) --- */
+
+.board.mancala {
+  display: grid;
+  gap: 8px;
+  align-items: stretch;
+  width: 100%;
+  max-width: 560px;
+  overflow-x: auto;
+  background: #6b4423;
+  border-color: #4a2f18;
+  padding: 10px;
+}
+
+/* 구덩이: 둥근 버튼. 소유자는 색뿐 아니라 P1/P2 레이블로 구분(색 비의존). */
+.mancala-pit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 44px;
+  min-height: 56px;
+  padding: 6px 4px;
+  border: 2px solid #4a2f18;
+  border-radius: 50%;
+  background: #e7c9a0;
+  color: #3a2a16;
+  cursor: pointer;
+  aspect-ratio: 1;
+}
+
+.mancala-pit.owner-p1 {
+  background: #dbeafe;
+  border-color: #1e3a8a;
+  color: #1e3a8a;
+}
+
+.mancala-pit.owner-p2 {
+  background: #fee2e2;
+  border-color: #991b1b;
+  color: #991b1b;
+}
+
+/* 현재 차례인 쪽의 둘 수 있는 구덩이를 강조(색 외 단서로 굵은 테두리). */
+.mancala-pit.current:not(:disabled) {
+  border-width: 3px;
+  box-shadow: 0 0 0 2px #f59e0b;
+}
+
+.mancala-pit:not(:disabled):hover,
+.mancala-pit:not(:disabled):focus-visible {
+  outline: 2px solid #f59e0b;
+}
+
+.mancala-pit:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.mancala-pit-label,
+.mancala-store-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.mancala-seeds {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* 곳간(store): 양 끝의 큰 세로 칸. 비인터랙티브(점수 누적). */
+.mancala-store {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 52px;
+  padding: 10px 8px;
+  border: 2px solid #4a2f18;
+  border-radius: 26px;
+  background: #f1e2c6;
+  color: #3a2a16;
+}
+
+.mancala-store.owner-p1 {
+  background: #dbeafe;
+  border-color: #1e3a8a;
+  color: #1e3a8a;
+}
+
+.mancala-store.owner-p2 {
+  background: #fee2e2;
+  border-color: #991b1b;
+  color: #991b1b;
+}
+
+.mancala-store .mancala-seeds {
+  font-size: 1.5rem;
+}
+
+/* --- 님(Nim) --- */
+
+/* 더미들을 세로로 쌓고, 좁은 화면에서 깨지지 않게 한다(색 비의존: 숫자+기호+라벨). */
+.board.nim {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 480px;
+  padding: 10px;
+}
+
+.nim-pile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 2px solid #475569;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.nim-pile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nim-pile-label {
+  font-weight: 700;
+}
+
+.nim-stones {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 돌 기호: 색이 아니라 ● 개수로 양을 표현. 좁은 화면에서 줄바꿈 허용. */
+.nim-stones-symbol {
+  letter-spacing: 2px;
+  color: #1e293b;
+  overflow-wrap: anywhere;
+}
+
+.nim-stones-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* 가져갈 개수 버튼들: 실제 <button>, 좁은 화면에서 줄바꿈. */
+.nim-take {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nim-take-btn {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 2px solid #1e3a8a;
+  border-radius: 6px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.nim-take-btn:not(:disabled):hover,
+.nim-take-btn:not(:disabled):focus-visible {
+  outline: 2px solid #f59e0b;
+}
+
+.nim-take-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.nim-empty {
+  color: #64748b;
+  font-style: italic;
+}
+
+/* --- 메모리(짝 맞추기) --- */
+
+.board.memory {
+  background: #1e293b;
+  border-color: #0f172a;
+  gap: 6px;
+  padding: 6px;
+}
+
+/* 카드: 상태(덮임/뒤집힘/매치)를 색뿐 아니라 입체·테두리·기호(?)·라벨로 구분한다. */
+.memory-card {
+  border-radius: 6px;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+/* 덮인 카드: 올라온(raised) 모양 — 뒤집힌 카드와 색이 아니라 입체로도 구분. 값은 ?로 가림. */
+.memory-card.memory-down {
+  background: #475569;
+  color: #cbd5e1;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.25),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.memory-card.memory-down:not(:disabled):hover,
+.memory-card.memory-down:not(:disabled):focus-visible {
+  background: #64748b;
+}
+
+/* 뒤집힌(판정 대기) 카드: 눌린(flat) 모양 + 강조 테두리. */
+.memory-card.memory-up {
+  background: #f8fafc;
+  color: #0f172a;
+  border: 2px solid #f59e0b;
+}
+
+/* 짝 완성 카드: 가라앉은 모양 + 점선 테두리(색 외 단서). */
+.memory-card.memory-matched {
+  background: #dcfce7;
+  color: #14532d;
+  border: 2px dashed #16a34a;
+}
+
+/* --- 슬라이드 퍼즐(15-퍼즐) --- */
+
+.board.slidepuzzle {
+  background: #1e293b;
+  border-color: #0f172a;
+  gap: 6px;
+  padding: 6px;
+}
+
+/* 타일: 숫자 텍스트로 구분(색 비의존). 빈 칸은 가라앉은 모양으로 명확히 구분. */
+.sp-cell {
+  border-radius: 6px;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.sp-tile {
+  background: #475569;
+  color: #f8fafc;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.22),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* 밀 수 있는(빈 칸과 인접) 타일: 강조 테두리로 색 외 단서를 함께 준다. */
+.sp-tile.sp-movable {
+  border: 2px solid #f59e0b;
+}
+
+.sp-tile.sp-movable:not(:disabled):hover,
+.sp-tile.sp-movable:not(:disabled):focus-visible {
+  background: #64748b;
+}
+
+.sp-tile:disabled {
+  opacity: 0.85;
+}
+
+/* 빈 칸: 눌린(움푹한) 모양으로 타일과 입체로도 구분. */
+.sp-blank {
+  background: #0f172a;
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+/* --- 페그 솔리테어(Peg Solitaire) --- */
+
+.board.pegsolitaire {
+  background: #4b3a1a;
+  border-color: #2f2410;
+  gap: 4px;
+  padding: 6px;
+}
+
+/* 코너(보드 밖) 자리: 보이지 않는 빈 칸으로 격자 정렬만 유지. */
+.peg-void {
+  background: transparent;
+  border: 0;
+  cursor: default;
+}
+
+.peg-cell {
+  border-radius: 50%;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #f8fafc;
+}
+
+/* 빈 구멍: 눌린(움푹한) 모양으로 못과 입체로도 구분(색 비의존). */
+.peg-hole {
+  background: #2f2410;
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.6);
+}
+
+/* 못: 밝은 입체 원으로 표시(● 기호 병행, 색 비의존). */
+.peg-stone {
+  background: #c9a24b;
+  color: #1c1404;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.35),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* 선택 가능한(뛸 수 있는) 못: 강조 테두리로 색 외 단서를 함께 준다. */
+.peg-cell.selectable {
+  border: 2px solid #f59e0b;
+}
+
+/* 선택된 출발 못. */
+.peg-cell.selected {
+  border: 2px solid #38bdf8;
+  background: #e2b95c;
+}
+
+/* 착지 가능한 빈 구멍: 강조 링 + ◆ 기호로 안내(색 비의존). */
+.peg-cell.peg-target {
+  box-shadow: inset 0 0 0 2px #22c55e;
+  color: #bbf7d0;
+}
+
+.peg-cell:not(:disabled):hover,
+.peg-cell:not(:disabled):focus-visible {
+  background: #7c6230;
+}
+
+.peg-cell.peg-stone:not(:disabled):hover,
+.peg-cell.peg-stone:not(:disabled):focus-visible {
+  background: #dbb45f;
+}
+
+.peg-cell:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+/* --- 소코반(Sokoban) --- */
+
+.board.sokoban {
+  background: #3f3f46;
+  border-color: #27272a;
+  font-size: clamp(14px, 5vw, 22px);
+  line-height: 1;
+}
+
+/* 화살표 키 포커스가 보이도록 명시적 아웃라인(키보드 조작 단서). */
+.board.sokoban:focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* 칸은 색만이 아니라 기호(#/◎/□/■/@)와 aria-label로 구분한다. 비인터랙티브 표시 칸. */
+.sokoban-cell {
+  font-weight: 700;
+  color: #f4f4f5;
+  cursor: default;
+}
+
+.sokoban-wall {
+  background: #52525b;
+  color: #18181b;
+}
+
+.sokoban-floor {
+  background: #71717a;
+}
+
+/* 목표 칸: 노란 표식(◎) + 색. */
+.sokoban-target {
+  background: #71717a;
+  color: #fde047;
+}
+
+.sokoban-box {
+  background: #a16207;
+  color: #fff7ed;
+}
+
+/* 목표 위 상자(완료): 굵은 테두리로 색 외 단서도 준다. */
+.sokoban-box-on-target {
+  background: #15803d;
+  color: #ecfccb;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+.sokoban-player,
+.sokoban-player-on-target {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+/* 플레이어가 목표 위에 있을 때: 노란 테두리로 목표 칸임을 함께 표시. */
+.sokoban-player-on-target {
+  box-shadow: inset 0 0 0 2px rgba(253, 224, 71, 0.85);
+}
+
+/* --- 플러드 잇(Flood-It) --- */
+
+.board.floodit {
+  background: #27272a;
+  border-color: #18181b;
+}
+
+/* 칸은 비인터랙티브 표시(색 선택은 팔레트 버튼). 색만이 아니라 문자(A~E)+aria-label로 구분. */
+.floodit-cell {
+  cursor: default;
+  font-weight: 700;
+  font-size: clamp(11px, 3.5vw, 18px);
+  color: #18181b;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+/* 색 선택 팔레트: 실제 버튼(키보드 포커스 가능). */
+.controls.palette {
+  flex-wrap: wrap;
+}
+
+.flood-swatch {
+  min-width: 3rem;
+  font-weight: 700;
+  color: #18181b;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(0, 0, 0, 0.45);
+}
+
+.flood-swatch:not(:disabled):hover,
+.flood-swatch:not(:disabled):focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.flood-swatch:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* --- 빙고(Bingo) --- */
+
+.board.bingo {
+  background: #1e293b;
+  border-color: #0f172a;
+  gap: 6px;
+  padding: 6px;
+}
+
+/* 칸: 번호 텍스트로 구분(색 비의존). 마킹은 색뿐 아니라 ✓ 기호·강조 테두리로도 표시. */
+.bingo-cell {
+  position: relative;
+  flex-direction: column;
+  cursor: default;
+  background: #475569;
+  color: #f8fafc;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border-radius: 6px;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.18),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* 마킹된 칸: 가라앉은 모양 + 점선 테두리(색 외 단서)와 ✓ 기호. */
+.bingo-cell.bingo-marked {
+  background: #14532d;
+  border: 2px dashed #22c55e;
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.bingo-mark {
+  font-size: 0.8rem;
+  line-height: 1;
+  color: #bbf7d0;
+}
+
+/* --- wordle (워들) --- */
+
+/* 힌트 기호 범례: 색뿐 아니라 기호+텍스트 라벨로 의미를 병기한다(색 비의존). */
+.wordle-legend {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.wordle-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.wordle-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 0.3rem;
+  border: 1px solid #334155;
+}
+
+/* 추측 히스토리 그리드: 행=추측, 열=글자. 좁은 화면에서도 폭에 맞춰 줄어든다. */
+.wordle-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+  max-width: 22rem;
+}
+
+.wordle-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.wordle-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #334155;
+  border-radius: 0.4rem;
+  background: #0b1220;
+  color: var(--text);
+}
+
+.wordle-letter {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.wordle-mark {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+/* 결과별 배경(색)은 보조 단서일 뿐 — 글자칸의 기호(■/◧/·)와 aria-label이 1차 단서다. */
+.wordle-cell.wordle-correct,
+.wordle-chip.wordle-correct {
+  background: #14532d;
+  border-color: #22c55e;
+  color: #dcfce7;
+}
+
+.wordle-cell.wordle-present,
+.wordle-chip.wordle-present {
+  background: #713f12;
+  border-color: #eab308;
+  color: #fef9c3;
+}
+
+.wordle-cell.wordle-absent,
+.wordle-chip.wordle-absent {
+  background: #1e293b;
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
+/* --- 2048 --- */
+
+/* 좁은 화면(360px)에서도 깨지지 않도록 폭에 맞춰 줄어들고, 넓은 화면에선 max-width로 캡한다. */
+.board2048 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  width: 100%;
+  max-width: 340px;
+  margin: 1rem 0;
+  padding: 6px;
+  background: #bbada0;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+/* 화살표 키 포커스가 보이도록 명시적 아웃라인(키보드 조작 단서). */
+.board2048:focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.board2048-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.tile2048 {
+  aspect-ratio: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: #cdc1b4;
+  /* 색뿐 아니라 숫자 텍스트로 타일을 구분한다(색각 이상 대응). */
+  color: #776e65;
+  font-weight: 700;
+  font-size: clamp(13px, 5vw, 24px);
+  line-height: 1;
+}
+
+/* 빈 칸(값 0)은 숫자를 숨긴다. */
+.tile2048.tile-0 {
+  color: transparent;
+}
+
+.tile2048.tile-2 {
+  background: #eee4da;
+}
+.tile2048.tile-4 {
+  background: #ede0c8;
+}
+.tile2048.tile-8 {
+  background: #f2b179;
+  color: #f9f6f2;
+}
+.tile2048.tile-16 {
+  background: #f59563;
+  color: #f9f6f2;
+}
+.tile2048.tile-32 {
+  background: #f67c5f;
+  color: #f9f6f2;
+}
+.tile2048.tile-64 {
+  background: #f65e3b;
+  color: #f9f6f2;
+}
+.tile2048.tile-128,
+.tile2048.tile-256,
+.tile2048.tile-512 {
+  background: #edcf72;
+  color: #f9f6f2;
+}
+.tile2048.tile-1024,
+.tile2048.tile-2048 {
+  background: #edc22e;
+  color: #f9f6f2;
+}
+
+/* 방향 패드: 화살표 버튼을 한 줄로 배치, 좁은 화면에서 줄바꿈 허용. */
+.controls.dpad {
+  flex-wrap: wrap;
+}
+
+.controls.dpad button {
+  min-width: 3rem;
+  font-size: 1.25rem;
+}
+
+.janggi-captures-empty {
+  color: #6b7280;
 }
 
 .piece {
@@ -562,4 +1781,740 @@ header h1 {
 .streak dd {
   margin: 0;
   font-variant-numeric: tabular-nums;
+}
+
+/* --- 묵찌빠 (Mukjjippa) 단계/공격자 상태 표시 --- */
+
+.status {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.75rem;
+  margin: 0.75rem 0 0;
+  max-width: 22rem;
+}
+
+.status dt {
+  color: var(--muted);
+  word-break: keep-all;
+}
+
+.status dd {
+  margin: 0;
+}
+
+.round-label {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  word-break: keep-all;
+}
+
+/* --- 숫자야구 (Number Baseball) --- */
+
+.guess-history {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-width: 22rem;
+}
+
+.guess-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.6rem;
+  background: #0b1220;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: var(--text);
+}
+
+.guess-no {
+  width: 2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.guess-digits {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.15em;
+  font-size: 1.1rem;
+}
+
+.guess-result {
+  margin-left: auto;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- ladder (사다리타기) --- */
+
+.ladder-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+
+.ladder-entry-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ladder-entry-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.ladder-entry-row input {
+  width: 9rem;
+  max-width: 40vw;
+  padding: 0.4rem 0.5rem;
+  background: #0b1220;
+  border: 1px solid #334155;
+  border-radius: 0.4rem;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.ladder-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.ladder-scroll {
+  overflow-x: auto;
+  margin: 0.5rem 0 1rem;
+  padding-bottom: 0.25rem;
+}
+
+.ladder-svg {
+  display: block;
+}
+
+.ladder-line,
+.ladder-rung {
+  stroke: #b8860b;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.ladder-path {
+  stroke: var(--accent);
+  stroke-width: 4;
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.ladder-label {
+  fill: var(--text);
+  font-size: 12px;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.ladder-row-active td {
+  background: rgba(56, 189, 248, 0.18);
+  font-weight: 600;
+}
+
+/* --- 하노이탑(Tower of Hanoi) --- */
+
+/* 3기둥 가로 배치. 좁은 화면에서도 줄지 않게 최소 폭을 두고 가로 스크롤 허용. */
+.hanoi {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  margin-top: 8px;
+}
+
+/* 기둥은 클릭 가능한 <button>. 디스크를 아래에서 쌓아 올리도록 끝을 아래로 정렬. */
+.hanoi-peg {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  min-height: 220px;
+  padding: 8px 6px;
+  border: 2px solid #475569;
+  border-radius: 8px;
+  /* 기둥 막대를 가운데 세로선으로 표현(색 비의존 보조; 실제 구분은 기둥 라벨). */
+  background:
+    linear-gradient(#94a3b8, #94a3b8) center / 6px 100% no-repeat,
+    #f8fafc;
+  cursor: pointer;
+}
+
+.hanoi-peg:not(:disabled):hover,
+.hanoi-peg:not(:disabled):focus-visible {
+  outline: 2px solid #f59e0b;
+}
+
+/* 선택된 출발 기둥 강조(색뿐 아니라 굵은 테두리·점선으로 구분). */
+.hanoi-peg.selected {
+  border-color: #1d4ed8;
+  border-style: dashed;
+  border-width: 3px;
+}
+
+/* 목표 기둥 표시(맨 오른쪽). */
+.hanoi-peg.target {
+  background:
+    linear-gradient(#94a3b8, #94a3b8) center / 6px 100% no-repeat,
+    #ecfeff;
+}
+
+.hanoi-peg:disabled {
+  cursor: default;
+}
+
+.hanoi-disks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+/* 디스크: 색이 아니라 폭(크기 비례)+숫자 라벨로 구분. 최소 폭으로 작은 디스크도 보이게. */
+.hanoi-disk {
+  min-width: 28px;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 맨 위(집을 수 있는) 디스크 강조(색 비의존: 굵은 테두리). */
+.hanoi-disk.top {
+  border-color: #f59e0b;
+  border-width: 2px;
+}
+
+.hanoi-peg-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+/* --- 마스터마인드(Mastermind) --- */
+
+/* 핀(추측 색 칸·이력 칸): 색뿐 아니라 기호+문자로 구분(색 비의존). */
+.peg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6rem;
+  min-height: 2.2rem;
+  margin: 0 3px 3px 0;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #18181b;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(0, 0, 0, 0.45);
+}
+
+/* 입력 중인 칸: 빈 칸도 누를 수 있게 버튼 형태(채워지면 색 표시). */
+.peg-slot {
+  cursor: pointer;
+  background: #e2e8f0;
+}
+
+.peg-slot:not(:disabled):hover,
+.peg-slot:not(:disabled):focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.peg-slot:disabled {
+  cursor: default;
+}
+
+.mastermind-history {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.mastermind-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mastermind-pegs,
+.mastermind-current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mastermind-current {
+  margin: 8px 0;
+  gap: 4px;
+}
+
+/* --- 네모로직(Nonogram) --- */
+
+/* 좁은 화면에서 단서+격자가 잘리지 않게 가로 스크롤을 허용한다. */
+.nonogram-scroll {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.nonogram-grid {
+  gap: 2px;
+  background: #1f2937;
+  border: 2px solid #111827;
+  border-radius: 4px;
+  padding: 4px;
+}
+
+/* 좌상단 빈 코너(단서 격자 정렬용). */
+.nonogram-corner {
+  background: transparent;
+}
+
+/* 행/열 단서: 색이 아니라 숫자 텍스트로 안내(색 비의존). */
+.nonogram-clue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e5e7eb;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  line-height: 1.1;
+  min-height: 1.6rem;
+  padding: 0 4px;
+}
+
+/* 열 단서는 위→아래로 묶음을 세로로 쌓는다. */
+.nonogram-col-clue {
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0;
+}
+
+.nonogram-row-clue {
+  justify-content: flex-end;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* 격자 칸: 색뿐 아니라 기호(■/✕)와 aria-label로 구분(색 비의존). */
+.nonogram-cell {
+  background: #f8fafc;
+  border: 1px solid #9ca3af;
+  color: #111827;
+  font-size: 1rem;
+  line-height: 1;
+  min-width: 1.6rem;
+}
+
+.nonogram-cell:not(:disabled):hover,
+.nonogram-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 칠해진 칸: 어두운 채움 + ■ 기호. */
+.nonogram-cell.nono-filled {
+  background: #1f2937;
+  color: #f8fafc;
+}
+
+/* X 표시 칸: 밝은 바탕 + ✕ 기호. */
+.nonogram-cell.nono-crossed {
+  color: #b91c1c;
+}
+
+.nonogram-cell:disabled {
+  cursor: default;
+  opacity: 0.95;
+}
+
+/* 스도쿠 9×9 보드: 밝은 바탕, 3×3 박스 경계는 굵게 구분. */
+.board.sudoku {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.sudoku-cell {
+  position: relative;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 0.5px solid #b9b08a;
+}
+
+/* 고정 단서: 굵게 + 구분 바탕(흐리게 처리하지 않는다). */
+.sudoku-cell.given {
+  font-weight: 800;
+  color: #111827;
+  background: #ece4c9;
+  opacity: 1;
+}
+
+.sudoku-cell:disabled {
+  cursor: default;
+}
+
+.sudoku-cell:not(:disabled):hover,
+.sudoku-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
+.sudoku-cell.selected {
+  background: #cfe8ff;
+  outline: 2px solid #1d4ed8;
+  outline-offset: -2px;
+}
+
+/* 충돌 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.sudoku-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.sudoku-cell .sudoku-conflict-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+/* 3×3 박스 경계(오른쪽/아래)는 굵은 선으로 구분. */
+.sudoku-cell.box-right {
+  border-right: 2px solid #1f2937;
+}
+
+.sudoku-cell.box-bottom {
+  border-bottom: 2px solid #1f2937;
+}
+
+/* 숫자 입력 패드: 줄바꿈 허용으로 좁은 화면 대응. */
+.controls.num-pad {
+  flex-wrap: wrap;
+}
+
+/* 비나이로(Binairo·Takuzu) 보드 — 스도쿠와 같은 결의 격자. */
+.board.binairo {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.binairo-cell {
+  position: relative;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 0.5px solid #b9b08a;
+}
+
+/* 고정 단서: 굵게 + 구분 바탕(흐리게 처리하지 않는다). */
+.binairo-cell.given {
+  font-weight: 800;
+  color: #111827;
+  background: #ece4c9;
+  opacity: 1;
+}
+
+.binairo-cell:disabled {
+  cursor: default;
+}
+
+.binairo-cell:not(:disabled):hover,
+.binairo-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.binairo-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.binairo-cell .binairo-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+/* 후토시키(Futoshiki·부등호 라틴방진) 보드 — 칸 사이에 부등호 슬롯을 끼운 확장 그리드.
+   트랙 크기는 인라인(futoshikiGridStyle)로 칸/사이를 번갈아 지정한다. */
+.board.futoshiki {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+  align-items: center;
+  justify-items: center;
+}
+
+.futoshiki-cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 1px solid #b9b08a;
+  cursor: pointer;
+}
+
+/* 고정 단서: 굵게 + 구분 바탕(흐리게 처리하지 않는다). */
+.futoshiki-cell.given {
+  font-weight: 800;
+  color: #111827;
+  background: #ece4c9;
+  opacity: 1;
+}
+
+.futoshiki-cell:disabled {
+  cursor: default;
+}
+
+.futoshiki-cell:not(:disabled):hover,
+.futoshiki-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
+.futoshiki-cell.selected {
+  background: #cfe8ff;
+  outline: 2px solid #1d4ed8;
+  outline-offset: -2px;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.futoshiki-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.futoshiki-cell .futoshiki-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+/* 칸 사이 부등호 슬롯: 색에 의존하지 않고 기호로 제약 방향을 드러낸다. */
+.futoshiki-gap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #1f2937;
+  background: #fdf6e3;
+  line-height: 1;
+}
+
+.futoshiki-gap-empty {
+  background: #fdf6e3;
+}
+
+/* 히토리(Hitori) 보드 — 고정 숫자 N×N 격자에서 칸을 칠해(black) 푼다.
+   칠 상태는 색뿐 아니라 채움 표식(■)·취소선으로 색 비의존 구분한다. */
+.board.hitori {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.hitori-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 0.5px solid #b9b08a;
+}
+
+.hitori-cell .hitori-number {
+  line-height: 1;
+}
+
+.hitori-cell:disabled {
+  cursor: default;
+}
+
+.hitori-cell:not(:disabled):hover,
+.hitori-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 칠한(black) 칸: 어두운 바탕 + 취소선 숫자 + ■ 표식으로 색 비의존 식별. */
+.hitori-cell.marked {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+.hitori-cell.marked .hitori-number {
+  text-decoration: line-through;
+  opacity: 0.85;
+}
+
+.hitori-cell:not(:disabled).marked:hover,
+.hitori-cell:not(:disabled).marked:focus-visible {
+  background: #374151;
+}
+
+.hitori-cell .hitori-mark {
+  position: absolute;
+  bottom: 1px;
+  left: 3px;
+  font-size: 0.55rem;
+  line-height: 1;
+  color: #f9fafb;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.hitori-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.hitori-cell.marked.conflict {
+  color: #fca5a5;
+}
+
+.hitori-cell .hitori-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+.hitori-cell.marked .hitori-violation-mark {
+  color: #fca5a5;
+}
+
+/* 켄켄(KenKen·Calcudoku) 보드 — 라틴방진 격자 위에 굵은 케이지 경계 + 좌상단 목표값/연산. */
+.board.kenken {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.kenken-cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #1f2937;
+  background: #fffdf5;
+  /* 케이지 내부의 얇은 기본 격자선. 굵은 케이지 경계는 cage-* 클래스가 덮어쓴다. */
+  border: 0.5px solid #cdc6a8;
+  cursor: pointer;
+}
+
+.kenken-cell:disabled {
+  cursor: default;
+}
+
+.kenken-cell:not(:disabled):hover,
+.kenken-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 굵은 케이지 경계: 이웃이 다른 케이지/격자 밖인 방향만 두껍게 그어 케이지를 시각적으로 묶는다. */
+.kenken-cell.cage-top {
+  border-top: 2px solid #1f2937;
+}
+.kenken-cell.cage-right {
+  border-right: 2px solid #1f2937;
+}
+.kenken-cell.cage-bottom {
+  border-bottom: 2px solid #1f2937;
+}
+.kenken-cell.cage-left {
+  border-left: 2px solid #1f2937;
+}
+
+/* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
+.kenken-cell.selected {
+  background: #cfe8ff;
+  outline: 2px solid #1d4ed8;
+  outline-offset: -2px;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.kenken-cell.conflict {
+  color: #b91c1c;
+}
+
+.kenken-cell.conflict .kenken-value {
+  text-decoration: underline;
+}
+
+/* 케이지 대표 칸(좌상단)의 목표값/연산 라벨. */
+.kenken-cell .kenken-cage-label {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #374151;
+}
+
+.kenken-cell .kenken-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
 }

@@ -18,7 +18,7 @@ launchd (로컬 macOS, 컴퓨터가 켜져 있을 때)
 
 | 파일 | 역할 |
 | --- | --- |
-| `planner-prompt.md` | 기획 봇 동작 명세 (이슈 생성 기준·**우선순위**·UI/UX 누락 점검). **이슈 우선순위를 바꾸려면 여기 §2를 수정.** |
+| `planner-prompt.md` | 기획 봇 동작 명세 (제품 방향·이슈 생성 기준·**우선순위**·UI/UX 누락 점검). **현재 새 게임 도메인 추가는 동결**(기존 게임 완성도 향상에 집중) — 방향/우선순위를 바꾸려면 상단 "현재 제품 방향" 블록과 §3을 수정. 위키 리서치를 위해 `planner.sh`가 WebSearch/WebFetch 도구를 허용한다. |
 | `dev-prompt.md` | 개발 봇 동작 명세 (레이어 규칙·검증·PR·자동 머지·보안 바닥). |
 | `qa-prompt.md` | QA/플레이테스트 봇 명세. **Playwright MCP로 AI가 게임을 직접 플레이**하며 런타임 문제·UX 갭을 찾아 `qa-finding` 이슈로 등록(코드 수정 X). |
 | `planner.sh` / `dev.sh` / `qa.sh` | launchd가 호출하는 실행 스크립트. 싼 게이트 후 로컬 `claude -p` 호출. 프롬프트는 **origin/main의 위 .md에서 읽는다**(버전관리 단일 소스). `qa.sh`는 vite 개발 서버를 띄우고 claude에 Playwright MCP를 붙인다. |

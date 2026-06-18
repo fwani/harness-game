@@ -32,6 +32,11 @@
 | 오델로 | [reversi.md](reversi.md) | 2인 로컬, 합법 수 착수·자동 패스·디스크 계가 |
 | 장기 | [janggi.md](janggi.md) | 표준 차림, 이동·장군·외통 판정 |
 | 윷놀이 | (사양 미작성) | vs CPU 말 1개 외곽 20칸 완주 경주, 도개걸윷모 |
+| 2048 | [2048.md](2048.md) | 4×4 타일 슬라이드·병합, 2048 도달/이동 불가 판정 |
+| 배틀십 | [battleship.md](battleship.md) | vs CPU 10×10, 함대 무작위 배치·사격(명중/빗나감/격침)·전 함대 격침 승패 |
+| 페그 솔리테어 | [peg-solitaire.md](peg-solitaire.md) | 1인 33칸 십자 보드, 못 뛰어넘기·못 1개=클리어(중앙이면 완벽 클리어) |
+| 플러드 잇 | [flood-it.md](flood-it.md) | NxN 색 격자 좌상단 flood fill로 영역 확장·전부 한 색이면 클리어 (domain ✅ / app·UI ❌) |
+| 히토리 | [hitori.md](hitori.md) | 숫자 N×N에서 칸 칠하기·white 행/열 중복 금지·black 비인접·white 연결이면 클리어 (domain ✅ / app·UI ❌) |
 | 기록(공통) | [records.md](records.md) | 게임 종류 독립 전적 기록·집계 |
 
 ## 구현 상태 매트릭스 (갱신: 2026-06-16)
@@ -50,6 +55,7 @@
 | 오델로 | ✅ `reversi*.ts` | ✅ `playReversi.ts` | ✅ 착수·자동패스·계가·승자 | ✅ 저장 |
 | 장기 | ✅ `janggi.ts` | ✅ `playJanggi.ts` | ✅ 선택·합법수·이동·턴·승부 | ✅ 저장 |
 | 윷놀이 | ✅ `yut.ts`+`yutMove.ts` | ✅ `playYutTurn.ts` | ✅ vs CPU 20칸 완주 경주 | ✅ 저장(`GameId="yut"`) |
+| 2048 | ✅ `game2048.ts` | ✅ `play2048.ts` | ✅ vs 자기기록(키보드·점수) | ✅ 저장(`GameId="game2048"`) |
 
 > **2026-06-16 갱신**: 이전의 핵심 갭(장기 보기 전용, 하이카드 부재, 바둑 종료·계가 미연동,
 > 기록 미저장)은 모두 닫혔다. 각 게임은 결과를 공통 저장소(`src/ui/records.ts`)에 기록하고,
