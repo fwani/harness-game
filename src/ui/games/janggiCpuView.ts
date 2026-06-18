@@ -11,22 +11,29 @@ import { chooseRandomJanggiMove } from "../../application/janggiAi";
 import type { JanggiMove } from "../../application/janggiEngine";
 import type { RandomSource } from "../../application/dealCards";
 
-/** vs CPU 모드 진영 고정: 사람=초(선), CPU=한. */
+/** vs CPU 모드 기본 진영(시작 옵션 미선택 시): 사람=초(선), CPU=한. 시작 옵션으로 바뀔 수 있다. */
 export const HUMAN_SIDE: Side = "cho";
 export const CPU_SIDE: Side = "han";
 
+/** 반대 진영을 돌려준다(사람↔CPU 매핑용). */
+export const opponentSide = (side: Side): Side => (side === "cho" ? "han" : "cho");
+
 /** 화면에 쓰는 진영 라벨(색 비의존, 한자 병기). */
 const SIDE_LABEL: Record<Side, string> = { cho: "초(楚)", han: "한(漢)" };
+
+/** 결과 문구용 짧은 진영 라벨(괄호 안 표기). */
+const SHORT_LABEL: Record<Side, string> = { cho: "초", han: "한" };
 
 /** 전적 저장용 승자 코드(records.WinSide와 동일 형태). a=초, b=한, draw=무승부. */
 export type JanggiWinSide = "a" | "b" | "draw";
 
 /**
- * vs CPU 모드에서 지금이 CPU(한) 차례인지. 종료 상태면 false.
+ * vs CPU 모드에서 지금이 CPU 차례인지. 종료 상태면 false.
+ * - cpuSide를 주입받아 사람이 어느 진영이든 일반화한다(기본은 CPU=한).
  * - 입력 state를 변형하지 않는다(순수).
  */
-export function isCpuTurn(state: JanggiState): boolean {
-  return !state.finished && state.next === CPU_SIDE;
+export function isCpuTurn(state: JanggiState, cpuSide: Side = CPU_SIDE): boolean {
+  return !state.finished && state.next === cpuSide;
 }
 
 /**
@@ -72,12 +79,14 @@ export interface JanggiOutcome {
  * 종료 상태를 화면 결과 문구로 매핑한다(순수).
  * - 미종료면 finished=false, text=null.
  * - 빅장이면 무승부.
- * - mode="cpu"면 사람(초)/CPU(한) 관점의 승/패로 표시하고, "local"이면 진영명으로 표시한다.
+ * - mode="cpu"면 사람/CPU 관점의 승/패로 표시하고, "local"이면 진영명으로 표시한다.
+ * - humanSide를 주입받아 사람이 초/한 중 무엇이든 "나"/"CPU" 라벨이 진영과 일치하게 한다(기본 사람=초).
  * - 색이 아니라 텍스트로 승자를 구분한다.
  */
 export function janggiOutcome(
   state: JanggiState,
   mode: "local" | "cpu",
+  humanSide: Side = HUMAN_SIDE,
 ): JanggiOutcome {
   if (!state.finished) {
     return { finished: false, draw: false, text: null };
@@ -89,10 +98,11 @@ export function janggiOutcome(
   const reason =
     state.endReason === "checkmate" ? "외통수(체크메이트)로 승리" : "상대 장 포획";
   if (mode === "cpu") {
+    const cpuSide = opponentSide(humanSide);
     const text =
-      winner === HUMAN_SIDE
-        ? `나(초) 승리! 🎉 (${reason})`
-        : `CPU(한) 승리 (${reason})`;
+      winner === humanSide
+        ? `나(${SHORT_LABEL[humanSide]}) 승리! 🎉 (${reason})`
+        : `CPU(${SHORT_LABEL[cpuSide]}) 승리 (${reason})`;
     return { finished: true, draw: false, text };
   }
   return {
@@ -111,4 +121,19 @@ export function janggiWinSide(state: JanggiState): JanggiWinSide {
     return "draw";
   }
   return state.winner === "cho" ? "a" : "b";
+}
+
+/**
+ * vs CPU 모드 전적 저장용 승자 코드를 사람 관점으로 매핑한다(순수).
+ * - 전적은 항상 labelA="나"/labelB="CPU"로 저장하므로, 사람 진영(humanSide) 승이면 "a",
+ *   CPU 승이면 "b", 무승부면 "draw". 사람이 초/한 어느 쪽이든 승/패 의미가 보존된다.
+ */
+export function janggiCpuWinSide(
+  state: JanggiState,
+  humanSide: Side,
+): JanggiWinSide {
+  if (state.winner === null) {
+    return "draw";
+  }
+  return state.winner === humanSide ? "a" : "b";
 }
