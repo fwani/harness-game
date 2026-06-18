@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Card, Rank, Suit } from "./card";
-import { evaluateBaccaratHand } from "./baccarat";
+import { evaluateBaccaratHand, settleBaccaratBet } from "./baccarat";
 
 const card = (rank: Rank, suit: Suit = "spades"): Card => ({ suit, rank });
 const hand = (...ranks: Rank[]): Card[] => ranks.map((r) => card(r));
@@ -72,5 +72,63 @@ describe("evaluateBaccaratHand", () => {
     const snapshot = JSON.parse(JSON.stringify(cards));
     evaluateBaccaratHand(cards);
     expect(cards).toEqual(snapshot);
+  });
+});
+
+describe("settleBaccaratBet", () => {
+  it("player 적중: 1:1 (+bet)", () => {
+    expect(settleBaccaratBet("player", 100, "player")).toEqual({ net: 100, push: false });
+  });
+
+  it("banker 적중: 5% 커미션 차감, 실수령 0.95:1 (+95)", () => {
+    expect(settleBaccaratBet("banker", 100, "banker")).toEqual({ net: 95, push: false });
+  });
+
+  it("banker 적중 커미션 내림 규칙: 50 → floor(47.5)=47", () => {
+    expect(settleBaccaratBet("banker", 50, "banker")).toEqual({ net: 47, push: false });
+  });
+
+  it("banker 적중 커미션 내림 규칙: 10 → floor(9.5)=9", () => {
+    expect(settleBaccaratBet("banker", 10, "banker")).toEqual({ net: 9, push: false });
+  });
+
+  it("tie 적중: 8:1 (+bet*8)", () => {
+    expect(settleBaccaratBet("tie", 10, "tie")).toEqual({ net: 80, push: false });
+  });
+
+  it("tie 결과에서 player 베팅: push(net 0, 원금 환원)", () => {
+    expect(settleBaccaratBet("player", 100, "tie")).toEqual({ net: 0, push: true });
+  });
+
+  it("tie 결과에서 banker 베팅: push(net 0, 원금 환원)", () => {
+    expect(settleBaccaratBet("banker", 100, "tie")).toEqual({ net: 0, push: true });
+  });
+
+  it("미적중(player 베팅·banker 승): -bet", () => {
+    expect(settleBaccaratBet("player", 100, "banker")).toEqual({ net: -100, push: false });
+  });
+
+  it("미적중(banker 베팅·player 승): -bet", () => {
+    expect(settleBaccaratBet("banker", 100, "player")).toEqual({ net: -100, push: false });
+  });
+
+  it("tie 베팅인데 player 승이면 패배: -bet", () => {
+    expect(settleBaccaratBet("tie", 100, "player")).toEqual({ net: -100, push: false });
+  });
+
+  it("tie 베팅인데 banker 승이면 패배: -bet", () => {
+    expect(settleBaccaratBet("tie", 100, "banker")).toEqual({ net: -100, push: false });
+  });
+
+  it("bet이 0이면 throw", () => {
+    expect(() => settleBaccaratBet("player", 0, "player")).toThrow();
+  });
+
+  it("bet이 음수면 throw", () => {
+    expect(() => settleBaccaratBet("player", -10, "player")).toThrow();
+  });
+
+  it("bet이 비정수면 throw", () => {
+    expect(() => settleBaccaratBet("player", 10.5, "player")).toThrow();
   });
 });
