@@ -943,6 +943,16 @@ header h1 {
   border-color: #0b2540;
 }
 
+/* '내 함대'(표시 전용) 보드 칸은 onClick 없는 비대화형 div다(적 함대·배치 보드는
+   button). 클릭 불가가 드러나도록 포인터/호버 단서를 끈다. 커넥트포 선례와 동일. #579 */
+.board.battleship div.cell {
+  cursor: default;
+}
+
+.board.battleship div.cell:hover {
+  background: transparent;
+}
+
 /* 물(미사격): 잔잔한 파랑. 색만이 아니라 기호(빈칸)로 구분되며 상태는 aria-label로 보강. */
 .bs-cell {
   color: #f8fafc;
