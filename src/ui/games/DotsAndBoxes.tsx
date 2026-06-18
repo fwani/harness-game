@@ -18,10 +18,11 @@ import {
   dotsTurnLabel,
   type DotsLabeler,
 } from "./dotsAndBoxesView";
-
-// 작은 표준 격자(3×3 박스). 변 24개로 한 판이 짧게 끝난다.
-const ROWS = 3;
-const COLS = 3;
+import {
+  dotsBoardSizeOptions,
+  normalizeDotsStartOptions,
+  type DotsStartOptions,
+} from "./dotsAndBoxesStartOptionsView";
 
 /** vs CPU 모드의 난수 어댑터(다른 게임 화면과 동일하게 infrastructure 어댑터 주입). */
 const rng = new MathRandomSource();
@@ -42,9 +43,9 @@ interface UiState {
   over: boolean;
 }
 
-function freshState(): UiState {
+function freshState(opts: DotsStartOptions): UiState {
   return {
-    board: createDotsAndBoxesBoard(ROWS, COLS),
+    board: createDotsAndBoxesBoard(opts.rows, opts.cols),
     current: 1,
     again: false,
     winner: null,
@@ -67,7 +68,13 @@ function applyTurn(state: UiState, edge: DotsEdge): UiState {
 
 export function DotsAndBoxes() {
   const [mode, setMode] = useState<Mode>("local");
-  const [state, setState] = useState<UiState>(freshState);
+  // 폼에서 고르는 시작 옵션(보드 크기). 기본 표준 5×5.
+  const [options, setOptions] = useState<DotsStartOptions>(() =>
+    normalizeDotsStartOptions({}),
+  );
+  const [state, setState] = useState<UiState>(() =>
+    freshState(normalizeDotsStartOptions({})),
+  );
 
   // vs CPU 모드의 통산 전적·연승 표시(저장소 변경에 맞춰 갱신).
   const records = useSyncExternalStore(subscribe, listRecords);
@@ -123,10 +130,17 @@ export function DotsAndBoxes() {
       return;
     }
     setMode(nextMode);
-    setState(freshState());
+    setState(freshState(options));
   };
 
-  const reset = () => setState(freshState());
+  // 보드 크기 선택: 옵션을 정규화해 저장하고 그 크기로 새 판을 시작한다(리셋).
+  const selectSize = (value: DotsStartOptions) => {
+    const next = normalizeDotsStartOptions(value);
+    setOptions(next);
+    setState(freshState(next));
+  };
+
+  const reset = () => setState(freshState(options));
 
   const over = state.over;
   const outcome = over ? dotsOutcomeLabel(state.winner, label) : null;
@@ -157,6 +171,25 @@ export function DotsAndBoxes() {
         >
           vs CPU
         </button>
+      </div>
+
+      <div className="controls" role="group" aria-label="보드 크기 선택">
+        <span className="hint">보드 크기:</span>
+        {dotsBoardSizeOptions().map((opt) => {
+          const selected =
+            options.rows === opt.value.rows && options.cols === opt.value.cols;
+          return (
+            <button
+              key={opt.label}
+              type="button"
+              className={selected ? "primary" : ""}
+              onClick={() => selectSize(opt.value)}
+              aria-pressed={selected}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
       </div>
 
       <p className="hint" aria-live="polite">
