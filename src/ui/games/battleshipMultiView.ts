@@ -90,6 +90,42 @@ export function battleshipSetupSeatView(
   return { mySubmitted, opponentSubmitted, waitingForOpponent, statusLabel };
 }
 
+/**
+ * 멀티 매치 종료 시 전적 기록 가드가 취할 동작(순수·결정적).
+ * - `record`: 이번에 1회 기록한다. `win`은 좌석 무관 절대 승자(p1→"a"/p2→"b").
+ * - `reset`: 진행 중/배치 단계 — 다음 매치(재대국)도 1회 기록되도록 가드를 해제한다.
+ * - `none`: 이미 기록함(중복 방지) 또는 기록할 결과가 없음.
+ */
+export type BattleshipMultiRecordAction =
+  | { kind: "record"; win: "a" | "b" }
+  | { kind: "reset" }
+  | { kind: "none" };
+
+/**
+ * 권위 있는 서버 `status`(전체 상태로 계산)와 직전 기록 여부로 전적 기록 동작을 결정한다(순수·결정적).
+ * 인메모리 허브에서는 두 좌석(p1·p2)이 같은 over 상태를 모두 구독하므로, 호출부가 들고 있는
+ * `alreadyRecorded` 플래그와 묶어 **매치당 정확히 1회만** 기록되게 한다.
+ * - status가 null(배치/대기 단계)이거나 미종료면 reset(가드 해제 — 재대국 후 다음 매치도 1회 기록).
+ * - over인데 승자가 없으면 none(배틀십은 무승부 없음 — 방어적으로 기록하지 않는다).
+ * - over이고 아직 기록 전이면 record(p1→"a"/p2→"b"), 이미 기록했으면 none.
+ * 좌석 무관 절대 승자만 본다 — 좌석 시점 outcome(win/loss)이 아니라 status.winner(p1/p2)를 쓴다.
+ */
+export function battleshipMultiRecordAction(
+  status: GameStatus | null,
+  alreadyRecorded: boolean,
+): BattleshipMultiRecordAction {
+  if (status === null || !status.over) {
+    return { kind: "reset" };
+  }
+  if (status.winner === null) {
+    return { kind: "none" };
+  }
+  if (alreadyRecorded) {
+    return { kind: "none" };
+  }
+  return { kind: "record", win: status.winner === "p1" ? "a" : "b" };
+}
+
 /** 사격(match) 단계의 좌석 시점 뷰: 내 함대 보드 + 상대 안개 보드 + 차례·승패(내 관점). */
 export interface BattleshipMatchSeatView {
   /** 내 함대 보드(내 함선이 보이고, 피격/격침이 드러난다). */
