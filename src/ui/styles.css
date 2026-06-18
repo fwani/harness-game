@@ -2267,3 +2267,252 @@ button.dots-edge:disabled {
   font-weight: 800;
   color: #b91c1c;
 }
+
+/* 후토시키(Futoshiki·부등호 라틴방진) 보드 — 칸 사이에 부등호 슬롯을 끼운 확장 그리드.
+   트랙 크기는 인라인(futoshikiGridStyle)로 칸/사이를 번갈아 지정한다. */
+.board.futoshiki {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+  align-items: center;
+  justify-items: center;
+}
+
+.futoshiki-cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 1px solid #b9b08a;
+  cursor: pointer;
+}
+
+/* 고정 단서: 굵게 + 구분 바탕(흐리게 처리하지 않는다). */
+.futoshiki-cell.given {
+  font-weight: 800;
+  color: #111827;
+  background: #ece4c9;
+  opacity: 1;
+}
+
+.futoshiki-cell:disabled {
+  cursor: default;
+}
+
+.futoshiki-cell:not(:disabled):hover,
+.futoshiki-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
+.futoshiki-cell.selected {
+  background: #cfe8ff;
+  outline: 2px solid #1d4ed8;
+  outline-offset: -2px;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.futoshiki-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.futoshiki-cell .futoshiki-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+/* 칸 사이 부등호 슬롯: 색에 의존하지 않고 기호로 제약 방향을 드러낸다. */
+.futoshiki-gap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #1f2937;
+  background: #fdf6e3;
+  line-height: 1;
+}
+
+.futoshiki-gap-empty {
+  background: #fdf6e3;
+}
+
+/* 히토리(Hitori) 보드 — 고정 숫자 N×N 격자에서 칸을 칠해(black) 푼다.
+   칠 상태는 색뿐 아니라 채움 표식(■)·취소선으로 색 비의존 구분한다. */
+.board.hitori {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.hitori-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f2937;
+  background: #fffdf5;
+  border: 0.5px solid #b9b08a;
+}
+
+.hitori-cell .hitori-number {
+  line-height: 1;
+}
+
+.hitori-cell:disabled {
+  cursor: default;
+}
+
+.hitori-cell:not(:disabled):hover,
+.hitori-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 칠한(black) 칸: 어두운 바탕 + 취소선 숫자 + ■ 표식으로 색 비의존 식별. */
+.hitori-cell.marked {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+.hitori-cell.marked .hitori-number {
+  text-decoration: line-through;
+  opacity: 0.85;
+}
+
+.hitori-cell:not(:disabled).marked:hover,
+.hitori-cell:not(:disabled).marked:focus-visible {
+  background: #374151;
+}
+
+.hitori-cell .hitori-mark {
+  position: absolute;
+  bottom: 1px;
+  left: 3px;
+  font-size: 0.55rem;
+  line-height: 1;
+  color: #f9fafb;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.hitori-cell.conflict {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.hitori-cell.marked.conflict {
+  color: #fca5a5;
+}
+
+.hitori-cell .hitori-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+.hitori-cell.marked .hitori-violation-mark {
+  color: #fca5a5;
+}
+
+/* 켄켄(KenKen·Calcudoku) 보드 — 라틴방진 격자 위에 굵은 케이지 경계 + 좌상단 목표값/연산. */
+.board.kenken {
+  background: #fdf6e3;
+  border: 2px solid #1f2937;
+}
+
+.kenken-cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #1f2937;
+  background: #fffdf5;
+  /* 케이지 내부의 얇은 기본 격자선. 굵은 케이지 경계는 cage-* 클래스가 덮어쓴다. */
+  border: 0.5px solid #cdc6a8;
+  cursor: pointer;
+}
+
+.kenken-cell:disabled {
+  cursor: default;
+}
+
+.kenken-cell:not(:disabled):hover,
+.kenken-cell:not(:disabled):focus-visible {
+  background: #dbeafe;
+}
+
+/* 굵은 케이지 경계: 이웃이 다른 케이지/격자 밖인 방향만 두껍게 그어 케이지를 시각적으로 묶는다. */
+.kenken-cell.cage-top {
+  border-top: 2px solid #1f2937;
+}
+.kenken-cell.cage-right {
+  border-right: 2px solid #1f2937;
+}
+.kenken-cell.cage-bottom {
+  border-bottom: 2px solid #1f2937;
+}
+.kenken-cell.cage-left {
+  border-left: 2px solid #1f2937;
+}
+
+/* 선택된 칸(편집 대상): 외곽선으로 또렷하게(색 비의존 보조로 굵은 테두리). */
+.kenken-cell.selected {
+  background: #cfe8ff;
+  outline: 2px solid #1d4ed8;
+  outline-offset: -2px;
+}
+
+/* 위반 칸: 색 + 밑줄 + ! 기호로 색 비의존 강조. */
+.kenken-cell.conflict {
+  color: #b91c1c;
+}
+
+.kenken-cell.conflict .kenken-value {
+  text-decoration: underline;
+}
+
+/* 케이지 대표 칸(좌상단)의 목표값/연산 라벨. */
+.kenken-cell .kenken-cage-label {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #374151;
+}
+
+.kenken-cell .kenken-violation-mark {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
