@@ -11,6 +11,7 @@ import { listRecords, recordGame, subscribe, type WinSide } from "../records";
 import { SELF_PLAYER, selfStreakSummary } from "./streakView";
 import { StreakPanel } from "./StreakPanel";
 import { boardGridStyle } from "./boardView";
+import { useBoardNavigation } from "./useBoardNavigation";
 import {
   battleshipStatusLabel,
   cellView,
@@ -101,14 +102,24 @@ function BoardGrid({
   locked: boolean;
 }) {
   const interactive = onFire !== undefined;
+  // 격자 키보드 내비게이션(방향키 이동 + 로빙 탭인덱스). 좌표계는 boardView와 동일하게
+  // x=열(c), y=행(r). 비대화형('내 함대' 표시 보드)에서는 와이어링하지 않는다(훅은 규칙상
+  // 항상 호출). Enter/Space 착수는 버튼 기본 동작이 처리한다.
+  const { setCellRef, onKeyDown, tabIndexFor, focusOn } = useBoardNavigation(
+    BOARD_SIZE,
+    BOARD_SIZE,
+  );
   return (
     <div className="bs-board-wrap">
       <h3>{title}</h3>
       <div
         className="board battleship"
         role="grid"
-        aria-label={title}
+        aria-label={
+          interactive ? `${title} (방향 키로 칸 이동, Enter/Space로 사격)` : title
+        }
         style={boardGridStyle(BOARD_SIZE)}
+        onKeyDown={interactive ? onKeyDown : undefined}
       >
         {board.map((rowCells, r) =>
           rowCells.map((cell, c) => {
@@ -124,10 +135,13 @@ function BoardGrid({
               return (
                 <button
                   key={`${r},${c}`}
+                  ref={setCellRef(c, r)}
                   type="button"
                   role="gridcell"
                   className={`cell bs-cell bs-${view.state}`}
+                  tabIndex={tabIndexFor(c, r)}
                   onClick={() => {
+                    focusOn(c, r);
                     if (!disabled) onFire?.(r, c);
                   }}
                   aria-disabled={disabled}
@@ -393,6 +407,11 @@ function PlacementPhase({
   onStart: () => void;
   onDifficulty: (difficulty: CpuDifficulty) => void;
 }) {
+  // 배치 보드도 방향키 이동 + 로빙 탭인덱스를 제공한다(좌표계 x=열 c, y=행 r).
+  const { setCellRef, onKeyDown, tabIndexFor, focusOn } = useBoardNavigation(
+    BOARD_SIZE,
+    BOARD_SIZE,
+  );
   const board = createBattleshipBoard(BOARD_SIZE, state.placed);
   const preview =
     hover && placingSize !== null
@@ -462,9 +481,10 @@ function PlacementPhase({
           <div
             className="board battleship"
             role="grid"
-            aria-label="내 함대 배치 보드"
+            aria-label="내 함대 배치 보드 (방향 키로 칸 이동, Enter/Space로 배치)"
             style={boardGridStyle(BOARD_SIZE)}
             onMouseLeave={() => setHover(null)}
+            onKeyDown={onKeyDown}
           >
             {board.map((rowCells, r) =>
               rowCells.map((cell, c) => {
@@ -483,14 +503,20 @@ function PlacementPhase({
                 return (
                   <button
                     key={`${r},${c}`}
+                    ref={setCellRef(c, r)}
                     type="button"
                     role="gridcell"
                     className={`cell bs-cell bs-${view.state}${previewClass}`}
+                    tabIndex={tabIndexFor(c, r)}
                     onClick={() => {
+                      focusOn(c, r);
                       if (!complete) onPlace(r, c);
                     }}
                     onMouseEnter={() => setHover({ row: r, col: c })}
-                    onFocus={() => setHover({ row: r, col: c })}
+                    onFocus={() => {
+                      focusOn(c, r);
+                      setHover({ row: r, col: c });
+                    }}
                     aria-disabled={complete}
                     aria-label={`${view.label}${previewLabel}`}
                   >
