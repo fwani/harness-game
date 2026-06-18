@@ -28,6 +28,7 @@
 
 | 게임 | 사양 | 한 줄 요약 |
 | --- | --- | --- |
+| 바카라 | [baccarat.md](baccarat.md) | 1인 베팅(플레이어/뱅커/타이) punto banco 타블로·배당 정산·뱅크롤 |
 | 가위바위보 | [rps.md](rps.md) | vs CPU 1판. 가위바위보 승패 판정 |
 | 홀짝 | [odd-even.md](odd-even.md) | 0–99 난수의 홀짝 맞히기 |
 | 카드 (덱·딜·하이카드) | [card.md](card.md) | 52장 덱 셔플·딜, 하이카드 비교 |
