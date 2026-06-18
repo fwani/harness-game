@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { getStandings, listRecords, recordsPersisted, subscribe } from "../records";
+import { getIdentity, subscribeIdentity } from "../identity";
+import { selfDisplayLabel } from "./selfLabelView";
 import { toEloLeaderboard } from "./recordsEloView";
 import { toWinRankingRows } from "./recordsRankingView";
 import { toStreakRankingRows, type StreakRankingRow } from "./recordsStreakRankingView";
@@ -28,6 +30,15 @@ export function Records() {
   // 외부 저장소(records.ts) 변경에 맞춰 다시 렌더한다.
   const standings = useSyncExternalStore(subscribe, getStandings);
   const records = useSyncExternalStore(subscribe, listRecords);
+  // 게스트 표시 이름 변경에 맞춰 self 표시를 갱신한다. 정렬/집계/저장 키는 SELF_PLAYER(안정값) 그대로이고
+  // 화면 표시만 displayName으로 매핑한다(키를 이름으로 바꾸면 이름 변경 시 같은 사람 집계가 쪼개짐, #535).
+  const identity = useSyncExternalStore(
+    subscribeIdentity,
+    getIdentity,
+    getIdentity,
+  );
+  const showSelf = (player: string): string =>
+    selfDisplayLabel(player, identity.displayName);
   // 누적 기록으로 ELO 레이팅 리더보드를 계산한다(domain/computeEloRatings 재사용, 표시용 변환).
   const leaderboard = toEloLeaderboard(records);
   // 누적 전적을 승수·승률 기준 순위표로 변환한다(domain/rankPlayers 재사용, 표시용 변환).
@@ -59,7 +70,7 @@ export function Records() {
           <tbody>
             {standings.map((s) => (
               <tr key={s.player}>
-                <td>{s.player}</td>
+                <td>{showSelf(s.player)}</td>
                 <td>{s.wins}</td>
                 <td>{s.losses}</td>
                 <td>{s.draws}</td>
@@ -88,7 +99,7 @@ export function Records() {
               {leaderboard.map((row) => (
                 <tr key={row.player}>
                   <td>{row.rank}</td>
-                  <td>{row.player}</td>
+                  <td>{showSelf(row.player)}</td>
                   <td>{row.rating}</td>
                   <td>{row.games}</td>
                 </tr>
@@ -122,7 +133,7 @@ export function Records() {
                 {winRanking.map((row) => (
                   <tr key={row.player}>
                     <td>{row.rank}</td>
-                    <td>{row.player}</td>
+                    <td>{showSelf(row.player)}</td>
                     <td>{row.wins}</td>
                     <td>{row.losses}</td>
                     <td>{row.draws}</td>
@@ -158,7 +169,7 @@ export function Records() {
                 {streakRanking.map((row) => (
                   <tr key={row.player}>
                     <td>{row.rank}</td>
-                    <td>{row.player}</td>
+                    <td>{showSelf(row.player)}</td>
                     <td>{row.longestWin}</td>
                     <td>{currentStreakLabel(row)}</td>
                   </tr>
@@ -193,7 +204,7 @@ export function Records() {
                 {headToHead.map((row) => (
                   <tr key={`${row.playerA} vs ${row.playerB}`}>
                     <td>
-                      {row.playerA} vs {row.playerB}
+                      {showSelf(row.playerA)} vs {showSelf(row.playerB)}
                     </td>
                     <td>{row.winsA}</td>
                     <td>{row.winsB}</td>
@@ -239,7 +250,7 @@ export function Records() {
                             <td rowSpan={row.players.length}>{row.totalGames}</td>
                           </>
                         ) : null}
-                        <td>{p.player}</td>
+                        <td>{showSelf(p.player)}</td>
                         <td>{p.wins}</td>
                         <td>{p.losses}</td>
                         <td>{p.draws}</td>
@@ -265,7 +276,7 @@ export function Records() {
                   <span className="record-game">{GAME_LABEL[r.game]}</span>
                   {r.outcomes.map((o) => (
                     <span key={o.player} className="record-outcome">
-                      {o.player} {RESULT_LABEL[o.result]}
+                      {showSelf(o.player)} {RESULT_LABEL[o.result]}
                     </span>
                   ))}
                 </li>
