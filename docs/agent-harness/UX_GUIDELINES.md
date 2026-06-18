@@ -185,7 +185,9 @@
   (application, `RandomSource` 주입)와 플레이 화면(`Hitori.tsx` + `hitoriView`: 칸 칠하기 토글·세 위반
   종류 색 비의존 강조·클리어 판정·새 게임·전적 저장 `GameId="hitori"`)이 후속 짝 이슈로 필요.
   사양: [`docs/games/hitori.md`](../games/hitori.md).
-- **접근성/반응형 점검**: 보드 셀 키보드 내비게이션, 모바일 레이아웃, 명도 대비.
+- **접근성/반응형 점검**: ✅ ~~보드 셀 키보드 내비게이션~~(격자 보드 4종에 로빙 탭인덱스
+  + 화살표/Home/End/PageUp/PageDown 이동 도입 — `boardView.nextBoardFocus` +
+  `useBoardNavigation`, #227). 모바일 레이아웃·명도 대비는 후속 점검 대상.
 
 ## 참고
 

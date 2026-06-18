@@ -418,11 +418,13 @@ header h1 {
   line-height: 1;
 }
 
-.cell:disabled {
+/* 비활성 칸: 네이티브 disabled 대신 aria-disabled를 쓴다(키보드 포커스로 건너갈 수
+   있어야 로빙 탭인덱스 내비게이션이 동작하므로). #227 */
+.cell[aria-disabled="true"] {
   cursor: default;
 }
 
-.cell:not(:disabled):hover {
+.cell:not([aria-disabled="true"]):hover {
   background: rgba(255, 255, 255, 0.18);
 }
 
