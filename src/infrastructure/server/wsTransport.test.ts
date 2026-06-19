@@ -126,6 +126,25 @@ describe("attachWsServer — 실제 ws 전송 통합", () => {
     }
   });
 
+  it("①-b 좌석 배정 시 그 연결에만 seated(자기 side)가 온다", async () => {
+    const srv = await startTestServer({ ...CF_DEPS, newConnId: seqConnId() });
+    try {
+      const a = await TestClient.connect(srv.url);
+      const b = await TestClient.connect(srv.url);
+      a.send({ type: "joinRoom", roomCode: "RS" });
+      const seatedA = await a.waitForType("seated");
+      expect(seatedA.side).toBe("p1");
+      expect(seatedA.roomCode).toBe("RS");
+      b.send({ type: "joinRoom", roomCode: "RS" });
+      const seatedB = await b.waitForType("seated");
+      expect(seatedB.side).toBe("p2");
+      a.close();
+      b.close();
+    } finally {
+      await srv.close();
+    }
+  });
+
   it("② 한쪽 makeMove가 양쪽에 gameState 동기화", async () => {
     const srv = await startTestServer({ ...CF_DEPS, newConnId: seqConnId() });
     try {

@@ -37,6 +37,7 @@ import {
   type InMemoryRoomHub,
   type RoomClient,
 } from "./battleshipRoomClient";
+import { createWsRoomConnection } from "./wsRoomClient";
 import { recordGame } from "../records";
 import { SELF_PLAYER } from "./streakView";
 
@@ -74,31 +75,54 @@ function emptySeat(): SeatUiState {
   return { payload: null, placed: [], orientation: "h", placementError: null, lastError: null };
 }
 
-/** 한 좌석(p1/p2)을 잇는 RoomClient 묶음 + 방 코드. */
-interface Session {
-  hub: InMemoryRoomHub;
-  clients: Record<Side, RoomClient>;
-  roomCode: string;
-}
+/** 전송 방식: 로컬 인메모리 2석 시뮬 vs 실제 ws 서버 원격 접속(다른 탭/브라우저). */
+type Transport = "local" | "online";
+
+/**
+ * 진행 중 세션.
+ * - local: 한 화면에서 두 좌석(p1/p2)을 인메모리 허브로 구동(서버 불필요).
+ * - online: 실제 ws 서버에 이 탭이 한 좌석으로 접속. ownSide는 서버 `seated`로 정해진다.
+ */
+type Session =
+  | { transport: "local"; hub: InMemoryRoomHub; clients: Record<Side, RoomClient>; roomCode: string }
+  | { transport: "online"; client: RoomClient; close: () => void; roomCode: string };
 
 const SIDES: readonly Side[] = ["p1", "p2"];
+
+/** 기본 ws 서버 URL(현재 호스트의 8787 포트). 브라우저 밖이면 localhost. `npm run serve:multi`. */
+function defaultWsUrl(): string {
+  const host =
+    typeof window !== "undefined" && window.location?.hostname
+      ? window.location.hostname
+      : "localhost";
+  return `ws://${host}:8787`;
+}
 
 function seatLabel(side: Side): string {
   return side === "p1" ? "좌석 1 (선)" : "좌석 2";
 }
 
 interface BattleshipMultiProps {
-  /** 방 허브 생성기 주입(테스트/실 ws #595 접점). 미주입 시 인메모리 허브로 로컬 2석 시뮬. */
+  /** 방 허브 생성기 주입(테스트). 미주입 시 인메모리 허브로 로컬 2석 시뮬. */
   makeHub?: (roomCode: string) => InMemoryRoomHub;
+  /** 온라인 ws 연결 생성기(테스트 주입용). 기본은 브라우저 WebSocket로 실제 ws 서버에 접속. */
+  connectOnline?: (url: string) => { client: RoomClient; close: () => void };
 }
 
 /**
  * 배틀십 멀티(방) 화면 — 주입된 RoomClient 포트(send/subscribe)만 소비한다(소켓 비종속).
- * 실제 native ws 바인딩은 #595(needs-human)이고, 기본값은 소켓 없는 인메모리 허브로 두 좌석을
- * 한 화면에서 구동하는 로컬 시뮬이다("현재 좌석"을 바꿔가며 비공개 배치→교대 사격).
+ * 두 가지 전송:
+ * - **로컬 2인**(기본·서버 불필요): 인메모리 허브로 한 화면에서 두 좌석을 번갈아 조작.
+ * - **온라인**: 실제 ws 서버(`npm run serve:multi`)에 이 탭이 한 좌석으로 접속 → 다른 탭/브라우저가
+ *   같은 방 코드로 들어오면 실시간 동기화. 내 좌석(side)은 서버 `seated`로 정해진다.
  */
-export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipMultiProps) {
+export function BattleshipMulti({
+  makeHub = createInMemoryRoomHub,
+  connectOnline = (url) => createWsRoomConnection(url),
+}: BattleshipMultiProps) {
+  const [transport, setTransport] = useState<Transport>("local");
   const [roomCodeInput, setRoomCodeInput] = useState("ROOM-1");
+  const [wsUrl, setWsUrl] = useState(defaultWsUrl());
   const [session, setSession] = useState<Session | null>(null);
   const [players, setPlayers] = useState<RoomPlayerInfo[]>([]);
   const [seats, setSeats] = useState<Record<Side, SeatUiState>>({
@@ -106,6 +130,9 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
     p2: emptySeat(),
   });
   const [activeSeat, setActiveSeat] = useState<Side>("p1");
+  // 온라인: 서버가 배정한 내 좌석(seated 수신 전 null). ref는 subscribe 콜백에서 최신값 읽기용.
+  const [ownSide, setOwnSide] = useState<Side | null>(null);
+  const ownSideRef = useRef<Side | null>(null);
   const unsubsRef = useRef<Array<() => void>>([]);
   // 이번 매치 결과를 이미 기록했는지(중복 방지 가드). 재대국·미종료 단계에서 자동 리셋된다.
   const recordedRef = useRef(false);
@@ -184,46 +211,79 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
   const join = () => {
     const code = roomCodeInput.trim();
     if (code.length === 0 || session !== null) return;
-    const hub = makeHub(code);
-    const clients: Record<Side, RoomClient> = {
-      p1: hub.connect(CONN_ID.p1),
-      p2: hub.connect(CONN_ID.p2),
-    };
-    for (const side of SIDES) {
-      unsubsRef.current.push(clients[side].subscribe((m) => applyMessage(side, m)));
-    }
-    setSession({ hub, clients, roomCode: code });
     setSeats({ p1: emptySeat(), p2: emptySeat() });
-    setActiveSeat("p1");
-    // 두 좌석을 입장시켜 비공개 배치(setup)를 시작한다.
-    for (const side of SIDES) {
-      clients[side].send({ type: "joinRoom", roomCode: code });
+    ownSideRef.current = null;
+    setOwnSide(null);
+
+    if (transport === "local") {
+      // 로컬: 한 화면에서 두 좌석을 인메모리 허브로 구동(서버 불필요).
+      const hub = makeHub(code);
+      const clients: Record<Side, RoomClient> = {
+        p1: hub.connect(CONN_ID.p1),
+        p2: hub.connect(CONN_ID.p2),
+      };
+      for (const side of SIDES) {
+        unsubsRef.current.push(clients[side].subscribe((m) => applyMessage(side, m)));
+      }
+      setActiveSeat("p1");
+      setSession({ transport: "local", hub, clients, roomCode: code });
+      for (const side of SIDES) {
+        clients[side].send({ type: "joinRoom", roomCode: code });
+      }
+      return;
     }
+
+    // 온라인: 이 탭이 한 좌석으로 ws 서버에 접속. 내 side는 서버 seated로 정해진다.
+    const { client, close } = connectOnline(wsUrl);
+    const off = client.subscribe((m) => {
+      if (m.type === "seated") {
+        ownSideRef.current = m.side;
+        setOwnSide(m.side);
+        setActiveSeat(m.side);
+        return;
+      }
+      // 내 좌석 관점의 메시지(서버가 이미 side별로 가려 보냄). seated 전이면 p1로 임시 라우팅.
+      applyMessage(ownSideRef.current ?? "p1", m);
+    });
+    unsubsRef.current.push(off);
+    setSession({ transport: "online", client, close, roomCode: code });
+    client.send({ type: "joinRoom", roomCode: code });
   };
 
   const leave = () => {
     if (session !== null) {
-      for (const side of SIDES) session.clients[side].send({ type: "leaveRoom" });
+      if (session.transport === "local") {
+        for (const side of SIDES) session.clients[side].send({ type: "leaveRoom" });
+      } else {
+        session.client.send({ type: "leaveRoom" });
+        session.close();
+      }
     }
     for (const off of unsubsRef.current) off();
     unsubsRef.current = [];
     setSession(null);
     setPlayers([]);
     setSeats({ p1: emptySeat(), p2: emptySeat() });
+    setOwnSide(null);
+    ownSideRef.current = null;
   };
 
   if (session === null) {
     return (
       <Lobby
+        transport={transport}
+        onTransportChange={setTransport}
         roomCode={roomCodeInput}
         onRoomCodeChange={setRoomCodeInput}
+        wsUrl={wsUrl}
+        onWsUrlChange={setWsUrl}
         onJoin={join}
       />
     );
   }
 
   const active = seats[activeSeat];
-  const activeClient = session.clients[activeSeat];
+  const activeClient = session.transport === "local" ? session.clients[activeSeat] : session.client;
 
   // ── 배치(setup) 핸들러 ──────────────────────────────────────────────
   const placingSize = nextShipSize(active.placed, FLEET);
@@ -289,6 +349,8 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
         activeSeat={activeSeat}
         onSeat={setActiveSeat}
         onLeave={leave}
+        transport={session.transport}
+        ownSide={ownSide}
       />
 
       {active.lastError && (
@@ -297,10 +359,16 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
         </p>
       )}
 
-      {phase === null && (
+      {session.transport === "online" && ownSide === null ? (
         <p className="hint" role="status" aria-live="polite">
-          좌석에 입장하는 중…
+          서버에 접속해 좌석 배정을 기다리는 중… (서버가 떠 있어야 합니다: <code>npm run serve:multi</code>)
         </p>
+      ) : (
+        phase === null && (
+          <p className="hint" role="status" aria-live="polite">
+            좌석에 입장하는 중…
+          </p>
+        )
       )}
 
       {phase === "setup" && active.payload?.stage === "setup" && (
@@ -331,23 +399,59 @@ export function BattleshipMulti({ makeHub = createInMemoryRoomHub }: BattleshipM
   );
 }
 
-/** 로비: 방 코드 입력 → 입장(로컬 2석 시뮬 시작). */
+/** 로비: 전송 방식(로컬/온라인) + 방 코드(+온라인 서버 URL) → 입장. */
 function Lobby({
+  transport,
+  onTransportChange,
   roomCode,
   onRoomCodeChange,
+  wsUrl,
+  onWsUrlChange,
   onJoin,
 }: {
+  transport: Transport;
+  onTransportChange: (t: Transport) => void;
   roomCode: string;
   onRoomCodeChange: (v: string) => void;
+  wsUrl: string;
+  onWsUrlChange: (v: string) => void;
   onJoin: () => void;
 }) {
+  const TRANSPORTS: ReadonlyArray<{ value: Transport; label: string }> = [
+    { value: "local", label: "로컬 2인 (서버 불필요)" },
+    { value: "online", label: "온라인 (다른 탭/브라우저)" },
+  ];
   return (
     <div className="bs-multi-lobby">
+      <div className="controls" role="group" aria-label="전송 방식 선택">
+        <span className="hint">접속 방식:</span>
+        {TRANSPORTS.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            className={transport === t.value ? "primary" : ""}
+            aria-pressed={transport === t.value}
+            onClick={() => onTransportChange(t.value)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       <p className="hint">
-        <strong>멀티(방)</strong> 모드입니다. 방 코드로 두 좌석이 같은 방에 입장해 서로의 배치를
-        비공개로 두고 교대 사격합니다. 실제 원격 접속(ws)은 준비 중이라, 지금은 한 화면에서 두 좌석을
-        번갈아 조작하는 <strong>로컬 2인</strong> 시뮬입니다.
+        {transport === "local" ? (
+          <>
+            <strong>로컬 2인</strong>: 한 화면에서 두 좌석을 번갈아 조작하는 시뮬입니다(서버 불필요).
+          </>
+        ) : (
+          <>
+            <strong>온라인</strong>: 이 탭이 한 좌석으로 ws 서버에 접속합니다. <strong>다른 탭/브라우저</strong>
+            에서 같은 방 코드로 들어오면 실시간으로 맞붙습니다. 먼저 서버를 켜야 합니다:{" "}
+            <code>npm run serve:multi</code>.
+          </>
+        )}
       </p>
+
       <form
         className="controls"
         onSubmit={(e) => {
@@ -363,34 +467,52 @@ function Lobby({
           onChange={(e) => onRoomCodeChange(e.target.value)}
           aria-label="방 코드 입력"
         />
+        {transport === "online" && (
+          <>
+            <label htmlFor="bs-ws-url">서버 주소</label>
+            <input
+              id="bs-ws-url"
+              type="text"
+              value={wsUrl}
+              onChange={(e) => onWsUrlChange(e.target.value)}
+              aria-label="ws 서버 주소"
+            />
+          </>
+        )}
         <button type="submit" className="primary" disabled={roomCode.trim().length === 0}>
-          방 만들기 / 입장
+          {transport === "online" ? "접속" : "방 만들기 / 입장"}
         </button>
       </form>
     </div>
   );
 }
 
-/** 방 머리말: 방 코드·좌석 배정·현재 좌석 토글·나가기. */
+/** 방 머리말: 방 코드·좌석 배정·현재 좌석 토글·나가기. 온라인은 내 좌석만 조작(토글 잠금). */
 function RoomHeader({
   roomCode,
   players,
   activeSeat,
   onSeat,
   onLeave,
+  transport,
+  ownSide,
 }: {
   roomCode: string;
   players: RoomPlayerInfo[];
   activeSeat: Side;
   onSeat: (s: Side) => void;
   onLeave: () => void;
+  transport: Transport;
+  ownSide: Side | null;
 }) {
   const occupied = new Set(players.map((p) => p.side));
+  const online = transport === "online";
   return (
     <>
       <div className="controls">
         <span className="hint">
           방 코드 <strong>{roomCode}</strong>
+          {online && ownSide !== null ? ` · 내 좌석: ${seatLabel(ownSide)}` : ""}
         </span>
         <button type="button" onClick={onLeave}>
           방 나가기
@@ -398,24 +520,29 @@ function RoomHeader({
       </div>
       <p className="hint" role="status" aria-live="polite">
         {occupied.size < 2
-          ? "상대 좌석이 비어 있습니다. 두 좌석이 모두 차면 배치가 시작됩니다."
-          : "양 좌석 입장 완료. 각 좌석에서 함대를 비공개로 배치하세요."}
+          ? online
+            ? "상대 좌석이 비어 있습니다. 다른 탭/브라우저에서 같은 방 코드로 접속하세요."
+            : "상대 좌석이 비어 있습니다. 두 좌석이 모두 차면 배치가 시작됩니다."
+          : "양 좌석 입장 완료. 함대를 비공개로 배치하세요."}
       </p>
-      <div className="controls" role="group" aria-label="현재 조작할 좌석 선택">
-        <span className="hint">현재 좌석:</span>
-        {SIDES.map((side) => (
-          <button
-            key={side}
-            type="button"
-            className={activeSeat === side ? "primary" : ""}
-            aria-pressed={activeSeat === side}
-            onClick={() => onSeat(side)}
-          >
-            {seatLabel(side)}
-            {occupied.has(side) ? " ✓" : ""}
-          </button>
-        ))}
-      </div>
+      {/* 온라인은 내 좌석만 조작하므로 좌석 토글을 노출하지 않는다(로컬만 토글). */}
+      {!online && (
+        <div className="controls" role="group" aria-label="현재 조작할 좌석 선택">
+          <span className="hint">현재 좌석:</span>
+          {SIDES.map((side) => (
+            <button
+              key={side}
+              type="button"
+              className={activeSeat === side ? "primary" : ""}
+              aria-pressed={activeSeat === side}
+              onClick={() => onSeat(side)}
+            >
+              {seatLabel(side)}
+              {occupied.has(side) ? " ✓" : ""}
+            </button>
+          ))}
+        </div>
+      )}
     </>
   );
 }

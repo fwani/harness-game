@@ -105,6 +105,15 @@ export function attachWsServer(wss: WebSocketServer, deps: WsTransportDeps): () 
       const result = dispatch(state, connId, code, raw, deps.registryDeps);
       state = result.state;
       deliver(result.outbound);
+
+      // joinRoom으로 이 연결이 좌석에 앉았으면, 원격 클라이언트가 자기 side를 알 수 있도록
+      // 그 연결에게만 seated를 보낸다(방 코어 reduceRoom은 좌석을 connId로만 다룬다).
+      if (isJoinRoom(raw)) {
+        const side = sideOf(connId);
+        if (side !== null) {
+          sendTo(connId, { type: "seated", side, roomCode: code });
+        }
+      }
     });
 
     socket.on("close", () => {
