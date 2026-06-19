@@ -1,5 +1,25 @@
 import { describe, it, expect } from "vitest";
-import { applyGoBonus } from "./goStopGo";
+import { applyGoBonus, canCallGo, GO_MIN_SCORE } from "./goStopGo";
+
+describe("canCallGo (「고」 게이트)", () => {
+  it("승점(GO_MIN_SCORE=3) 미만이면 「고」를 외칠 수 없다", () => {
+    expect(GO_MIN_SCORE).toBe(3);
+    expect(canCallGo(0)).toBe(false);
+    expect(canCallGo(1)).toBe(false);
+    expect(canCallGo(2)).toBe(false);
+  });
+
+  it("승점 이상이면 「고」를 외칠 수 있다", () => {
+    expect(canCallGo(3)).toBe(true);
+    expect(canCallGo(7)).toBe(true);
+  });
+
+  it("base가 음수/비정수/NaN이면 throw", () => {
+    expect(() => canCallGo(-1)).toThrow();
+    expect(() => canCallGo(2.5)).toThrow();
+    expect(() => canCallGo(Number.NaN)).toThrow();
+  });
+});
 
 describe("applyGoBonus", () => {
   it("goCount 0이면 total === base, bonus 0, multiplier 1", () => {
