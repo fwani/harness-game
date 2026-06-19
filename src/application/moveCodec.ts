@@ -49,7 +49,7 @@ function isXY(v: unknown): v is { x: number; y: number } {
   return isObject(v) && isNumber(v.x) && isNumber(v.y);
 }
 
-/** { row: number; col: number } 형태인가(tictactoe/chess/checkers 좌표). */
+/** { row: number; col: number } 형태인가(tictactoe/chess/checkers/battleship 좌표). */
 function isRowCol(v: unknown): v is { row: number; col: number } {
   return isObject(v) && isNumber(v.row) && isNumber(v.col);
 }
@@ -115,6 +115,7 @@ function isDotsEdge(raw: unknown): raw is DotsEdge {
  * 키 = 멀티 지원 11종(GameId). 여기 없는 gameType은 unsupported_game으로 거부된다.
  */
 const MOVE_GUARDS: Partial<Record<GameId, (raw: unknown) => boolean>> = {
+  battleship: isRowCol,
   checkers: isCheckersMove,
   chess: isChessMove,
   connectfour: isConnectFourMove,
