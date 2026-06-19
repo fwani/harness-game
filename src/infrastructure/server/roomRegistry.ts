@@ -7,7 +7,11 @@
 // 가드(`isClientMessage`)와 `parseEngineMove`(#529)를 재사용하고, 방/매치 규칙은 `reduceRoom`에
 // 위임한다(재구현 금지). 식별값(connId)은 호출자가 주입하는 불투명 문자열로만 다루고, 민감정보를
 // 본문/로그/리터럴에 넣지 않는다.
-import { isClientMessage, type ServerMessage } from "../../application/protocol";
+import {
+  isClientMessage,
+  type RoomSummary,
+  type ServerMessage,
+} from "../../application/protocol";
 import { parseEngineMove } from "../../application/moveCodec";
 import type { GameId } from "../../domain/gameRecord";
 import {
@@ -58,6 +62,26 @@ export interface DispatchResult {
 /** 빈 레지스트리(방·매핑 없음)를 생성한다. */
 export function createRegistry(): RegistryState {
   return { rooms: new Map(), connRoom: new Map() };
+}
+
+/**
+ * 현재 열린 방들의 요약 목록(로비 표시용). 코드 순 정렬(결정적). 민감정보 없음 —
+ * 코드·게임·착석 인원·단계만 노출한다(좌석 connId 등은 포함하지 않는다).
+ */
+export function summarizeRooms(state: RegistryState): RoomSummary[] {
+  const summaries: RoomSummary[] = [];
+  for (const room of state.rooms.values()) {
+    const phase: RoomSummary["phase"] =
+      room.setup !== null ? "setup" : room.match !== null ? "playing" : "waiting";
+    summaries.push({
+      code: room.code,
+      gameType: room.gameType,
+      players: room.seats.length,
+      phase,
+    });
+  }
+  summaries.sort((a, b) => (a.code < b.code ? -1 : a.code > b.code ? 1 : 0));
+  return summaries;
 }
 
 /**

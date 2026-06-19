@@ -922,6 +922,28 @@ header h1 {
 /* --- 배틀십(Battleship) --- */
 
 /* 두 보드(적 함대/내 함대)를 나란히 두되 좁은 화면에서는 세로로 쌓고 가로 스크롤 없이 줄어든다. */
+/* 온라인 로비 방 목록: 디자인 토큰만 사용(생짜 hex 금지). */
+.bs-room-list {
+  list-style: none;
+  margin: var(--s-3) 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  max-width: 28rem;
+}
+
+.bs-room-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
 .bs-boards {
   display: flex;
   flex-wrap: wrap;

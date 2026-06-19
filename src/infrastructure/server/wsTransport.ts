@@ -15,6 +15,7 @@ import {
   createRegistry,
   dispatch,
   disconnect,
+  summarizeRooms,
   type AddressedOut,
   type RegistryDeps,
   type RegistryState,
@@ -78,6 +79,14 @@ export function attachWsServer(wss: WebSocketServer, deps: WsTransportDeps): () 
     }
   }
 
+  /** 현재 방 목록을 모든 연결에 보낸다(로비가 실시간 갱신되도록 방 변경 후 호출). */
+  function broadcastRoomList(): void {
+    const rooms = summarizeRooms(state);
+    for (const connId of sockets.keys()) {
+      sendTo(connId, { type: "roomList", rooms });
+    }
+  }
+
   function handleConnection(socket: WebSocket): void {
     const connId = deps.newConnId();
     sockets.set(connId, socket);
@@ -89,6 +98,12 @@ export function attachWsServer(wss: WebSocketServer, deps: WsTransportDeps): () 
         raw = JSON.parse(String(data));
       } catch {
         sendTo(connId, { type: "error", reason: "invalid_json" });
+        return;
+      }
+
+      // listRooms는 방에 속하지 않은 로비 연결도 보낼 수 있다 — 방 라우팅 전에 직접 응답.
+      if (isType(raw, "listRooms")) {
+        sendTo(connId, { type: "roomList", rooms: summarizeRooms(state) });
         return;
       }
 
@@ -114,6 +129,9 @@ export function attachWsServer(wss: WebSocketServer, deps: WsTransportDeps): () 
           sendTo(connId, { type: "seated", side, roomCode: code });
         }
       }
+
+      // 방 생성/착석/단계 변화가 로비에 반영되도록 모든 연결에 방 목록을 갱신해 보낸다.
+      broadcastRoomList();
     });
 
     socket.on("close", () => {
@@ -121,6 +139,8 @@ export function attachWsServer(wss: WebSocketServer, deps: WsTransportDeps): () 
       state = result.state;
       deliver(result.outbound);
       sockets.delete(connId);
+      // 끊김으로 방 인원/정리가 바뀌었을 수 있으니 남은 연결의 로비 목록을 갱신한다.
+      broadcastRoomList();
     });
 
     // 소켓 에러는 close 핸들러가 정리하도록 둔다(여기서 throw 금지).
@@ -142,11 +162,12 @@ export function attachWsServer(wss: WebSocketServer, deps: WsTransportDeps): () 
   };
 }
 
-/** raw가 joinRoom 메시지 형태인지(코드 추출용 최소 판정). 본 검증은 dispatch의 isClientMessage가 한다. */
+/** raw의 type 디스크리미네이터가 t인지(라우팅용 최소 판정). 본 검증은 dispatch의 isClientMessage가 한다. */
+function isType<T extends string>(raw: unknown, t: T): raw is { type: T } & Record<string, unknown> {
+  return typeof raw === "object" && raw !== null && (raw as { type?: unknown }).type === t;
+}
+
+/** raw가 joinRoom 메시지 형태인지(코드 추출용). */
 function isJoinRoom(raw: unknown): raw is { type: "joinRoom"; roomCode?: unknown } {
-  return (
-    typeof raw === "object" &&
-    raw !== null &&
-    (raw as { type?: unknown }).type === "joinRoom"
-  );
+  return isType(raw, "joinRoom");
 }

@@ -26,7 +26,19 @@ export type ClientMessage =
   | { type: "makeMove"; gameType: GameId; move: unknown }
   | { type: "submitSetup"; gameType: GameId; payload: unknown }
   | { type: "leaveRoom" }
-  | { type: "requestRematch" };
+  | { type: "requestRematch" }
+  // 로비에서 현재 열린 방 목록을 요청한다(방에 입장하지 않은 연결도 보낼 수 있다).
+  | { type: "listRooms" };
+
+/** 로비 방 목록의 한 항목(요약). 민감정보 없음 — 코드·게임·인원·단계만. */
+export interface RoomSummary {
+  code: string;
+  gameType: GameId;
+  /** 착석한 플레이어 수(0~2). 2면 가득 참(플레이어로는 입장 불가). */
+  players: number;
+  /** 진행 단계. waiting=좌석 대기, setup=비공개 배치, playing=매치 진행. */
+  phase: "waiting" | "setup" | "playing";
+}
 
 /** 서버 → 클라이언트 메시지. `type`로 판별한다. */
 export type ServerMessage =
@@ -38,7 +50,9 @@ export type ServerMessage =
   // 전송 어댑터가 한 연결이 좌석에 앉을 때 그 연결에게만 보내, 자신의 side를 알린다.
   // (방 코어 reduceRoom은 좌석 배정을 connId로만 다루므로, 원격 클라이언트가 자기 side를
   //  알 수 있도록 전송 계층이 합성해 보낸다. 로컬 인메모리 흐름은 UI가 좌석을 직접 알아 불필요.)
-  | { type: "seated"; side: Side; roomCode: string };
+  | { type: "seated"; side: Side; roomCode: string }
+  // 로비 방 목록 응답(listRooms에 대한 회신, 또는 방 변경 시 브로드캐스트).
+  | { type: "roomList"; rooms: RoomSummary[] };
 
 // ──────────────────────────────────────────────────────────────────────────
 // 런타임 검증 가드 (네트워크 경계용). throw하지 않고 boolean으로만 판정한다.
@@ -124,10 +138,24 @@ export function isClientMessage(value: unknown): value is ClientMessage {
       return isGameId(value.gameType) && "payload" in value;
     case "leaveRoom":
     case "requestRematch":
+    case "listRooms":
       return true;
     default:
       return false;
   }
+}
+
+/** RoomSummary 형태 가드(로비 목록 항목). */
+function isRoomSummary(value: unknown): value is RoomSummary {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return (
+    isNonEmptyString(value.code) &&
+    isGameId(value.gameType) &&
+    typeof value.players === "number" &&
+    (value.phase === "waiting" || value.phase === "setup" || value.phase === "playing")
+  );
 }
 
 /**
@@ -162,6 +190,8 @@ export function isServerMessage(value: unknown): value is ServerMessage {
       return isGameRecord(value.record);
     case "seated":
       return isSide(value.side) && isNonEmptyString(value.roomCode);
+    case "roomList":
+      return Array.isArray(value.rooms) && value.rooms.every(isRoomSummary);
     default:
       return false;
   }

@@ -26,6 +26,7 @@ describe("isClientMessage", () => {
       { type: "submitSetup", gameType: "battleship", payload: { ships: [] } },
       { type: "leaveRoom" },
       { type: "requestRematch" },
+      { type: "listRooms" },
     ];
     for (const msg of valid) {
       expect(isClientMessage(msg)).toBe(true);
@@ -114,6 +115,23 @@ describe("isServerMessage", () => {
     expect(isServerMessage({ type: "seated", side: "p3", roomCode: "ABCD" })).toBe(false);
     expect(isServerMessage({ type: "seated", side: "p1", roomCode: "" })).toBe(false);
     expect(isServerMessage({ type: "seated", side: "p1" })).toBe(false);
+  });
+
+  it("accepts roomList with valid room summaries, rejects malformed entries", () => {
+    expect(isServerMessage({ type: "roomList", rooms: [] })).toBe(true);
+    expect(
+      isServerMessage({
+        type: "roomList",
+        rooms: [{ code: "ABCD", gameType: "battleship", players: 1, phase: "waiting" }],
+      }),
+    ).toBe(true);
+    expect(
+      isServerMessage({
+        type: "roomList",
+        rooms: [{ code: "ABCD", gameType: "battleship", players: 1, phase: "nope" }],
+      }),
+    ).toBe(false);
+    expect(isServerMessage({ type: "roomList" })).toBe(false);
   });
 
   it("accepts gameState with any state payload (serialization out of scope)", () => {

@@ -123,4 +123,38 @@ describe("createWsRoomConnection — 브라우저 ws 어댑터로 실제 서버 
       await srv.close();
     }
   });
+
+  it("로비 연결이 listRooms로 방 목록을 받고, 다른 연결의 방 생성이 브로드캐스트된다", async () => {
+    const deps: WsTransportDeps = {
+      newConnId: seqConnId(),
+      registryDeps: {
+        resolveEngine: (gt) => (gt === "battleship" ? fakeBattleshipEngine() : undefined),
+        defaultGameType: "battleship",
+      },
+      resolveRedact,
+    };
+    const srv = await startServer(deps);
+    try {
+      const lobby = createWsRoomConnection(srv.url, ctor);
+      const cl = collect(lobby.client);
+      lobby.client.send({ type: "listRooms" });
+      const empty = await cl.waitFor((m) => m.type === "roomList");
+      expect((empty as { rooms: unknown[] }).rooms).toEqual([]);
+
+      // 다른 연결이 방을 만들면 로비에 roomList가 브로드캐스트된다.
+      const a = createWsRoomConnection(srv.url, ctor);
+      a.client.send({ type: "joinRoom", roomCode: "OPEN1" });
+      const updated = await cl.waitFor(
+        (m) => m.type === "roomList" && (m as { rooms: unknown[] }).rooms.length === 1,
+      );
+      const room = (updated as unknown as { rooms: Array<Record<string, unknown>> }).rooms[0]!;
+      expect(room.code).toBe("OPEN1");
+      expect(room.players).toBe(1);
+
+      lobby.close();
+      a.close();
+    } finally {
+      await srv.close();
+    }
+  });
 });
