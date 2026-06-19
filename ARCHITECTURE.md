@@ -50,6 +50,19 @@ architecture:
       reason: "domain must not depend on infrastructure"
 ```
 
+## Entrypoints (실행 진입점)
+
+> Status: 확정. 전송/소켓 등 부수효과 진입점은 모두 `src/infrastructure`에 둔다.
+
+- **웹 UI**: `npm run dev` (Vite, 기본 http://localhost:5173) — `src/ui` (React).
+- **CLI**: `npm run start` / `npm run dev:cli` — `src/infrastructure/cli.ts`.
+- **멀티플레이 ws 서버(로컬)**: `npm run serve:multi` — `src/infrastructure/server/wsServer.ts`
+  (native `ws`, 기본 포트 8787, `PORT` 환경변수로 변경). 같은 브라우저 여러 탭/다른 브라우저가
+  방 코드로 접속해 같은 매치를 플레이한다. 전송 어댑터 `wsTransport.ts`가 멀티룸 레지스트리
+  (`roomRegistry.ts`)에 바인딩하고, 게임 시점 가림(fog-of-war)은 `redactors.ts`로 side별 적용한다.
+  **로컬 + 다중 탭 범위까지만** — 원격(인터넷) 노출/배포는 범위 밖(needs-human).
+  소켓/전송 라이브러리(`ws`) import는 infrastructure에만 둔다(application/domain은 import하지 않음).
+
 ## Rules for agents
 
 - 이 문서에 명시되지 않은 의존성 방향은 추가하지 않는다.

@@ -141,7 +141,12 @@ ui               : 소켓 클라이언트 + 기존 로컬 모드
    서버는 단계 1~2 코어를 그대로 호출. *통합 테스트(서버 인스턴스 + 가짜 클라이언트 2개).*
    - 진행: 프로토콜 메시지 타입(#516) 완료. **전송 비종속 방 런타임 `infrastructure/server/room.ts`
      (`reduceRoom`·착석/매치시작/브로드캐스트/거부 error, 순수·결정적) 완료(#526).** 엔진 해석은
-     주입(`ResolveEngine`)이라 레지스트리(#525)와 독립. 남은 범위: native `ws` 전송·연결 수명주기.
+     주입(`ResolveEngine`)이라 레지스트리(#525)와 독립. **멀티룸 레지스트리 `roomRegistry.ts`
+     (방 코드별 RoomState·connId 라우팅·to:"all" 해소·disconnect 정리) 완료(#543).**
+     **native `ws` 전송·연결 수명주기 완료(#595)**: `wsTransport.ts`(attachWsServer — 연결→connId,
+     수신 검증·레지스트리 위임, side별 fog-of-war 가림 송신, disconnect 정리) + 엔트리 `wsServer.ts`
+     (`npm run serve:multi`, 기본 포트 8787) + 실 ws 통합 테스트(2클라 입장/동기화/거부/끊김/가림).
+     → **단계 4 완료**(로컬 ws 서버 + 다중 탭). 원격 노출/배포는 범위 밖(needs-human).
 5. **온라인 UI.** 방 만들기/입장, 실시간 상태 반영, 재대국. 로컬·AI 모드와 공존.
 6. **기록 영속화 + 전적.** `recordStore` 포트, `summarize` 노출(전적 화면). 영속 수단은 6에서 확정.
 
