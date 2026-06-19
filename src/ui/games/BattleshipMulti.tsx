@@ -8,7 +8,7 @@ import type { Side, GameStatus } from "../../application/gameEngine";
 import { DEFAULT_BATTLESHIP_SIZE } from "../../application/battleshipEngine";
 import type { BattleshipEngineState } from "../../application/battleshipEngine";
 import type { BattleshipSetupState } from "../../application/battleshipSetup";
-import type { RoomPlayerInfo, ServerMessage } from "../../application/protocol";
+import type { RoomPlayerInfo, RoomSummary, ServerMessage } from "../../application/protocol";
 import { boardGridStyle } from "./boardView";
 import { useBoardNavigation } from "./useBoardNavigation";
 import {
@@ -134,14 +134,23 @@ export function BattleshipMulti({
   const [ownSide, setOwnSide] = useState<Side | null>(null);
   const ownSideRef = useRef<Side | null>(null);
   const unsubsRef = useRef<Array<() => void>>([]);
+  // 온라인 로비: 지속 연결(방 입장 전후로 유지) + 방 목록 + 연결 상태.
+  const [rooms, setRooms] = useState<RoomSummary[]>([]);
+  const [onlineStatus, setOnlineStatus] = useState<"disconnected" | "connecting" | "connected">(
+    "disconnected",
+  );
+  const onlineRef = useRef<{ client: RoomClient; close: () => void; off: () => void } | null>(null);
   // 이번 매치 결과를 이미 기록했는지(중복 방지 가드). 재대국·미종료 단계에서 자동 리셋된다.
   const recordedRef = useRef(false);
 
-  // 구독 해지(언마운트/방 나가기) — 누수 방지.
+  // 구독 해지·소켓 닫기(언마운트) — 누수 방지.
   useEffect(() => {
     return () => {
       for (const off of unsubsRef.current) off();
       unsubsRef.current = [];
+      onlineRef.current?.off();
+      onlineRef.current?.close();
+      onlineRef.current = null;
     };
   }, []);
 
@@ -208,59 +217,93 @@ export function BattleshipMulti({
     // 전적 기록은 권위 있는 status(over)를 감지하는 위 useEffect가 매치당 1회 담당한다.
   };
 
-  const join = () => {
+  /** 로컬 2석 시뮬 입장(서버 불필요). */
+  const joinLocal = () => {
     const code = roomCodeInput.trim();
     if (code.length === 0 || session !== null) return;
     setSeats({ p1: emptySeat(), p2: emptySeat() });
     ownSideRef.current = null;
     setOwnSide(null);
+    const hub = makeHub(code);
+    const clients: Record<Side, RoomClient> = {
+      p1: hub.connect(CONN_ID.p1),
+      p2: hub.connect(CONN_ID.p2),
+    };
+    for (const side of SIDES) {
+      unsubsRef.current.push(clients[side].subscribe((m) => applyMessage(side, m)));
+    }
+    setActiveSeat("p1");
+    setSession({ transport: "local", hub, clients, roomCode: code });
+    for (const side of SIDES) {
+      clients[side].send({ type: "joinRoom", roomCode: code });
+    }
+  };
 
-    if (transport === "local") {
-      // 로컬: 한 화면에서 두 좌석을 인메모리 허브로 구동(서버 불필요).
-      const hub = makeHub(code);
-      const clients: Record<Side, RoomClient> = {
-        p1: hub.connect(CONN_ID.p1),
-        p2: hub.connect(CONN_ID.p2),
-      };
-      for (const side of SIDES) {
-        unsubsRef.current.push(clients[side].subscribe((m) => applyMessage(side, m)));
-      }
-      setActiveSeat("p1");
-      setSession({ transport: "local", hub, clients, roomCode: code });
-      for (const side of SIDES) {
-        clients[side].send({ type: "joinRoom", roomCode: code });
-      }
+  /** 온라인 로비 연결을 연다(지속 연결: 방 입장 전후로 유지). 방 목록을 요청한다. */
+  const connectLobby = () => {
+    if (onlineRef.current !== null) {
+      onlineRef.current.client.send({ type: "listRooms" }); // 이미 연결됨 → 새로고침
       return;
     }
-
-    // 온라인: 이 탭이 한 좌석으로 ws 서버에 접속. 내 side는 서버 seated로 정해진다.
+    setOnlineStatus("connecting");
+    setRooms([]);
     const { client, close } = connectOnline(wsUrl);
     const off = client.subscribe((m) => {
+      if (m.type === "roomList") {
+        setRooms(m.rooms);
+        setOnlineStatus("connected");
+        return;
+      }
       if (m.type === "seated") {
         ownSideRef.current = m.side;
         setOwnSide(m.side);
         setActiveSeat(m.side);
         return;
       }
-      // 내 좌석 관점의 메시지(서버가 이미 side별로 가려 보냄). seated 전이면 p1로 임시 라우팅.
+      // 방 안 메시지(서버가 이미 side별로 가려 보냄). seated 전이면 p1로 임시 라우팅.
       applyMessage(ownSideRef.current ?? "p1", m);
     });
-    unsubsRef.current.push(off);
-    setSession({ transport: "online", client, close, roomCode: code });
-    client.send({ type: "joinRoom", roomCode: code });
+    onlineRef.current = { client, close, off };
+    client.send({ type: "listRooms" });
+  };
+
+  /** 온라인: 지속 연결로 방에 입장(목록 클릭 또는 새 방 코드). */
+  const joinOnline = (rawCode: string) => {
+    const code = rawCode.trim();
+    const conn = onlineRef.current;
+    if (conn === null || code.length === 0 || session !== null) return;
+    setSeats({ p1: emptySeat(), p2: emptySeat() });
+    ownSideRef.current = null;
+    setOwnSide(null);
+    setSession({ transport: "online", client: conn.client, close: conn.close, roomCode: code });
+    conn.client.send({ type: "joinRoom", roomCode: code });
+  };
+
+  /** 온라인 연결을 완전히 끊는다(전송 전환/언마운트). */
+  const disconnectOnline = () => {
+    onlineRef.current?.off();
+    onlineRef.current?.close();
+    onlineRef.current = null;
+    setRooms([]);
+    setOnlineStatus("disconnected");
+  };
+
+  /** 전송 방식 전환: 온라인→다른 방식이면 연결을 정리한다. */
+  const handleTransportChange = (t: Transport) => {
+    if (t !== "online") disconnectOnline();
+    setTransport(t);
   };
 
   const leave = () => {
-    if (session !== null) {
-      if (session.transport === "local") {
-        for (const side of SIDES) session.clients[side].send({ type: "leaveRoom" });
-      } else {
-        session.client.send({ type: "leaveRoom" });
-        session.close();
-      }
+    if (session !== null && session.transport === "local") {
+      for (const side of SIDES) session.clients[side].send({ type: "leaveRoom" });
+      for (const off of unsubsRef.current) off();
+      unsubsRef.current = [];
+    } else if (session !== null && session.transport === "online") {
+      // 온라인: 방만 나가고 연결은 유지해 로비(방 목록)로 돌아간다.
+      session.client.send({ type: "leaveRoom" });
+      onlineRef.current?.client.send({ type: "listRooms" });
     }
-    for (const off of unsubsRef.current) off();
-    unsubsRef.current = [];
     setSession(null);
     setPlayers([]);
     setSeats({ p1: emptySeat(), p2: emptySeat() });
@@ -272,12 +315,17 @@ export function BattleshipMulti({
     return (
       <Lobby
         transport={transport}
-        onTransportChange={setTransport}
+        onTransportChange={handleTransportChange}
         roomCode={roomCodeInput}
         onRoomCodeChange={setRoomCodeInput}
+        onJoinLocal={joinLocal}
         wsUrl={wsUrl}
         onWsUrlChange={setWsUrl}
-        onJoin={join}
+        onlineStatus={onlineStatus}
+        rooms={rooms}
+        onConnect={connectLobby}
+        onRefresh={connectLobby}
+        onJoinRoom={joinOnline}
       />
     );
   }
@@ -399,23 +447,33 @@ export function BattleshipMulti({
   );
 }
 
-/** 로비: 전송 방식(로컬/온라인) + 방 코드(+온라인 서버 URL) → 입장. */
+/** 로비: 전송 방식(로컬/온라인) 선택 + 로컬 입장 폼 또는 온라인 방 목록. */
 function Lobby({
   transport,
   onTransportChange,
   roomCode,
   onRoomCodeChange,
+  onJoinLocal,
   wsUrl,
   onWsUrlChange,
-  onJoin,
+  onlineStatus,
+  rooms,
+  onConnect,
+  onRefresh,
+  onJoinRoom,
 }: {
   transport: Transport;
   onTransportChange: (t: Transport) => void;
   roomCode: string;
   onRoomCodeChange: (v: string) => void;
+  onJoinLocal: () => void;
   wsUrl: string;
   onWsUrlChange: (v: string) => void;
-  onJoin: () => void;
+  onlineStatus: "disconnected" | "connecting" | "connected";
+  rooms: RoomSummary[];
+  onConnect: () => void;
+  onRefresh: () => void;
+  onJoinRoom: (code: string) => void;
 }) {
   const TRANSPORTS: ReadonlyArray<{ value: Transport; label: string }> = [
     { value: "local", label: "로컬 2인 (서버 불필요)" },
@@ -438,52 +496,157 @@ function Lobby({
         ))}
       </div>
 
-      <p className="hint">
-        {transport === "local" ? (
-          <>
+      {transport === "local" ? (
+        <>
+          <p className="hint">
             <strong>로컬 2인</strong>: 한 화면에서 두 좌석을 번갈아 조작하는 시뮬입니다(서버 불필요).
-          </>
-        ) : (
-          <>
-            <strong>온라인</strong>: 이 탭이 한 좌석으로 ws 서버에 접속합니다. <strong>다른 탭/브라우저</strong>
-            에서 같은 방 코드로 들어오면 실시간으로 맞붙습니다. 먼저 서버를 켜야 합니다:{" "}
-            <code>npm run serve:multi</code>.
-          </>
-        )}
+          </p>
+          <form
+            className="controls"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onJoinLocal();
+            }}
+          >
+            <label htmlFor="bs-room-code">방 코드</label>
+            <input
+              id="bs-room-code"
+              type="text"
+              value={roomCode}
+              onChange={(e) => onRoomCodeChange(e.target.value)}
+              aria-label="방 코드 입력"
+            />
+            <button type="submit" className="primary" disabled={roomCode.trim().length === 0}>
+              방 만들기 / 입장
+            </button>
+          </form>
+        </>
+      ) : (
+        <OnlineLobby
+          roomCode={roomCode}
+          onRoomCodeChange={onRoomCodeChange}
+          wsUrl={wsUrl}
+          onWsUrlChange={onWsUrlChange}
+          onlineStatus={onlineStatus}
+          rooms={rooms}
+          onConnect={onConnect}
+          onRefresh={onRefresh}
+          onJoinRoom={onJoinRoom}
+        />
+      )}
+    </div>
+  );
+}
+
+/** 온라인 로비: 서버 연결 + 열린 방 목록(실시간 갱신) + 방 만들기/입장. */
+function OnlineLobby({
+  roomCode,
+  onRoomCodeChange,
+  wsUrl,
+  onWsUrlChange,
+  onlineStatus,
+  rooms,
+  onConnect,
+  onRefresh,
+  onJoinRoom,
+}: {
+  roomCode: string;
+  onRoomCodeChange: (v: string) => void;
+  wsUrl: string;
+  onWsUrlChange: (v: string) => void;
+  onlineStatus: "disconnected" | "connecting" | "connected";
+  rooms: RoomSummary[];
+  onConnect: () => void;
+  onRefresh: () => void;
+  onJoinRoom: (code: string) => void;
+}) {
+  const connected = onlineStatus === "connected";
+  const phaseLabel: Record<RoomSummary["phase"], string> = {
+    waiting: "대기 중",
+    setup: "배치 중",
+    playing: "진행 중",
+  };
+  return (
+    <>
+      <p className="hint">
+        <strong>온라인</strong>: 서버에 연결해 열린 방 목록에서 입장하거나 새 방을 만듭니다.{" "}
+        <strong>다른 탭/브라우저</strong>에서 같은 방에 들어오면 실시간으로 맞붙습니다. 먼저 서버를
+        켜야 합니다: <code>npm run serve:multi</code>.
       </p>
 
-      <form
-        className="controls"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onJoin();
-        }}
-      >
-        <label htmlFor="bs-room-code">방 코드</label>
+      <div className="controls">
+        <label htmlFor="bs-ws-url">서버 주소</label>
         <input
-          id="bs-room-code"
+          id="bs-ws-url"
           type="text"
-          value={roomCode}
-          onChange={(e) => onRoomCodeChange(e.target.value)}
-          aria-label="방 코드 입력"
+          value={wsUrl}
+          onChange={(e) => onWsUrlChange(e.target.value)}
+          aria-label="ws 서버 주소"
+          disabled={connected}
         />
-        {transport === "online" && (
-          <>
-            <label htmlFor="bs-ws-url">서버 주소</label>
-            <input
-              id="bs-ws-url"
-              type="text"
-              value={wsUrl}
-              onChange={(e) => onWsUrlChange(e.target.value)}
-              aria-label="ws 서버 주소"
-            />
-          </>
-        )}
-        <button type="submit" className="primary" disabled={roomCode.trim().length === 0}>
-          {transport === "online" ? "접속" : "방 만들기 / 입장"}
+        <button type="button" className={connected ? "" : "primary"} onClick={onConnect}>
+          {connected ? "목록 새로고침" : onlineStatus === "connecting" ? "연결 중…" : "서버 연결"}
         </button>
-      </form>
-    </div>
+      </div>
+
+      <p className="hint" role="status" aria-live="polite">
+        {onlineStatus === "disconnected" && "서버에 연결하면 방 목록이 표시됩니다."}
+        {onlineStatus === "connecting" && "서버에 연결하는 중…"}
+        {connected && `연결됨 · 열린 방 ${rooms.length}개`}
+      </p>
+
+      {connected && (
+        <>
+          <ul className="bs-room-list" aria-label="열린 방 목록">
+            {rooms.length === 0 && (
+              <li className="hint">열린 방이 없습니다. 아래에서 새 방을 만드세요.</li>
+            )}
+            {rooms.map((r) => {
+              const full = r.players >= 2;
+              return (
+                <li key={r.code} className="bs-room-row">
+                  <span>
+                    <strong>{r.code}</strong> · {r.players}/2명 · {phaseLabel[r.phase]}
+                  </span>
+                  <button
+                    type="button"
+                    className="primary"
+                    onClick={() => onJoinRoom(r.code)}
+                    disabled={full}
+                    aria-label={`방 ${r.code} 입장${full ? " (가득 참)" : ""}`}
+                  >
+                    {full ? "가득 참" : "입장"}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+
+          <form
+            className="controls"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onJoinRoom(roomCode);
+            }}
+          >
+            <label htmlFor="bs-room-code">새 방 코드</label>
+            <input
+              id="bs-room-code"
+              type="text"
+              value={roomCode}
+              onChange={(e) => onRoomCodeChange(e.target.value)}
+              aria-label="새 방 코드 입력"
+            />
+            <button type="submit" className="primary" disabled={roomCode.trim().length === 0}>
+              방 만들기 / 입장
+            </button>
+            <button type="button" onClick={onRefresh}>
+              새로고침
+            </button>
+          </form>
+        </>
+      )}
+    </>
   );
 }
 

@@ -145,6 +145,32 @@ describe("attachWsServer — 실제 ws 전송 통합", () => {
     }
   });
 
+  it("①-c listRooms로 방 목록을 받고, 방 생성/입장이 모든 연결에 브로드캐스트된다", async () => {
+    const srv = await startTestServer({ ...CF_DEPS, newConnId: seqConnId() });
+    try {
+      const lobby = await TestClient.connect(srv.url);
+      // 처음엔 빈 목록.
+      lobby.send({ type: "listRooms" });
+      const empty = await lobby.waitForType("roomList");
+      expect(empty.rooms).toEqual([]);
+
+      // 다른 연결이 방을 만들면(joinRoom 자동 생성), 로비에 roomList가 브로드캐스트된다.
+      const a = await TestClient.connect(srv.url);
+      a.send({ type: "joinRoom", roomCode: "LOBBY1" });
+      const updated = await lobby.waitFor(
+        (m) => m.type === "roomList" && Array.isArray(m.rooms) && (m.rooms as unknown[]).length === 1,
+      );
+      const room = (updated.rooms as Array<Record<string, unknown>>)[0]!;
+      expect(room.code).toBe("LOBBY1");
+      expect(room.players).toBe(1);
+      expect(room.phase).toBe("waiting");
+      lobby.close();
+      a.close();
+    } finally {
+      await srv.close();
+    }
+  });
+
   it("② 한쪽 makeMove가 양쪽에 gameState 동기화", async () => {
     const srv = await startTestServer({ ...CF_DEPS, newConnId: seqConnId() });
     try {
