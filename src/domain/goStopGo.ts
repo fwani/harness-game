@@ -3,6 +3,24 @@
 // 카드/상태가 아닌 점수(number)·고 횟수(number)만 입력으로 받는 결정적 산술 함수다.
 // 난수·시간·식별자 생성 없이 입력만으로 결정적이며, 입력값을 변형하지 않는다.
 
+/**
+ * 「고(Go)」를 외칠 수 있는 최소 점수(승점). 표준 고스톱에서 「고/스톱」 선택은 "날 수 있는 점수"
+ * (기본 3점)에 도달한 플레이어만 할 수 있다. 이 점수 미만이면 「고」를 외칠 수 없다.
+ */
+export const GO_MIN_SCORE = 3;
+
+/**
+ * 현재 카드 기본 점수(base)로 「고」를 외칠 수 있는지 판정한다(순수). base가 승점(GO_MIN_SCORE)
+ * 이상일 때만 true. base는 0 이상 정수여야 하며 음수·비정수면 throw.
+ * (카드 점수와 무관하게 「고」로 일방 승리하던 결함 방지 — 「고」는 날 수 있는 점수 도달 후에만.)
+ */
+export function canCallGo(base: number): boolean {
+  if (!Number.isInteger(base) || base < 0) {
+    throw new Error("canCallGo requires base to be a non-negative integer");
+  }
+  return base >= GO_MIN_SCORE;
+}
+
 /** 「고(Go)」 콜 보너스·배수를 적용한 결과. */
 export interface GoBonusResult {
   /** 고 선언 시점의 기본 점수 (입력 그대로) */

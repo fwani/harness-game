@@ -2,6 +2,8 @@ import { useState, useSyncExternalStore } from "react";
 import type { HwatuCard } from "../../domain/hwatu";
 import { createHwatuDeck } from "../../domain/hwatu";
 import type { GoStopFinalScore } from "../../domain/goStopBak";
+import { scoreGoStopTotal } from "../../domain/goStopTotal";
+import { canCallGo, GO_MIN_SCORE } from "../../domain/goStopGo";
 import { shuffle, deal } from "../../application/dealCards";
 import {
   settleGoStopShowdown,
@@ -92,6 +94,11 @@ export function GoStop() {
   const records = useSyncExternalStore(subscribe, listRecords);
   const streak = selfStreakSummary(records, "gostop");
 
+  // 「고」는 표준 규칙대로 "날 수 있는 점수"(승점 GO_MIN_SCORE) 이상일 때만 외칠 수 있다.
+  // 카드 점수와 무관하게 「고」로 일방 승리하던 결함(#537) 방지.
+  const myBase = piles ? scoreGoStopTotal(piles.a) : 0;
+  const goAllowed = piles ? canCallGo(myBase) : false;
+
   function startDeal() {
     const deck = shuffle(createHwatuDeck(), rng);
     const { hands } = deal(deck, 2, CARDS_PER_PLAYER);
@@ -145,19 +152,35 @@ export function GoStop() {
           {!result && (
             <>
               <p className="hint" id="go-count-label">
-                내 「고」 횟수 선택 (CPU는 {CPU_GO_COUNT}회)
+                내 카드 {myBase}점 · 내 「고」 횟수 선택 (CPU는 {CPU_GO_COUNT}회)
               </p>
+              {!goAllowed && (
+                <p className="hint">
+                  「고」는 카드 점수가 승점({GO_MIN_SCORE}점) 이상일 때만 외칠 수 있습니다 (현재{" "}
+                  {myBase}점). 점수가 모자라면 {GO_OPTIONS[0]}고로 쇼다운하세요.
+                </p>
+              )}
               <div className="hand-cards" role="group" aria-labelledby="go-count-label">
-                {GO_OPTIONS.map((n) => (
-                  <button
-                    key={n}
-                    className={n === goCount ? "tab active" : "tab"}
-                    aria-pressed={n === goCount}
-                    onClick={() => setGoCount(n)}
-                  >
-                    {n}고
-                  </button>
-                ))}
+                {GO_OPTIONS.map((n) => {
+                  // 0고는 항상 가능. 1고 이상은 승점 도달(goAllowed) 시에만 선택 가능.
+                  const disabled = n > 0 && !goAllowed;
+                  return (
+                    <button
+                      key={n}
+                      className={n === goCount ? "tab active" : "tab"}
+                      aria-pressed={n === goCount}
+                      aria-disabled={disabled}
+                      disabled={disabled}
+                      onClick={() => {
+                        if (!disabled) {
+                          setGoCount(n);
+                        }
+                      }}
+                    >
+                      {n}고
+                    </button>
+                  );
+                })}
               </div>
               <button className="primary" onClick={showdown}>
                 쇼다운! (나 {goCount}고)
