@@ -34,7 +34,11 @@ export type ServerMessage =
   | { type: "gameState"; gameType: GameId; state: unknown; status: GameStatus; turn: Side }
   | { type: "setupState"; gameType: GameId; setup: unknown }
   | { type: "error"; reason: string }
-  | { type: "gameOver"; record: GameRecord };
+  | { type: "gameOver"; record: GameRecord }
+  // 전송 어댑터가 한 연결이 좌석에 앉을 때 그 연결에게만 보내, 자신의 side를 알린다.
+  // (방 코어 reduceRoom은 좌석 배정을 connId로만 다루므로, 원격 클라이언트가 자기 side를
+  //  알 수 있도록 전송 계층이 합성해 보낸다. 로컬 인메모리 흐름은 UI가 좌석을 직접 알아 불필요.)
+  | { type: "seated"; side: Side; roomCode: string };
 
 // ──────────────────────────────────────────────────────────────────────────
 // 런타임 검증 가드 (네트워크 경계용). throw하지 않고 boolean으로만 판정한다.
@@ -156,6 +160,8 @@ export function isServerMessage(value: unknown): value is ServerMessage {
       return isNonEmptyString(value.reason);
     case "gameOver":
       return isGameRecord(value.record);
+    case "seated":
+      return isSide(value.side) && isNonEmptyString(value.roomCode);
     default:
       return false;
   }

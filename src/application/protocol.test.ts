@@ -108,6 +108,14 @@ describe("isServerMessage", () => {
     expect(isServerMessage({ type: "roomState", roomCode: "ABCD", players: [] })).toBe(true);
   });
 
+  it("accepts seated with a valid side + roomCode, rejects bad side/roomCode", () => {
+    expect(isServerMessage({ type: "seated", side: "p1", roomCode: "ABCD" })).toBe(true);
+    expect(isServerMessage({ type: "seated", side: "p2", roomCode: "ABCD" })).toBe(true);
+    expect(isServerMessage({ type: "seated", side: "p3", roomCode: "ABCD" })).toBe(false);
+    expect(isServerMessage({ type: "seated", side: "p1", roomCode: "" })).toBe(false);
+    expect(isServerMessage({ type: "seated", side: "p1" })).toBe(false);
+  });
+
   it("accepts gameState with any state payload (serialization out of scope)", () => {
     expect(
       isServerMessage({ type: "gameState", gameType: "go", state: null, status: P1_WIN, turn: "p2" }),
